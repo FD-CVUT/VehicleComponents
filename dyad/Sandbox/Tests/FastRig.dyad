@@ -1,8 +1,0 @@
-"Throwaway rig: a first-order lag that settles well inside the budget"
-test component FastRig
-  variable x::Real
-relations
-  initial x = 1
-  der(x) = -x
-metadata {"Dyad": {"tests": {"case1": {"stop": 5, "expect": {"initial": {"x": 1}, "final": {"x": 0.006737946999085467}}}}}}
-end

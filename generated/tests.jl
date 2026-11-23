@@ -19,4 +19,3 @@ include("test_internals.jl")
 
 @testset "`VehicleComponents`" begin
 end
-include("Sandbox/tests.jl")
