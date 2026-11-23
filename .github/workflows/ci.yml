@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  fast-tier:
+    name: Fast tier
+    # Fork pull requests get no secrets and so cannot reach the JuliaHub package server.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: dyad
+        uses: ./.github/actions/setup-dyad
+        with:
+          juliahub-auth-toml: ${{ secrets.JULIAHUB_AUTH_TOML }}
+      - name: Run the fast tier
+        env:
+          CHANNEL: ${{ steps.dyad.outputs.channel }}
+        run: julia "+$CHANNEL" --project=. test/runtests.jl fast
+
+  staleness:
+    name: Generated code is current
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: dyad
+        uses: ./.github/actions/setup-dyad
+        with:
+          juliahub-auth-toml: ${{ secrets.JULIAHUB_AUTH_TOML }}
+      # The compiler leaves the generated files of a deleted module in place, so compile from an
+      # empty generated/ to catch leftovers as well as stale contents.
+      - name: Regenerate from scratch
+        env:
+          CLI: ${{ steps.dyad.outputs.cli }}
+        run: |
+          rm -rf generated
+          node "$CLI" compile .
+      - name: Fail on any difference
+        run: |
+          if [ -n "$(git status --porcelain -- generated)" ]; then
+            git status --short -- generated
+            git --no-pager diff --stat -- generated
+            echo "::error::generated/ does not match the Dyad sources. Run 'mise run compile' with the pinned Dyad Studio and commit the result."
+            exit 1
+          fi

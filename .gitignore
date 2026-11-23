@@ -1,0 +1,9 @@
+/docs/build/
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+/.dyadcache
+/docs/Manifest*.toml
+/agent_resources/
+/.migration-backups/
+/test/comparisons/

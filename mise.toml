@@ -1,0 +1,18 @@
+[env]
+# The Dyad Studio release whose compiler generates `generated/`; see AGENTS.md.
+DYAD_STUDIO_VERSION = "3.5.1"
+
+[tools]
+node = "22"
+
+[tasks.compile]
+description = "Regenerate generated/ with the installed Dyad Studio's compiler"
+run = "node ~/.vscode/extensions/juliacomputing.dyad-studio-$DYAD_STUDIO_VERSION/out/dyad-cli.js compile ."
+
+[tasks.test]
+description = "Run the fast tier: every test model under a Tests submodule, 30 s budget per rig"
+run = "julia +dyad-$(sed -n 's/^kernel = \"\\(.*\\)\"$/\\1/p' Project.toml) --project=. test/runtests.jl fast"
+
+[tasks."test:examples"]
+description = "Run the example tier: every test model under Examples, each in its own process"
+run = "julia +dyad-$(sed -n 's/^kernel = \"\\(.*\\)\"$/\\1/p' Project.toml) --project=. test/runtests.jl examples"

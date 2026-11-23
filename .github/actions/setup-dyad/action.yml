@@ -1,0 +1,127 @@
+name: Set up Dyad
+description: >-
+  Install the Dyad compiler from the Dyad Studio release pinned in mise.toml and the Julia build
+  its kernel needs, sign in to the JuliaHub package server, and instantiate the package.
+
+inputs:
+  juliahub-auth-toml:
+    description: Base64 of a JuliaHub auth.toml, passed from the JULIAHUB_AUTH_TOML repo secret.
+    required: true
+
+outputs:
+  channel:
+    description: The juliaup channel of the Dyad Julia build, e.g. dyad-3.5.0.
+    value: ${{ steps.kernel.outputs.channel }}
+  cli:
+    description: Path to the pinned compiler's dyad-cli.js, run with Node.
+    value: ${{ steps.kernel.outputs.cli }}
+
+runs:
+  using: composite
+  steps:
+    - name: Read the Dyad Studio pin
+      id: pin
+      shell: bash
+      run: |
+        studio=$(sed -n 's/^DYAD_STUDIO_VERSION = "\([^"]*\)"$/\1/p' mise.toml)
+        if [ -z "$studio" ]; then
+          echo "::error file=mise.toml::mise.toml has no DYAD_STUDIO_VERSION = \"x.y.z\" line"
+          exit 1
+        fi
+        echo "studio=$studio" >> "$GITHUB_OUTPUT"
+        echo "dir=$HOME/.cache/dyad-studio/$studio" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 22
+
+    - name: Restore the Dyad Studio compiler
+      id: studio-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pin.outputs.dir }}
+        key: dyad-studio-${{ steps.pin.outputs.studio }}
+
+    - name: Download the Dyad Studio compiler
+      if: steps.studio-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        STUDIO: ${{ steps.pin.outputs.studio }}
+        DIR: ${{ steps.pin.outputs.dir }}
+      run: |
+        vsix="$RUNNER_TEMP/dyad-studio.vsix"
+        curl -fsSL --retry 3 -o "$vsix" \
+          "https://open-vsx.org/api/JuliaComputing/dyad-studio/$STUDIO/file/JuliaComputing.dyad-studio-$STUDIO.vsix"
+        mkdir -p "$DIR"
+        unzip -q "$vsix" 'extension/out/*' -d "$DIR"
+
+    - name: Save the Dyad Studio compiler
+      if: steps.studio-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pin.outputs.dir }}
+        key: dyad-studio-${{ steps.pin.outputs.studio }}
+
+    # The compiler reports the kernel it carries; the kernel names the Julia build's channel, and
+    # Project.toml must name the same kernel or the extension and CI disagree on the toolchain.
+    - name: Match the kernel to Project.toml
+      id: kernel
+      shell: bash
+      env:
+        STUDIO: ${{ steps.pin.outputs.studio }}
+        DIR: ${{ steps.pin.outputs.dir }}
+      run: |
+        cli="$DIR/extension/out/dyad-cli.js"
+        kernel=$(node "$cli" --version | cut -d' ' -f1)
+        project=$(sed -n 's/^kernel = "\([^"]*\)"$/\1/p' Project.toml)
+        if [ "$kernel" != "$project" ]; then
+          echo "::error file=Project.toml::Dyad Studio $STUDIO carries kernel $kernel, but Project.toml [dyad] names kernel $project. Upgrade through the extension and bump the pin in mise.toml together."
+          exit 1
+        fi
+        echo "channel=dyad-$kernel" >> "$GITHUB_OUTPUT"
+        echo "cli=$cli" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the Dyad Julia build
+      id: julia-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.julia/juliaup
+        key: dyad-julia-${{ steps.kernel.outputs.channel }}-${{ runner.os }}-${{ runner.arch }}
+
+    - uses: julia-actions/install-juliaup@ac1bed66e8369307bff3d25a4fa3f6b85cdfcfe7 # v3.1.7
+      env:
+        JULIAUP_SERVER: https://juliahub.com/juliabin
+      with:
+        channel: ${{ steps.kernel.outputs.channel }}
+
+    # Saved straight away rather than at job end, so a failing test run still keeps the ~1.1 GB build.
+    - name: Save the Dyad Julia build
+      if: steps.julia-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.julia/juliaup
+        key: dyad-julia-${{ steps.kernel.outputs.channel }}-${{ runner.os }}-${{ runner.arch }}
+
+    - name: Sign in to JuliaHub
+      shell: bash
+      env:
+        AUTH: ${{ inputs.juliahub-auth-toml }}
+      run: |
+        if [ -z "$AUTH" ]; then
+          echo "::error::The JULIAHUB_AUTH_TOML repo secret is empty or missing; see AGENTS.md."
+          exit 1
+        fi
+        dir="$HOME/.julia/servers/juliahub.com"
+        mkdir -p "$dir"
+        (umask 077 && printf '%s' "$AUTH" | base64 -d > "$dir/auth.toml")
+        echo "JULIA_PKG_SERVER=juliahub.com" >> "$GITHUB_ENV"
+
+    - name: Instantiate the package
+      shell: bash
+      env:
+        CHANNEL: ${{ steps.kernel.outputs.channel }}
+      run: |
+        julia "+$CHANNEL" --project=. -e '
+          using Pkg
+          foreach(Pkg.Registry.add, ["General", "DyadRegistry"])
+          Pkg.instantiate()'

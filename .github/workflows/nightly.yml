@@ -1,0 +1,32 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  example-tier:
+    name: Example tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: dyad
+        uses: ./.github/actions/setup-dyad
+        with:
+          juliahub-auth-toml: ${{ secrets.JULIAHUB_AUTH_TOML }}
+      - name: Run the example tier
+        env:
+          CHANNEL: ${{ steps.dyad.outputs.channel }}
+        run: julia "+$CHANNEL" --project=. test/runtests.jl examples
