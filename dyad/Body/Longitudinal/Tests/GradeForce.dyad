@@ -1,0 +1,34 @@
+"""
+A 1400 kg mass on a flat road that turns into a 10 % climb at t = 1 s. The along-slope weight
+is m g sin(atan(0.1)) = 1366.12 N, which decelerates the mass at 0.9758 m/s².
+"""
+test component GradeForce
+  grade = BlockComponents.Sources.Step(height = 0.10, offset = 0.0, start_time = 1.0)
+  force = VehicleComponents.Body.Longitudinal.GradeForce(m = 1400.0)
+  mass = TranslationalComponents.Components.Mass(m = 1400.0)
+  fixed = TranslationalComponents.Components.Fixed()
+relations
+  connect(grade.y, force.grade)
+  connect(force.flange, mass.flange_a)
+  connect(force.support, fixed.flange)
+  initial mass.s = 0.0
+  initial mass.v = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "climb_from_flat": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"force.f": 0.01, "mass.a": 0.0001},
+        "expect": {
+          "initial": {"force.f": 0, "mass.a": 0},
+          "final": {"force.f": 1366.1174045921907, "mass.a": -0.9757981461372791},
+          "signals": ["force.f", "mass.v"]
+        }
+      }
+    }
+  }
+}
+end

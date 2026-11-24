@@ -1,0 +1,28 @@
+"""
+Target vehicle speed from a drive cycle: a time-series CSV of time and speed in km/h.
+
+Port: `y`, the target vehicle speed in km/h. The default is the packaged WLTC class 3b trace
+(Regulation (EU) 2017/1151). Linear interpolation follows the prescribed straight ramps between
+its 1 Hz points, and constant extrapolation keeps the endpoint defined.
+"""
+component DriveCycle
+  "Target vehicle speed [km/h]"
+  y = RealOutput() {^y}
+  "CSV with `t_s` and `v_kmh` columns"
+  structural parameter file::String = "dyad://VehicleComponents/data/drive_cycles/wltc_class3b.csv"
+  structural parameter dataset::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "t_s", dependent_vars = ["v_kmh"])
+  interpolation = BlockComponents.Tables.Interpolation(dataset = dataset, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^interpolation}
+relations
+  interpolation.u = time
+  connect(interpolation.y, y) {^w1}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Driver/DriveCycle.svg"}
+  },
+  "_links": {
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "interpolation": {"Dyad": {"placement": {"diagram": {"x1": 425, "x2": 575, "y1": 425, "y2": 575}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

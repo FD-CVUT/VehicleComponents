@@ -1,0 +1,32 @@
+"""
+Along-slope weight of a vehicle on a road whose gradient is a signal, so a scenario can switch
+from flat road to a climb partway through a run.
+
+Ports: `flange` moves with the vehicle and takes the force, `support` takes the reaction (the
+road), and `grade` is the road gradient tan(alpha), the same convention as the `inclination`
+input of `TranslationalComponents.Components.RollingResistance`, so one signal drives both.
+
+The force is f = m g sin(atan(grade)). A force source drives what its flange moves with
+-flange.f, so a positive grade (a climb) gives a positive f that opposes forward travel.
+"""
+component GradeForce
+  extends TranslationalComponents.Interfaces.PartialForce
+  "Road gradient, tan(alpha)"
+  grade = RealInput() {^grade}
+  "Vehicle mass (assumed, the course's Lecture 1 car)"
+  parameter m::Dyad.Mass = 1400.0
+  "Gravitational acceleration, standard gravity"
+  parameter g::Acceleration = 9.80665
+relations
+  f = m * g * sin(atan(grade))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/GradeForce.svg"}
+  },
+  "_links": {
+    "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}}
+  }
+}
+end

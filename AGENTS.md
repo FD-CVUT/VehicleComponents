@@ -55,6 +55,12 @@ count; then both stay.
 Every public name is US English. Every rename of a course component gets its row in
 `MIGRATION.md`, the old-to-new name table.
 
+**Connections.** Every connection shows on the diagram: no `connect` inside an `if`, and no
+conditional port or part. A port that a case does not need stays and is always wired, and the
+user feeds it its neutral value (0 for a flat road's `grade`). To choose between signal paths by a
+structural parameter, route them through a gate block whose ports always exist. When the value a
+port needs takes a calculation, that calculation is a block of its own, wired in.
+
 **Docstrings.** Each component's docstring states what is modeled, its ports and its assumptions.
 
 **Data.** Library data is referenced as `dyad://VehicleComponents/...` and ships in `assets/`.

@@ -1,0 +1,19 @@
+"""
+Driver interface: every driver produces throttle and brake pedal fractions in [0, 1] and a
+steering-wheel angle in radians. Actuator response belongs to the car, not the driver.
+"""
+partial component Interface
+  "Throttle pedal fraction"
+  throttle_signal = RealOutput() {^throttle_signal}
+  "Brake pedal fraction"
+  brake_signal = RealOutput() {^brake_signal}
+  "Steering-wheel angle in radians"
+  steer_signal = RealOutput() {^steer_signal}
+metadata {
+  "_links": {
+    "throttle_signal": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}},
+    "brake_signal": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "steer_signal": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+  }
+}
+end

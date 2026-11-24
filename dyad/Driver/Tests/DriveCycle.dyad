@@ -1,0 +1,21 @@
+"""
+The packaged WLTC class 3b trace is 0.2 km/h at 12 s and 1.7 km/h at 13 s, so linear
+interpolation gives 0.95 km/h at 12.5 s.
+"""
+test component DriveCycle
+  cycle = VehicleComponents.Driver.DriveCycle()
+metadata {
+  "Dyad": {
+    "tests": {
+      "linear_interpolation": {
+        "stop": 12.5,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"cycle.y": 1e-9},
+        "expect": {"initial": {"cycle.y": 0.0}, "final": {"cycle.y": 0.95}, "signals": ["cycle.y"]}
+      }
+    }
+  }
+}
+end

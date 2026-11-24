@@ -1,0 +1,9 @@
+"Full throttle until 9 s, coast, then full braking from 19 s. Ports are those of `Driver.Interface`."
+component HardStop
+  extends VehicleComponents.Driver.Scripted(table = "dyad://VehicleComponents/data/drivers/hard_stop.csv")
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Driver/HardStop.svg"}
+  }
+}
+end

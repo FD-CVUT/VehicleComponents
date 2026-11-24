@@ -1,0 +1,58 @@
+"""
+500 N of traction on two bodies: `flat` from rest on a 0 grade, and `climbing`
+at 10 m/s on a 2 % grade. On the flat the start acceleration is 500/1400 = 0.3571 m/s² and the
+speed settles where drag and rolling resistance take the whole 500 N. On the climb the road load
+at 10 m/s is 477.05 N, leaving 0.0164 m/s².
+"""
+test component Vehicle
+  flat_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0)
+  level = BlockComponents.Sources.Constant(k = 0.0)
+  "Car tire on asphalt"
+  tire = BlockComponents.Sources.Constant(k = 0.012)
+  flat = VehicleComponents.Body.Longitudinal.Vehicle()
+  climb_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0)
+  grade = BlockComponents.Sources.Constant(k = 0.02)
+  climbing = VehicleComponents.Body.Longitudinal.Vehicle()
+  fixed = TranslationalComponents.Components.Fixed()
+relations
+  connect(flat_traction.flange, flat.flange)
+  connect(climb_traction.flange, climbing.flange)
+  connect(flat_traction.support, climb_traction.support, fixed.flange)
+  connect(grade.y, climbing.grade)
+  connect(level.y, flat.grade)
+  connect(tire.y, flat.f_r, climbing.f_r)
+  initial flat.mass.s = 0.0
+  initial flat.mass.v = 0.0
+  initial climbing.mass.s = 0.0
+  initial climbing.mass.v = 10.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "flat_from_rest": {
+        "stop": 800,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"flat.mass.a": 0.001, "flat.mass.v": 0.001},
+        "expect": {
+          "initial": {"flat.mass.a": 0.35714285714285715, "flat.mass.v": 0},
+          "final": {"flat.mass.a": 0, "flat.mass.v": 29.780869893947216},
+          "signals": ["flat.mass.v"]
+        }
+      },
+      "climb": {
+        "stop": 10,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"climbing.mass.a": 0.001, "climbing.mass.v": 0.001},
+        "expect": {
+          "initial": {"climbing.mass.a": 0.0163928, "climbing.mass.v": 10},
+          "final": {"climbing.mass.v": 10.15956},
+          "signals": ["climbing.mass.v"]
+        }
+      }
+    }
+  }
+}
+end

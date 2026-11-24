@@ -1,0 +1,9 @@
+"Full throttle until 9 s, then coast. Ports are those of `Driver.Interface`."
+component CoastDown
+  extends VehicleComponents.Driver.Scripted(table = "dyad://VehicleComponents/data/drivers/coast_down.csv")
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Driver/CoastDown.svg"}
+  }
+}
+end

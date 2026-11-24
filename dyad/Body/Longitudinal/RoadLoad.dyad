@@ -1,0 +1,76 @@
+"""
+Road load on a translational flange: aerodynamic drag, rolling resistance and the along-slope
+weight. It has no mass of its own.
+
+The force taken at `flange` is the whole road load, positive when it opposes forward travel:
+
+    F = 1/2 rho CdA v|v| + f_r m g cos(alpha) sign(v) + m g sin(alpha),    tan(alpha) = grade
+
+Ports: `flange` moves with the vehicle; `grade` is the road gradient tan(alpha), 0 on a flat
+road; `f_r` is the rolling resistance coefficient of tire on road (0.012 is a car tire on asphalt).
+Every reaction goes to the road through `ground`.
+
+Assumptions: drag uses the v|v| form, so it opposes motion in both directions; the stdlib
+regularizes the sign of rolling resistance near standstill. Being mass-free, the road load moves
+only as its flange is moved, by the mass in `Vehicle` or by a speed source that follows a planar
+body; `m` enters only through the normal load and the along-slope weight. Source tags:
+(textbook) standard physical values; (assumed) the course's Lecture 1 car.
+"""
+component RoadLoad
+  "Moves with the vehicle; the road load acts here"
+  flange = Flange() {^flange}
+  "Road gradient, tan(alpha)"
+  grade = RealInput() {^grade}
+  "Rolling resistance coefficient"
+  f_r = RealInput() {^f_r}
+  # The stdlib source drives its flange with -flange.f, so a negative nominal force is what
+  # makes the quadratic force oppose motion.
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2) {^drag}
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g) {^rolling}
+  gradeforce = VehicleComponents.Body.Longitudinal.GradeForce(m = m, g = g) {^gradeforce}
+  "Road reference for the resistance reaction forces"
+  ground = TranslationalComponents.Components.Fixed() {^ground}
+  "Vehicle mass; the road load uses it for the normal load and the along-slope weight (assumed)"
+  parameter m::Dyad.Mass = 1400.0
+  "Aerodynamic drag area, Cd * A (assumed)"
+  parameter CdA::Area = 0.63
+  "Air density at sea level (textbook)"
+  parameter rho::Density = 1.2
+  "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)"
+  parameter v_nominal::Velocity = 30.0
+  "Gravitational acceleration, standard gravity (textbook)"
+  parameter g::Acceleration = 9.80665
+relations
+  connect(flange, drag.flange) {^id8}
+  connect(flange, rolling.flange) {^id9}
+  connect(drag.support, ground.flange) {^id11}
+  connect(rolling.support, ground.flange) {^id12}
+  connect(f_r, rolling.cr) {^id14}
+  connect(flange, gradeforce.flange) {^id10}
+  connect(gradeforce.support, ground.flange) {^id13}
+  connect(grade, rolling.inclination) {^id15}
+  connect(grade, gradeforce.grade) {^id16}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/RoadLoad.svg"}
+  },
+  "_links": {
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "f_r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}},
+    "drag": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 450, "y2": 550}}}},
+    "rolling": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 150, "y2": 250}}}},
+    "gradeforce": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 650, "y2": 750}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 400, "y2": 500, "rot": 90}}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 500}, {"x": 950, "y": 200}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 500}, {"x": 950, "y": 700}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 600}, {"x": 700, "y": 600}, {"x": 700, "y": 450}], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 350}, {"x": 650, "y": 350}, {"x": 650, "y": 450}], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 800}, {"x": 650, "y": 800}, {"x": 650, "y": 450}], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 250}, {"x": 350, "y": 170}], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 500}, {"x": 450, "y": 225}], "E": 2}], "path": {}}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 700}], "E": 2}], "path": {}}}
+  }
+}
+end
