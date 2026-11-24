@@ -5,11 +5,11 @@
 
 
 __dyad_run_test_case!(
-  VehicleComponents.Blocks.Tests.SoCPhase,
-  "wraps for VehicleComponents.Blocks.Tests.SoCPhase";
-  case_name="wraps",
-  component_stem="SoCPhase",
-  module_path=String["Blocks", "Tests"],
+  VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor,
+  "two_temperatures for VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor";
+  case_name="two_temperatures",
+  component_stem="ArrheniusFactor",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
   stop=1e+0,
   abstol=1e-9,
@@ -19,8 +19,8 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.first_cycle.y, "first_cycle.y", 0.5, 1e-9, 1e-8),
-    (m -> m.third_cycle.y, "third_cycle.y", 1, 1e-9, 1e-8),
+    (m -> m.warm.y, "warm.y", 1, 1e-9, 1e-8),
+    (m -> m.cold.y, "cold.y", 1.586506296539818, 1e-9, 1e-8),
   ],
   signals=Tuple[],
 )

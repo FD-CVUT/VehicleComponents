@@ -7,9 +7,9 @@ test component CCCVVoltageCurrent
   low = BlockComponents.Sources.Constant(k = 350.0)
   near_full = BlockComponents.Sources.Constant(k = 400.0)
   over = BlockComponents.Sources.Constant(k = 410.0)
-  cc = VehicleComponents.Blocks.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
-  cv = VehicleComponents.Blocks.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
-  done = VehicleComponents.Blocks.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+  cc = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+  cv = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+  done = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
 relations
   connect(low.y, cc.u)
   connect(near_full.y, cv.u)

@@ -4,8 +4,8 @@ With a 2 s period, 0.5 s is 0.5 s into the first cycle and 5 s is 1 s into the t
 test component SoCPhase
   early = BlockComponents.Sources.Constant(k = 0.5)
   late = BlockComponents.Sources.Constant(k = 5.0)
-  first_cycle = VehicleComponents.Blocks.SoCPhase(period = 2.0)
-  third_cycle = VehicleComponents.Blocks.SoCPhase(period = 2.0)
+  first_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0)
+  third_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0)
 relations
   connect(early.y, first_cycle.u)
   connect(late.y, third_cycle.u)

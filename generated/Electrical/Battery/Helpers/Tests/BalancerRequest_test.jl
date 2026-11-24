@@ -5,11 +5,11 @@
 
 
 __dyad_run_test_case!(
-  VehicleComponents.Blocks.Tests.BalancerRequest,
-  "three_requests for VehicleComponents.Blocks.Tests.BalancerRequest";
+  VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest,
+  "three_requests for VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest";
   case_name="three_requests",
   component_stem="BalancerRequest",
-  module_path=String["Blocks", "Tests"],
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
   stop=1e+0,
   abstol=1e-9,

@@ -5,11 +5,11 @@
 
 
 __dyad_run_test_case!(
-  VehicleComponents.Blocks.Tests.CCCVPowerCurrent,
-  "four_regions for VehicleComponents.Blocks.Tests.CCCVPowerCurrent";
+  VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent,
+  "four_regions for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent";
   case_name="four_regions",
   component_stem="CCCVPowerCurrent",
-  module_path=String["Blocks", "Tests"],
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
   stop=1e+0,
   abstol=1e-9,

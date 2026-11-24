@@ -9,13 +9,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
-include("ArrheniusFactor_experiment.jl")
-include("BalancerRequest_experiment.jl")
-include("CCCVPowerCurrent_experiment.jl")
-include("CCCVVoltageCurrent_experiment.jl")
 include("ParameterSwitch_experiment.jl")
-include("SoCPhase_experiment.jl")
-include("TerminalPowerCurrent_experiment.jl")
 include("ToKmPerHour_experiment.jl")
 include("ToPercent_experiment.jl")
 include("ToRPM_experiment.jl")

@@ -16,13 +16,7 @@ end
 
 
 @testset "`VehicleComponents.Blocks`" begin
-include("ArrheniusFactor_test.jl")
-include("BalancerRequest_test.jl")
-include("CCCVPowerCurrent_test.jl")
-include("CCCVVoltageCurrent_test.jl")
 include("ParameterSwitch_test.jl")
-include("SoCPhase_test.jl")
-include("TerminalPowerCurrent_test.jl")
 include("ToKmPerHour_test.jl")
 include("ToPercent_test.jl")
 include("ToRPM_test.jl")

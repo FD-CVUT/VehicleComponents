@@ -5,17 +5,17 @@
 
 
 @doc Markdown.doc"""
-   ArrheniusFactor(; name, __overrides)
+   TerminalPowerCurrent(; name, __overrides)
 
-The factor is 1 at the reference temperature, 298.15 K, and at 0 °C (273.15 K) it is
-exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
+20 kW at 400 V is 50 A, and -20 kW is -50 A. At 0 V the one-volt floor gives 20000 A instead of
+a division by zero.
 """
-@component function ArrheniusFactor(; name = nothing, __overrides = Dict{String, Any}())
+@component function TerminalPowerCurrent(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = ArrheniusFactor()
+    @named model = TerminalPowerCurrent()
   """))
 
   __overrides = Dict{String, Any}(__overrides)
@@ -54,18 +54,21 @@ exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
   __constants = Any[]
 
   ### Components
-  # Subcomponent reference of type BlockComponents.Sources.Constant
-  reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = BlockComponents.Sources.Constant(; k=298.15, __overrides = reference_overrides))
-  # Subcomponent freezing of type BlockComponents.Sources.Constant
-  freezing_overrides = __pop_subcomponent_overrides!(__overrides, "freezing")
-  push!(__systems, @named freezing = BlockComponents.Sources.Constant(; k=273.15, __overrides = freezing_overrides))
-  # Subcomponent warm of type VehicleComponents.Blocks.ArrheniusFactor
-  warm_overrides = __pop_subcomponent_overrides!(__overrides, "warm")
-  push!(__systems, @named warm = VehicleComponents.Blocks.ArrheniusFactor(; __overrides = warm_overrides))
-  # Subcomponent cold of type VehicleComponents.Blocks.ArrheniusFactor
-  cold_overrides = __pop_subcomponent_overrides!(__overrides, "cold")
-  push!(__systems, @named cold = VehicleComponents.Blocks.ArrheniusFactor(; __overrides = cold_overrides))
+  # Subcomponent pack of type BlockComponents.Sources.Constant
+  pack_overrides = __pop_subcomponent_overrides!(__overrides, "pack")
+  push!(__systems, @named pack = BlockComponents.Sources.Constant(; k=Float64(400.0), __overrides = pack_overrides))
+  # Subcomponent dead of type BlockComponents.Sources.Constant
+  dead_overrides = __pop_subcomponent_overrides!(__overrides, "dead")
+  push!(__systems, @named dead = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = dead_overrides))
+  # Subcomponent charge of type VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent
+  charge_overrides = __pop_subcomponent_overrides!(__overrides, "charge")
+  push!(__systems, @named charge = VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent(; P=Float64(20000.0), __overrides = charge_overrides))
+  # Subcomponent discharge of type VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent
+  discharge_overrides = __pop_subcomponent_overrides!(__overrides, "discharge")
+  push!(__systems, @named discharge = VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent(; P=-20000.0, __overrides = discharge_overrides))
+  # Subcomponent floored of type VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent
+  floored_overrides = __pop_subcomponent_overrides!(__overrides, "floored")
+  push!(__systems, @named floored = VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent(; P=Float64(20000.0), __overrides = floored_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -78,10 +81,10 @@ exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(reference.y, warm.u))
-  push!(__eqs, connect(freezing.y, cold.u))
+  push!(__eqs, connect(pack.y, charge.u, discharge.u))
+  push!(__eqs, connect(dead.y, floored.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export ArrheniusFactor
+export TerminalPowerCurrent

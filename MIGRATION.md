@@ -25,12 +25,12 @@ not listed has not moved yet.
 | `Vehicle.ToPercent` | `Blocks.ToPercent` | |
 | `Vehicle.ParameterSwitch` | `Blocks.ParameterSwitch` | |
 | `Vehicle.ParameterGate` | `Blocks.ParameterSwitch` | Wire the gated signal to `u1` and a `BlockComponents.Sources.Constant(k = fallback)` to `u2`; `on` keeps its meaning. |
-| `Vehicle.Blocks.ArrheniusFactorEquation` | `Blocks.ArrheniusFactor` | Input `u1` is now `u`. |
-| `Vehicle.Blocks.BalancerRequestEquation` | `Blocks.BalancerRequest` | |
-| `Vehicle.Blocks.CCCVPowerCurrentEquation` | `Blocks.CCCVPowerCurrent` | |
-| `Vehicle.Blocks.CCCVVoltageCurrentEquation` | `Blocks.CCCVVoltageCurrent` | Input `u1` is now `u`. |
-| `Vehicle.Blocks.SoCPhaseEquation` | `Blocks.SoCPhase` | Input `u1` is now `u`. |
-| `Vehicle.Blocks.TerminalPowerCurrentEquation` | `Blocks.TerminalPowerCurrent` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.ArrheniusFactorEquation` | `Electrical.Battery.Helpers.ArrheniusFactor` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.BalancerRequestEquation` | `Electrical.Battery.Helpers.BalancerRequest` | |
+| `Vehicle.Blocks.CCCVPowerCurrentEquation` | `Electrical.Battery.Helpers.CCCVPowerCurrent` | |
+| `Vehicle.Blocks.CCCVVoltageCurrentEquation` | `Electrical.Battery.Helpers.CCCVVoltageCurrent` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.SoCPhaseEquation` | `Electrical.Battery.Helpers.SoCPhase` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.TerminalPowerCurrentEquation` | `Electrical.Battery.Helpers.TerminalPowerCurrent` | Input `u1` is now `u`. |
 
 ## Data
 

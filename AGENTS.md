@@ -25,6 +25,7 @@ Body.Longitudinal, Body.Planar
 Chassis.Wheel, Chassis.Brakes
 Powertrain.Engine, Powertrain.Transmission, Powertrain.Hybrid
 Electrical.Machines, Electrical.PowerElectronics, Electrical.Battery
+  Helpers          signal blocks one domain's components share; any domain may have one
 Control            ABS, ESP, TCS, Cruise, brake allocation, regen blend
 CanBus, Driver, Road, Sensors, Blocks
 Examples
@@ -62,12 +63,16 @@ user feeds it its neutral value (0 for a flat road's `grade`). To choose between
 structural parameter, route them through a gate block whose ports always exist. When the value a
 port needs takes a calculation, that calculation is a block of its own, wired in.
 
+**Helpers.** A signal block that only one domain's components use goes in that domain's `Helpers`
+submodule (`Electrical.Battery.Helpers.CCCVVoltageCurrent`). One that several domains use goes in
+`Blocks`.
+
 **Docstrings.** Each component's docstring states what is modeled, its ports and its assumptions.
 
 **Data.** Library data is referenced as `dyad://VehicleComponents/...` and ships in `assets/`.
 
 **Icons.** Every public component with ports gets its own icon, in `assets/` under a path that
-mirrors its module path. Partials, tests, examples and `Blocks` utilities need none.
+mirrors its module path. Partials, tests, examples, `Blocks` and `Helpers` blocks need none.
 
 **Layout.** Important components get a strict diagram layout. Important means every example and
 platform, every component they place directly at their top level, and any component whose

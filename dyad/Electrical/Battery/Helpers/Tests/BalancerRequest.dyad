@@ -12,9 +12,9 @@ test component BalancerRequest
   cell = BlockComponents.Sources.Constant(k = 4.15)
   allowed_below = BlockComponents.Sources.Constant(k = 4.10)
   allowed_above = BlockComponents.Sources.Constant(k = 4.20)
-  bleeding = VehicleComponents.Blocks.BalancerRequest()
-  too_low = VehicleComponents.Blocks.BalancerRequest()
-  on_threshold = VehicleComponents.Blocks.BalancerRequest()
+  bleeding = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest()
+  too_low = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest()
+  on_threshold = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest()
 relations
   connect(enable.y, bleeding.u1, too_low.u1, on_threshold.u1)
   connect(delta.y, bleeding.u2, too_low.u2)

@@ -197,13 +197,7 @@ component.
 end
 
 
-include("ArrheniusFactor_definition.jl")
-include("BalancerRequest_definition.jl")
-include("CCCVPowerCurrent_definition.jl")
-include("CCCVVoltageCurrent_definition.jl")
 include("ParameterSwitch_definition.jl")
-include("SoCPhase_definition.jl")
-include("TerminalPowerCurrent_definition.jl")
 include("ToKmPerHour_definition.jl")
 include("ToPercent_definition.jl")
 include("ToRPM_definition.jl")

@@ -5,11 +5,11 @@
 
 
 __dyad_run_test_case!(
-  VehicleComponents.Blocks.Tests.TerminalPowerCurrent,
-  "power_to_current for VehicleComponents.Blocks.Tests.TerminalPowerCurrent";
+  VehicleComponents.Electrical.Battery.Helpers.Tests.TerminalPowerCurrent,
+  "power_to_current for VehicleComponents.Electrical.Battery.Helpers.Tests.TerminalPowerCurrent";
   case_name="power_to_current",
   component_stem="TerminalPowerCurrent",
-  module_path=String["Blocks", "Tests"],
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
   stop=1e+0,
   abstol=1e-9,

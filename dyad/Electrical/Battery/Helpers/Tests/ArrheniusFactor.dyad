@@ -5,8 +5,8 @@ exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
 test component ArrheniusFactor
   reference = BlockComponents.Sources.Constant(k = 298.15)
   freezing = BlockComponents.Sources.Constant(k = 273.15)
-  warm = VehicleComponents.Blocks.ArrheniusFactor()
-  cold = VehicleComponents.Blocks.ArrheniusFactor()
+  warm = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor()
+  cold = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor()
 relations
   connect(reference.y, warm.u)
   connect(freezing.y, cold.u)

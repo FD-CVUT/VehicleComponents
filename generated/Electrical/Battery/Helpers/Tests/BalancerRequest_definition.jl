@@ -75,15 +75,15 @@ each tanh is 0 and the request is u1 / 4 = 0.125.
   # Subcomponent allowed_above of type BlockComponents.Sources.Constant
   allowed_above_overrides = __pop_subcomponent_overrides!(__overrides, "allowed_above")
   push!(__systems, @named allowed_above = BlockComponents.Sources.Constant(; k=4.2, __overrides = allowed_above_overrides))
-  # Subcomponent bleeding of type VehicleComponents.Blocks.BalancerRequest
+  # Subcomponent bleeding of type VehicleComponents.Electrical.Battery.Helpers.BalancerRequest
   bleeding_overrides = __pop_subcomponent_overrides!(__overrides, "bleeding")
-  push!(__systems, @named bleeding = VehicleComponents.Blocks.BalancerRequest(; __overrides = bleeding_overrides))
-  # Subcomponent too_low of type VehicleComponents.Blocks.BalancerRequest
+  push!(__systems, @named bleeding = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest(; __overrides = bleeding_overrides))
+  # Subcomponent too_low of type VehicleComponents.Electrical.Battery.Helpers.BalancerRequest
   too_low_overrides = __pop_subcomponent_overrides!(__overrides, "too_low")
-  push!(__systems, @named too_low = VehicleComponents.Blocks.BalancerRequest(; __overrides = too_low_overrides))
-  # Subcomponent on_threshold of type VehicleComponents.Blocks.BalancerRequest
+  push!(__systems, @named too_low = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest(; __overrides = too_low_overrides))
+  # Subcomponent on_threshold of type VehicleComponents.Electrical.Battery.Helpers.BalancerRequest
   on_threshold_overrides = __pop_subcomponent_overrides!(__overrides, "on_threshold")
-  push!(__systems, @named on_threshold = VehicleComponents.Blocks.BalancerRequest(; __overrides = on_threshold_overrides))
+  push!(__systems, @named on_threshold = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest(; __overrides = on_threshold_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

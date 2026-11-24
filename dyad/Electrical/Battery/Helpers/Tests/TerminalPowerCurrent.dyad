@@ -5,9 +5,9 @@ a division by zero.
 test component TerminalPowerCurrent
   pack = BlockComponents.Sources.Constant(k = 400.0)
   dead = BlockComponents.Sources.Constant(k = 0.0)
-  charge = VehicleComponents.Blocks.TerminalPowerCurrent(P = 20000.0)
-  discharge = VehicleComponents.Blocks.TerminalPowerCurrent(P = -20000.0)
-  floored = VehicleComponents.Blocks.TerminalPowerCurrent(P = 20000.0)
+  charge = VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent(P = 20000.0)
+  discharge = VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent(P = -20000.0)
+  floored = VehicleComponents.Electrical.Battery.Helpers.TerminalPowerCurrent(P = 20000.0)
 relations
   connect(pack.y, charge.u, discharge.u)
   connect(dead.y, floored.u)

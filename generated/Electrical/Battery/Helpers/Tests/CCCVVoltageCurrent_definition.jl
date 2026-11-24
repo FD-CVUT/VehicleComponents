@@ -64,15 +64,15 @@ A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage
   # Subcomponent over of type BlockComponents.Sources.Constant
   over_overrides = __pop_subcomponent_overrides!(__overrides, "over")
   push!(__systems, @named over = BlockComponents.Sources.Constant(; k=Float64(410.0), __overrides = over_overrides))
-  # Subcomponent cc of type VehicleComponents.Blocks.CCCVVoltageCurrent
+  # Subcomponent cc of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
   cc_overrides = __pop_subcomponent_overrides!(__overrides, "cc")
-  push!(__systems, @named cc = VehicleComponents.Blocks.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = cc_overrides))
-  # Subcomponent cv of type VehicleComponents.Blocks.CCCVVoltageCurrent
+  push!(__systems, @named cc = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = cc_overrides))
+  # Subcomponent cv of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
   cv_overrides = __pop_subcomponent_overrides!(__overrides, "cv")
-  push!(__systems, @named cv = VehicleComponents.Blocks.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = cv_overrides))
-  # Subcomponent done of type VehicleComponents.Blocks.CCCVVoltageCurrent
+  push!(__systems, @named cv = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = cv_overrides))
+  # Subcomponent done of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
   done_overrides = __pop_subcomponent_overrides!(__overrides, "done")
-  push!(__systems, @named done = VehicleComponents.Blocks.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = done_overrides))
+  push!(__systems, @named done = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = done_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
