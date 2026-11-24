@@ -55,15 +55,17 @@ two tiers:
 
 | Tier | What | When | Budget |
 |---|---|---|---|
-| fast | every test model in a domain's `Tests` submodule, one process | every pull request and push to `main` | 30 s per rig, under 10 min in all |
-| example | every test model under `Examples`, one process each | nightly | under 60 min |
+| fast | every test model in a domain's `Tests` submodule, one process | every pull request | 30 s per rig, under 10 min in all |
+| example | every test model under `Examples`, one process each | PRs that touch an example | under 60 min |
 
 ```sh
 mise run test            # julia +dyad-<kernel> --project=. test/runtests.jl fast
 mise run test:examples   # julia +dyad-<kernel> --project=. test/runtests.jl examples
+mise run check           # the PR gate: fast tier, then fail if generated/ is stale
 ```
 
-CI also recompiles the Dyad sources and fails if the committed `generated/` code differs.
+The checks run locally: CI is manual-only until the repo has a long-term JuliaHub token (see
+[AGENTS.md](AGENTS.md)).
 
 ## Contributing
 

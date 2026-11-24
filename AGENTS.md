@@ -30,7 +30,8 @@ the pin names the Studio release and the channel comes from the compiler, not fr
 
 Upgrade Dyad only through the extension, in a PR of its own: let the extension migrate the
 project, bump `DYAD_STUDIO_VERSION` to the installed Studio version, regenerate `generated/`, and
-commit all three together. CI fails when the pin, `Project.toml` and `generated/` disagree.
+commit all three together. `mise run check` fails when the pin, `Project.toml` and `generated/`
+disagree.
 
 ## Module tree
 
@@ -109,8 +110,8 @@ Two tiers, chosen by where the test model lives:
 
 | Tier | Test models | Runs | Budget |
 |---|---|---|---|
-| fast | in a domain's `Tests` submodule | every PR and push to `main`, one process | 30 s per rig, under 10 min in all |
-| example | under `Examples` | nightly, one process per model | under 60 min |
+| fast | in a domain's `Tests` submodule | every PR, one process | 30 s per rig, under 10 min in all |
+| example | under `Examples` | before merging a PR that touches an example, one process per model | under 60 min |
 
 A test model anywhere else fails the fast tier. The fast tier warms the compiler up on a one-state
 model first, then times each rig (one test model, all its cases) and fails any over 30 s. A rig
@@ -128,16 +129,19 @@ purpose, in the same PR as the model change that moves them: rerun the affected 
 `DYAD_UPDATE_REFS=1` and commit the new `.ref` files, so the reviewer sees every output change. A
 test model run without a snapshot writes one; commit it with the model.
 
+## PR gate
+
+Every PR passes `mise run check` on the author's machine before review, and its description says
+so. The check runs the fast tier and the generated-code check, which compiles from an empty
+`generated/` (the compiler leaves a deleted module's files in place) and fails on any difference
+from the committed code. A PR that touches an example also passes `mise run test:examples`.
+
 ## CI
 
-GitHub-hosted runners. The repo secret `JULIAHUB_AUTH_TOML` holds the base64 of a JuliaHub
-`auth.toml` from the maintainer's account; CI writes it to `~/.julia/servers/juliahub.com/`, uses
-the `juliahub.com` package server and adds General and DyadRegistry. The token is personal: if its
-refresh lapses, replace the secret by hand (`base64 -w0 ~/.julia/servers/juliahub.com/auth.toml`).
-
-- `CI` (every PR and push to `main`): fast tier, and the staleness check, which compiles from an
-  empty `generated/` and fails on any difference from the committed code.
-- `Nightly` (schedule and manual dispatch): example tier.
-
-Fork PRs receive no secrets and get no CI. To test a fork's change, a maintainer pushes the branch
-into this repo.
+The `CI` and `Nightly` workflows run only by manual dispatch, so no check on a PR shows a result
+that never ran. The repo has no long-term JuliaHub token, and the Dyad dependencies resolve only
+through the authenticated JuliaHub package server. Once a long-term token is issued (request one
+from admin@juliahub.com for a dedicated CI user), store it base64-encoded as `JULIAHUB_AUTH_TOML`
+and restore the `pull_request`/`push` triggers and the nightly schedule. CI then writes it to
+`~/.julia/servers/juliahub.com/`, uses the `juliahub.com` package server and adds General and
+DyadRegistry. Fork PRs receive no secrets and get no CI.

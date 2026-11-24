@@ -1,9 +1,8 @@
 name: CI
 
+# Manual only: the repo has no long-term JuliaHub token, and without one every run fails at
+# sign-in. Restore the pull_request and push triggers once JULIAHUB_AUTH_TOML holds such a token.
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions: {}

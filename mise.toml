@@ -13,6 +13,22 @@ run = "node ~/.vscode/extensions/juliacomputing.dyad-studio-$DYAD_STUDIO_VERSION
 description = "Run the fast tier: every test model under a Tests submodule, 30 s budget per rig"
 run = "julia +dyad-$(sed -n 's/^kernel = \"\\(.*\\)\"$/\\1/p' Project.toml) --project=. test/runtests.jl fast"
 
+[tasks."check:generated"]
+description = "Fail unless generated/ is exactly what the pinned compiler produces from dyad/"
+run = """
+rm -rf generated
+node ~/.vscode/extensions/juliacomputing.dyad-studio-$DYAD_STUDIO_VERSION/out/dyad-cli.js compile .
+if [ -n "$(git status --porcelain -- generated)" ]; then
+  git status --short -- generated
+  echo "generated/ differs from the committed code: commit the regenerated files" >&2
+  exit 1
+fi
+"""
+
+[tasks.check]
+description = "The PR gate: the fast tier and the generated-code check"
+depends = ["test", "check:generated"]
+
 [tasks."test:examples"]
 description = "Run the example tier: every test model under Examples, each in its own process"
 run = "julia +dyad-$(sed -n 's/^kernel = \"\\(.*\\)\"$/\\1/p' Project.toml) --project=. test/runtests.jl examples"
