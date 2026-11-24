@@ -62,6 +62,9 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   # Subcomponent level of type BlockComponents.Sources.Constant
   level_overrides = __pop_subcomponent_overrides!(__overrides, "level")
   push!(__systems, @named level = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = level_overrides))
+  # Subcomponent tire of type BlockComponents.Sources.Constant
+  tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
+  push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=0.012, __overrides = tire_overrides))
   # Subcomponent flat of type VehicleComponents.Body.Longitudinal.Vehicle
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = flat_overrides))
@@ -98,6 +101,7 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   push!(__eqs, connect(flat_traction.support, climb_traction.support, fixed.flange))
   push!(__eqs, connect(grade.y, climbing.grade))
   push!(__eqs, connect(level.y, flat.grade))
+  push!(__eqs, connect(tire.y, flat.f_r, climbing.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

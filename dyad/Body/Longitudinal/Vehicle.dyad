@@ -3,10 +3,11 @@ Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `Ro
 rolling resistance and the road grade.
 
 Ports: `flange` takes the tractive force and moves with the vehicle; `grade` is the road gradient
-tan(alpha). Wire a constant 0 for a flat road.
+tan(alpha), 0 for a flat road; `f_r` is the rolling resistance coefficient (0.012 is a car tire
+on asphalt).
 
 The body extends `RoadLoad` and adds only `mass`, so the parameters and parts (`drag`,
-`rolling`, `gradeforce`, `cr_const`, `ground`) are the road load's, and the same resistance law
+`rolling`, `gradeforce`, `ground`) are the road load's, and the same resistance law
 serves a planar car whose mass lives in its multibody body.
 """
 component Vehicle

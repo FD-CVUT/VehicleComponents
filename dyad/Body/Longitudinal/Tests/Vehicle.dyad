@@ -7,6 +7,8 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
 test component Vehicle
   flat_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0)
   level = BlockComponents.Sources.Constant(k = 0.0)
+  "Car tire on asphalt"
+  tire = BlockComponents.Sources.Constant(k = 0.012)
   flat = VehicleComponents.Body.Longitudinal.Vehicle()
   climb_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0)
   grade = BlockComponents.Sources.Constant(k = 0.02)
@@ -18,6 +20,7 @@ relations
   connect(flat_traction.support, climb_traction.support, fixed.flange)
   connect(grade.y, climbing.grade)
   connect(level.y, flat.grade)
+  connect(tire.y, flat.f_r, climbing.f_r)
   initial flat.mass.s = 0.0
   initial flat.mass.v = 0.0
   initial climbing.mass.s = 0.0

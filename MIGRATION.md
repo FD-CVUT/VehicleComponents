@@ -8,9 +8,9 @@ not listed has not moved yet.
 
 | Course | Library | Notes |
 |---|---|---|
-| `Vehicle.VehicleBody` | `Body.Longitudinal.Vehicle` | |
-| `HandsOn.GradeBody` | `Body.Longitudinal.Vehicle` | Same equations as `Vehicle.VehicleBody`. |
-| `Vehicle.RoadLoad` | `Body.Longitudinal.RoadLoad` | |
+| `Vehicle.VehicleBody` | `Body.Longitudinal.Vehicle` | The rolling resistance coefficient `f_r` is an input, no longer a parameter: wire a constant (0.012 was the default). |
+| `HandsOn.GradeBody` | `Body.Longitudinal.Vehicle` | Same equations as `Vehicle.VehicleBody`; `f_r` as there. |
+| `Vehicle.RoadLoad` | `Body.Longitudinal.RoadLoad` | `f_r` is an input, as for `Vehicle`. |
 | `Vehicle.GradeForce` | `Body.Longitudinal.GradeForce` | |
 | `HandsOn.GradeForce` | `Body.Longitudinal.GradeForce` | |
 | `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | `F_z` output and `downforce` input are now flanges: wire `load` to the wheel's load flange and push `downforce` with a force source; positive force presses the car onto the road. Default `m` is 1400 kg, was 2000 kg. |

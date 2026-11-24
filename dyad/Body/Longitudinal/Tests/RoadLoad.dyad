@@ -1,5 +1,6 @@
 """
-Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
+Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade, both on
+f_r = 0.012. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
 f_r m g = 164.7517 N on the flat and that times cos(atan(0.1)) on the climb; the climb adds
 m g sin(atan(0.1)) = 1366.117 N. Reversing the speed flips drag and rolling resistance but not
 the grade force.
@@ -9,6 +10,8 @@ test component RoadLoad
   speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0)
   grade = BlockComponents.Sources.Constant(k = 0.1)
   level = BlockComponents.Sources.Constant(k = 0.0)
+  "Car tire on asphalt"
+  tire = BlockComponents.Sources.Constant(k = 0.012)
   climbing = VehicleComponents.Body.Longitudinal.RoadLoad()
   flat = VehicleComponents.Body.Longitudinal.RoadLoad()
   fixed = TranslationalComponents.Components.Fixed()
@@ -17,6 +20,7 @@ relations
   connect(speed.support, fixed.flange)
   connect(grade.y, climbing.grade)
   connect(level.y, flat.grade)
+  connect(tire.y, climbing.f_r, flat.f_r)
   initial speed.s = 0.0
 metadata {
   "Dyad": {

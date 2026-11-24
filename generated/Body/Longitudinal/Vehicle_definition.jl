@@ -5,16 +5,17 @@
 
 
 @doc Markdown.doc"""
-   Vehicle(; name, m, CdA, rho, v_nominal, f_r, g, __overrides)
+   Vehicle(; name, m, CdA, rho, v_nominal, g, __overrides)
 
 Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `RoadLoad`: drag,
 rolling resistance and the road grade.
 
 Ports: `flange` takes the tractive force and moves with the vehicle; `grade` is the road gradient
-tan(alpha). Wire a constant 0 for a flat road.
+tan(alpha), 0 for a flat road; `f_r` is the rolling resistance coefficient (0.012 is a car tire
+on asphalt).
 
 The body extends `RoadLoad` and adds only `mass`, so the parameters and parts (`drag`,
-`rolling`, `gradeforce`, `cr_const`, `ground`) are the road load's, and the same resistance law
+`rolling`, `gradeforce`, `ground`) are the road load's, and the same resistance law
 serves a planar car whose mass lives in its multibody body.
 
 ## Parameters:
@@ -25,15 +26,15 @@ serves a planar car whose mass lives in its multibody body.
 | `CdA`         | Aerodynamic drag area, Cd * A (assumed)                         | m2  |   0.63 |
 | `rho`         | Air density at sea level (textbook)                         | kg/m3  |   1.2 |
 | `v_nominal`         | Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)                         | m/s  |   30.0 |
-| `f_r`         | Rolling resistance coefficient (assumed)                         | --  |   0.012 |
 | `g`         | Gravitational acceleration, standard gravity (textbook)                         | m/s2  |   9.80665 |
 
 ## Connectors
 
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `f_r` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function Vehicle(; name = nothing, var"m"=Float64(1400.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"f_r"=0.012, var"g"=9.80665, __overrides = Dict{String, Any}())
+@component function Vehicle(; name = nothing, var"m"=Float64(1400.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,7 +57,6 @@ serves a planar car whose mass lives in its multibody body.
   haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
   haskey(__overrides, "rho") && (rho = pop!(__overrides, "rho"))
   haskey(__overrides, "v_nominal") && (v_nominal = pop!(__overrides, "v_nominal"))
-  haskey(__overrides, "f_r") && (f_r = pop!(__overrides, "f_r"))
   haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
 
   ### Structural Parameters (functions)
@@ -84,9 +84,6 @@ serves a planar car whose mass lives in its multibody body.
   __local__v_nominal = v_nominal
   append!(__params, @parameters (v_nominal::Real), [description = "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_nominal, __local__v_nominal)
-  __local__f_r = f_r
-  append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient (assumed)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, f_r, __local__f_r)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration, standard gravity (textbook)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
@@ -95,6 +92,7 @@ serves a planar car whose mass lives in its multibody body.
 
   ### Final Path Parameters
   append!(__vars, @variables (grade(t)::Real), [input = true])
+  append!(__vars, @variables (f_r(t)::Real), [input = true])
 
   ### Variables (declarations)
 
@@ -111,9 +109,6 @@ serves a planar car whose mass lives in its multibody body.
   # Subcomponent rolling of type TranslationalComponents.Components.RollingResistance
   rolling_overrides = __pop_subcomponent_overrides!(__overrides, "rolling")
   push!(__systems, @named rolling = TranslationalComponents.Components.RollingResistance(; fWeight=m * g, __overrides = rolling_overrides))
-  # Subcomponent cr_const of type BlockComponents.Sources.Constant
-  cr_const_overrides = __pop_subcomponent_overrides!(__overrides, "cr_const")
-  push!(__systems, @named cr_const = BlockComponents.Sources.Constant(; k=f_r, __overrides = cr_const_overrides))
   # Subcomponent gradeforce of type VehicleComponents.Body.Longitudinal.GradeForce
   gradeforce_overrides = __pop_subcomponent_overrides!(__overrides, "gradeforce")
   push!(__systems, @named gradeforce = VehicleComponents.Body.Longitudinal.GradeForce(; m=m, g=g, __overrides = gradeforce_overrides))
@@ -139,7 +134,7 @@ serves a planar car whose mass lives in its multibody body.
   push!(__eqs, connect(flange, rolling.flange))
   push!(__eqs, connect(drag.support, ground.flange))
   push!(__eqs, connect(rolling.support, ground.flange))
-  push!(__eqs, connect(cr_const.y, rolling.cr))
+  push!(__eqs, connect(f_r, rolling.cr))
   push!(__eqs, connect(flange, gradeforce.flange))
   push!(__eqs, connect(gradeforce.support, ground.flange))
   push!(__eqs, connect(grade, rolling.inclination))

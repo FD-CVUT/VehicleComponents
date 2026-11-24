@@ -7,7 +7,8 @@
 @doc Markdown.doc"""
    RoadLoad(; name, __overrides)
 
-Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
+Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade, both on
+f_r = 0.012. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
 f_r m g = 164.7517 N on the flat and that times cos(atan(0.1)) on the climb; the climb adds
 m g sin(atan(0.1)) = 1366.117 N. Reversing the speed flips drag and rolling resistance but not
 the grade force.
@@ -65,6 +66,9 @@ the grade force.
   # Subcomponent level of type BlockComponents.Sources.Constant
   level_overrides = __pop_subcomponent_overrides!(__overrides, "level")
   push!(__systems, @named level = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = level_overrides))
+  # Subcomponent tire of type BlockComponents.Sources.Constant
+  tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
+  push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=0.012, __overrides = tire_overrides))
   # Subcomponent climbing of type VehicleComponents.Body.Longitudinal.RoadLoad
   climbing_overrides = __pop_subcomponent_overrides!(__overrides, "climbing")
   push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.RoadLoad(; __overrides = climbing_overrides))
@@ -91,6 +95,7 @@ the grade force.
   push!(__eqs, connect(speed.support, fixed.flange))
   push!(__eqs, connect(grade.y, climbing.grade))
   push!(__eqs, connect(level.y, flat.grade))
+  push!(__eqs, connect(tire.y, climbing.f_r, flat.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadLoad(; name, m, CdA, rho, v_nominal, f_r, g, __overrides)
+   RoadLoad(; name, m, CdA, rho, v_nominal, g, __overrides)
 
 Road load on a translational flange: aerodynamic drag, rolling resistance and the along-slope
 weight. It has no mass of its own.
@@ -15,7 +15,8 @@ The force taken at `flange` is the whole road load, positive when it opposes for
     F = 1/2 rho CdA v|v| + f_r m g cos(alpha) sign(v) + m g sin(alpha),    tan(alpha) = grade
 
 Ports: `flange` moves with the vehicle; `grade` is the road gradient tan(alpha), 0 on a flat
-road. Every reaction goes to the road through `ground`.
+road; `f_r` is the rolling resistance coefficient of tire on road (0.012 is a car tire on asphalt).
+Every reaction goes to the road through `ground`.
 
 Assumptions: drag uses the v|v| form, so it opposes motion in both directions; the stdlib
 regularizes the sign of rolling resistance near standstill. Being mass-free, the road load moves
@@ -31,15 +32,15 @@ body; `m` enters only through the normal load and the along-slope weight. Source
 | `CdA`         | Aerodynamic drag area, Cd * A (assumed)                         | m2  |   0.63 |
 | `rho`         | Air density at sea level (textbook)                         | kg/m3  |   1.2 |
 | `v_nominal`         | Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)                         | m/s  |   30.0 |
-| `f_r`         | Rolling resistance coefficient (assumed)                         | --  |   0.012 |
 | `g`         | Gravitational acceleration, standard gravity (textbook)                         | m/s2  |   9.80665 |
 
 ## Connectors
 
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `f_r` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function RoadLoad(; name = nothing, var"m"=Float64(1400.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"f_r"=0.012, var"g"=9.80665, __overrides = Dict{String, Any}())
+@component function RoadLoad(; name = nothing, var"m"=Float64(1400.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -62,7 +63,6 @@ body; `m` enters only through the normal load and the along-slope weight. Source
   haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
   haskey(__overrides, "rho") && (rho = pop!(__overrides, "rho"))
   haskey(__overrides, "v_nominal") && (v_nominal = pop!(__overrides, "v_nominal"))
-  haskey(__overrides, "f_r") && (f_r = pop!(__overrides, "f_r"))
   haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
 
   ### Structural Parameters (functions)
@@ -90,9 +90,6 @@ body; `m` enters only through the normal load and the along-slope weight. Source
   __local__v_nominal = v_nominal
   append!(__params, @parameters (v_nominal::Real), [description = "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_nominal, __local__v_nominal)
-  __local__f_r = f_r
-  append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient (assumed)"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, f_r, __local__f_r)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration, standard gravity (textbook)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
@@ -101,6 +98,7 @@ body; `m` enters only through the normal load and the along-slope weight. Source
 
   ### Final Path Parameters
   append!(__vars, @variables (grade(t)::Real), [input = true])
+  append!(__vars, @variables (f_r(t)::Real), [input = true])
 
   ### Variables (declarations)
 
@@ -117,9 +115,6 @@ body; `m` enters only through the normal load and the along-slope weight. Source
   # Subcomponent rolling of type TranslationalComponents.Components.RollingResistance
   rolling_overrides = __pop_subcomponent_overrides!(__overrides, "rolling")
   push!(__systems, @named rolling = TranslationalComponents.Components.RollingResistance(; fWeight=m * g, __overrides = rolling_overrides))
-  # Subcomponent cr_const of type BlockComponents.Sources.Constant
-  cr_const_overrides = __pop_subcomponent_overrides!(__overrides, "cr_const")
-  push!(__systems, @named cr_const = BlockComponents.Sources.Constant(; k=f_r, __overrides = cr_const_overrides))
   # Subcomponent gradeforce of type VehicleComponents.Body.Longitudinal.GradeForce
   gradeforce_overrides = __pop_subcomponent_overrides!(__overrides, "gradeforce")
   push!(__systems, @named gradeforce = VehicleComponents.Body.Longitudinal.GradeForce(; m=m, g=g, __overrides = gradeforce_overrides))
@@ -142,7 +137,7 @@ body; `m` enters only through the normal load and the along-slope weight. Source
   push!(__eqs, connect(flange, rolling.flange))
   push!(__eqs, connect(drag.support, ground.flange))
   push!(__eqs, connect(rolling.support, ground.flange))
-  push!(__eqs, connect(cr_const.y, rolling.cr))
+  push!(__eqs, connect(f_r, rolling.cr))
   push!(__eqs, connect(flange, gradeforce.flange))
   push!(__eqs, connect(gradeforce.support, ground.flange))
   push!(__eqs, connect(grade, rolling.inclination))
