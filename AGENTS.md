@@ -82,6 +82,29 @@ lives in partial platform bases in `Examples.Platforms`. An example extends a ba
 and connections, changes parameters, and swaps an inherited subsystem by redeclaration. A base
 holds only what every child needs, since an inherited subsystem cannot be removed.
 
+Redeclaration works on the pinned Dyad through the `extends` clause. The base declares a
+replaceable subsystem with its interface as the constraint, and the example names the
+replacement and its parameter changes in one clause (`Examples.HardStop` on
+`Examples.Platforms.Longitudinal`):
+
+```dyad
+partial component Longitudinal
+  driver::VehicleComponents.Driver.Interface = VehicleComponents.Driver.CoastDown() {^driver}
+  ...
+end
+
+test component HardStop
+  extends VehicleComponents.Examples.Platforms.Longitudinal(driver = VehicleComponents.Driver.HardStop(), body(m = 1500.0))
+  ...
+end
+```
+
+The compiler rejects a replacement that lacks a member of the constraint
+(`incompatible-redeclaration`), so connections the base makes to the subsystem stay valid. Give
+every replaceable subsystem an interface constraint. A redeclaration written at a declaration site
+(`sub = Child(inner = Other())`) is not applied by Dyad 3.5: the model keeps the declared type, so
+redeclare only through `extends`.
+
 ## Tests
 
 A rig is one test model with all its cases. Assert only on external behavior: the signals and
