@@ -1,5 +1,5 @@
 [env]
-# The Dyad Studio release whose compiler generates `generated/`; see AGENTS.md.
+# The Dyad Studio release whose compiler generates `generated/`; see docs/agents/toolchain.md.
 DYAD_STUDIO_VERSION = "3.5.1"
 DYAD_CLI = "{{ env.HOME }}/.vscode/extensions/juliacomputing.dyad-studio-{{ env.DYAD_STUDIO_VERSION }}/out/dyad-cli.js"
 

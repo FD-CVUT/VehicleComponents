@@ -47,7 +47,8 @@ mise run check           # what CI runs on every PR: generated-code check and fa
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md) for the structural rules, test rules and toolchain pin.
+Read [AGENTS.md](AGENTS.md) for the component and test rules, and
+[docs/agents/toolchain.md](docs/agents/toolchain.md) for the toolchain pin and upgrades.
 
 ## License
 
