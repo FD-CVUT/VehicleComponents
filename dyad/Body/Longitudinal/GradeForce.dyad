@@ -13,16 +13,15 @@ component GradeForce
   extends TranslationalComponents.Interfaces.PartialForce
   "Road gradient, tan(alpha)"
   grade = RealInput() {^grade}
-  "Vehicle mass"
-  parameter m::Dyad.Mass
+  "Vehicle mass (assumed, the course's Lecture 1 car)"
+  parameter m::Dyad.Mass = 1400.0
   "Gravitational acceleration, standard gravity"
   parameter g::Acceleration = 9.80665
 relations
   f = m * g * sin(atan(grade))
 metadata {
   "Dyad": {
-    "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/GradeForce.svg"},
-    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+    "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/GradeForce.svg"}
   },
   "_links": {
     "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},

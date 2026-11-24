@@ -25,6 +25,9 @@ metadata {
     "tests": {
       "flat_from_rest": {
         "stop": 800,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"flat.mass.a": 0.001, "flat.mass.v": 0.001},
         "expect": {
           "initial": {"flat.mass.a": 0.35714285714285715, "flat.mass.v": 0},
@@ -34,6 +37,9 @@ metadata {
       },
       "climb": {
         "stop": 10,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"climbing.mass.a": 0.001, "climbing.mass.v": 0.001},
         "expect": {
           "initial": {"climbing.mass.a": 0.0163928, "climbing.mass.v": 10},

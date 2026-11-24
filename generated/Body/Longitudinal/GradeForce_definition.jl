@@ -21,7 +21,7 @@ The force is f = m g sin(atan(grade)). A force source drives what its flange mov
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `m`         | Vehicle mass                         | kg  |    |
+| `m`         | Vehicle mass (assumed, the course's Lecture 1 car)                         | kg  |   1400.0 |
 | `g`         | Gravitational acceleration, standard gravity                         | m/s2  |   9.80665 |
 
 ## Connectors
@@ -37,7 +37,7 @@ The force is f = m g sin(atan(grade)). A force source drives what its flange mov
 | `s`         | Distance between flange and support (= flange.s - support.s)                         | m  |
 | `f`         | Accelerating force acting at flange (= flange.f)                         | N  |
 """
-@component function GradeForce(; name = nothing, var"m"=nothing, var"g"=9.80665, __overrides = Dict{String, Any}())
+@component function GradeForce(; name = nothing, var"m"=Float64(1400.0), var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -73,7 +73,7 @@ The force is f = m g sin(atan(grade)). A force source drives what its flange mov
 
   ### Symbolic Parameters
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass (assumed, the course's Lecture 1 car)", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration, standard gravity"])

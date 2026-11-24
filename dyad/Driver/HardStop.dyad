@@ -3,8 +3,7 @@ component HardStop
   extends VehicleComponents.Driver.Scripted(table = "dyad://VehicleComponents/data/drivers/hard_stop.csv")
 metadata {
   "Dyad": {
-    "icons": {"default": "dyad://VehicleComponents/Driver/HardStop.svg"},
-    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+    "icons": {"default": "dyad://VehicleComponents/Driver/HardStop.svg"}
   }
 }
 end

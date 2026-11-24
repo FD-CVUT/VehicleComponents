@@ -9,6 +9,9 @@ metadata {
     "tests": {
       "linear_interpolation": {
         "stop": 12.5,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"cycle.y": 1e-9},
         "expect": {"initial": {"cycle.y": 0.0}, "final": {"cycle.y": 0.95}, "signals": ["cycle.y"]}
       }

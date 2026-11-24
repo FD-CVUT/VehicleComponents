@@ -23,6 +23,9 @@ metadata {
     "tests": {
       "launch": {
         "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"axle.F_z": 0.01, "aero.F_z": 0.01},
         "expect": {
           "initial": {"axle.F_z": 7551.1205, "aero.F_z": 8101.1205},

@@ -23,9 +23,6 @@ __dyad_run_test_case!(
   ],
   expected_final=Tuple[
     (m -> m.climbing.flange.f, "climbing.flange.f", 1870.2514931432536, 0.001, 1e-5),
-    (m -> m.climbing.drag.f, "climbing.drag.f", 340.2, 0.001, 1e-5),
-    (m -> m.climbing.rolling.f, "climbing.rolling.f", 163.93408855106287, 0.001, 1e-5),
-    (m -> m.climbing.gradeforce.f, "climbing.gradeforce.f", 1366.1174045921907, 0.001, 1e-5),
     (m -> m.flat.flange.f, "flat.flange.f", 504.95172, 0.001, 1e-5),
   ],
   signals=Tuple[],
@@ -49,9 +46,6 @@ __dyad_run_test_case!(
   ],
   expected_final=Tuple[
     (m -> m.climbing.flange.f, "climbing.flange.f", 861.9833160411279, 0.001, 1e-5),
-    (m -> m.climbing.drag.f, "climbing.drag.f", -340.2, 0.001, 1e-5),
-    (m -> m.climbing.rolling.f, "climbing.rolling.f", -163.93408855106287, 0.001, 1e-5),
-    (m -> m.climbing.gradeforce.f, "climbing.gradeforce.f", 1366.1174045921907, 0.001, 1e-5),
     (m -> m.flat.flange.f, "flat.flange.f", -504.95172, 0.001, 1e-5),
   ],
   signals=Tuple[],

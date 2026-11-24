@@ -18,6 +18,9 @@ metadata {
     "tests": {
       "climb_from_flat": {
         "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"force.f": 0.01, "mass.a": 0.0001},
         "expect": {
           "initial": {"force.f": 0, "mass.a": 0},

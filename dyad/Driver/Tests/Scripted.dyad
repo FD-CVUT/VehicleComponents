@@ -10,6 +10,9 @@ metadata {
     "tests": {
       "coast_down": {
         "stop": 12,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"coast.throttle_signal": 1e-9, "coast.brake_signal": 1e-9, "coast.steer_signal": 1e-9},
         "expect": {
           "initial": {"coast.throttle_signal": 1, "coast.brake_signal": 0, "coast.steer_signal": 0},
@@ -19,6 +22,9 @@ metadata {
       },
       "hard_stop": {
         "stop": 20,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"stop.throttle_signal": 1e-9, "stop.brake_signal": 1e-9},
         "expect": {
           "initial": {"stop.throttle_signal": 1, "stop.brake_signal": 0},

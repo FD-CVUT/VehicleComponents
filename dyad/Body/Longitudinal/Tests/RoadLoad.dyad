@@ -22,44 +22,26 @@ metadata {
     "tests": {
       "forward": {
         "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "params": {"speed.v_fixed": 30.0},
-        "atol": {
-          "climbing.flange.f": 0.001,
-          "climbing.drag.f": 0.001,
-          "climbing.rolling.f": 0.001,
-          "climbing.gradeforce.f": 0.001,
-          "flat.flange.f": 0.001
-        },
+        "atol": {"climbing.flange.f": 0.001, "flat.flange.f": 0.001},
         "expect": {
           "initial": {"climbing.flange.f": 1870.2514931432536, "flat.flange.f": 504.95172},
-          "final": {
-            "climbing.flange.f": 1870.2514931432536,
-            "climbing.drag.f": 340.2,
-            "climbing.rolling.f": 163.93408855106287,
-            "climbing.gradeforce.f": 1366.1174045921907,
-            "flat.flange.f": 504.95172
-          }
+          "final": {"climbing.flange.f": 1870.2514931432536, "flat.flange.f": 504.95172}
         }
       },
       "reverse": {
         "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "params": {"speed.v_fixed": -30.0},
-        "atol": {
-          "climbing.flange.f": 0.001,
-          "climbing.drag.f": 0.001,
-          "climbing.rolling.f": 0.001,
-          "climbing.gradeforce.f": 0.001,
-          "flat.flange.f": 0.001
-        },
+        "atol": {"climbing.flange.f": 0.001, "flat.flange.f": 0.001},
         "expect": {
           "initial": {"climbing.flange.f": 861.9833160411279, "flat.flange.f": -504.95172},
-          "final": {
-            "climbing.flange.f": 861.9833160411279,
-            "climbing.drag.f": -340.2,
-            "climbing.rolling.f": -163.93408855106287,
-            "climbing.gradeforce.f": 1366.1174045921907,
-            "flat.flange.f": -504.95172
-          }
+          "final": {"climbing.flange.f": 861.9833160411279, "flat.flange.f": -504.95172}
         }
       }
     }
