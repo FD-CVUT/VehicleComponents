@@ -26,8 +26,9 @@ fi
 """
 
 [tasks.check]
-description = "The PR gate: the fast tier and the generated-code check"
-depends = ["test", "check:generated"]
+description = "The PR gate: the generated-code check, then the fast tier"
+# Sequential: the fast tier loads generated/, which check:generated deletes and rewrites.
+run = "mise run check:generated && mise run test"
 
 [tasks."test:examples"]
 description = "Run the example tier: every test model under Examples, each in its own process"
