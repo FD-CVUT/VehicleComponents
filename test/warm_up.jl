@@ -11,4 +11,5 @@ end
 __dyad_run_test_case!(__harness_warm_up_model, "harness warm-up";
     case_name = "warm_up", component_stem = "warm_up", module_path = String[],
     start = 0.0, stop = 1.0, abstol = 1e-6, reltol = 1e-6, solver = ODEAlg.Auto(),
-    expected_final = Tuple[(m -> m.x, "x", exp(-1), 1e-4, 1e-4)])
+    expected_final = Tuple[(m -> m.x, "x", exp(-1), 1e-4, 1e-4)],
+    signals = Tuple[(m -> m.x, "x", 1e-4, 1e-4)])

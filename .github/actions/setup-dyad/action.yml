@@ -27,9 +27,9 @@ runs:
       with:
         node-version: 22
 
-    - name: Cache the Dyad Studio compiler
+    - name: Restore the Dyad Studio compiler
       id: studio-cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.pin.outputs.dir }}
         key: dyad-studio-${{ steps.pin.outputs.studio }}
@@ -46,6 +46,14 @@ runs:
           "https://open-vsx.org/api/JuliaComputing/dyad-studio/$STUDIO/file/JuliaComputing.dyad-studio-$STUDIO.vsix"
         mkdir -p "$DIR"
         unzip -q "$vsix" 'extension/out/*' -d "$DIR"
+
+    # Saved straight away, like the Julia build, so a failing run still keeps it.
+    - name: Save the Dyad Studio compiler
+      if: steps.studio-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pin.outputs.dir }}
+        key: dyad-studio-${{ steps.pin.outputs.studio }}
 
     # The Studio and kernel versions differ, so the Julia build's channel comes from the kernel the
     # compiler reports, not from the pin.

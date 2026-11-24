@@ -4,3 +4,7 @@
 /docs/src/types/** linguist-generated
 /test/snapshots/** linguist-generated
 Manifest*.toml linguist-generated
+# The tasks and scripts parse these line by line in a POSIX shell.
+/scripts/** text eol=lf
+Project.toml text eol=lf
+mise.toml text eol=lf

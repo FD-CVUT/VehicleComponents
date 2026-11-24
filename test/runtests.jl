@@ -40,7 +40,23 @@ end
 
 rigs(tier) = filter(r -> tier_of(r) == tier, rig_files())
 
-rig_name(rig) = join([splitpath(dirname(rig)); replace(basename(rig), r"_test\.jl$" => "")], '.')
+rig_name(rig) = join([filter(!isempty, splitpath(dirname(rig)));
+    replace(basename(rig), r"_test\.jl$" => "")], '.')
+
+const SNAPSHOTS = joinpath(@__DIR__, "snapshots")
+
+snapshot_files() = isdir(SNAPSHOTS) ?
+    Set(relpath(joinpath(root, n), SNAPSHOTS) for (root, _, names) in walkdir(SNAPSHOTS) for n in names) :
+    Set{String}()
+
+# A test case with no committed `.ref` seeds one from the current run and compares nothing, so a
+# seeded snapshot is a failure until it is committed (DYAD_UPDATE_REFS rewrites them on purpose).
+function test_no_seeded_snapshots(before)
+    isempty(get(ENV, "DYAD_UPDATE_REFS", "")) || return
+    @testset "every snapshot is committed" begin
+        @test sort!(collect(setdiff(snapshot_files(), before))) == String[]
+    end
+end
 
 # Package load and the harness's own plotting and CSV dependencies stay out of every rig's time.
 function load_harness()
@@ -57,7 +73,15 @@ cold process spends about a minute compiling that path on the first model it sim
 would otherwise land on whichever rig runs first and fail it against the budget.
 """
 function warm_up()
-    elapsed = @elapsed Base.include(Main, joinpath(@__DIR__, "warm_up.jl"))
+    # Twice, in a scratch directory: the first run seeds its snapshot, the second compares against
+    # it, so both snapshot paths are compiled before any rig is timed.
+    elapsed = @elapsed try
+        cd(mktempdir()) do
+            foreach(_ -> Base.include(Main, joinpath(@__DIR__, "warm_up.jl")), 1:2)
+        end
+    catch e
+        error("the harness warm-up model failed, so no rig ran: $(sprint(showerror, e))")
+    end
     println("Harness warm-up: $(round(elapsed; digits = 1)) s")
 end
 
@@ -70,6 +94,7 @@ function run_fast()
     isempty(fast) && @warn "No test models under a `Tests` submodule; the fast tier ran no rigs."
     load_harness()
     isempty(fast) || warm_up()
+    before = snapshot_files()
     @testset verbose = true "fast tier" begin
         @testset "every test model sits in a Tests or Examples submodule" begin
             @test rig_name.(rigs(:unplaced)) == String[]
@@ -80,6 +105,7 @@ function run_fast()
                 @test elapsed <= RIG_BUDGET_S
             end
         end
+        test_no_seeded_snapshots(before)
     end
 end
 
@@ -87,6 +113,7 @@ function run_examples()
     examples = rigs(:examples)
     isempty(examples) && @warn "No test models under `Examples`; the example tier ran no rigs."
     project = Base.active_project()
+    before = snapshot_files()
     rows = map(examples) do rig
         name = rig_name(rig)
         printstyled("\n── $name ──\n"; bold = true)
@@ -105,6 +132,7 @@ function run_examples()
             println(rpad(r.name, width), lpad(string(round(r.time; digits = 1), "s"), 7), "  ", r.status)
         end
     end
+    @testset "example tier" test_no_seeded_snapshots(before)
     all(r -> r.status == "ok", rows) || exit(1)
 end
 
