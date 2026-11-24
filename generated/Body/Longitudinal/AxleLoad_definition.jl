@@ -5,18 +5,18 @@
 
 
 @doc Markdown.doc"""
-   AxleLoad(; name, use_downforce, m, share, h_over_L, T_pitch, g, __overrides)
+   AxleLoad(; name, m, share, h_over_L, T_pitch, g, __overrides)
 
 Normal load on the driven axle during straight-line acceleration.
 
-The driven axle carries `share` of the weight, and of the downforce with `use_downforce = true`,
-at rest. Acceleration `a` moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with
+The driven axle carries `share` of the weight and of the downforce at rest. Acceleration `a`
+moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with
 `h_over_L = 0`: weight transfer only moves load between driven wheels. A front-wheel-drive car
 needs a negative `h_over_L`, because acceleration takes load off the front axle.
 
 Ports: `flange` attaches to the vehicle body to measure its motion and takes no force; `F_z` is
-the normal load on the driven axle; `downforce`, a force pushing the car onto the road, exists
-only with `use_downforce = true`.
+the normal load on the driven axle; `downforce` is a force pushing the car onto the road, 0 for a
+car without aerodynamic downforce.
 
 Assumptions: the transfer follows the acceleration through a first-order lag of `T_pitch`, the
 time the suspension takes to pitch the body. The lag also keeps the solver from solving the load
@@ -26,7 +26,6 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `use_downforce`         | Adds the `downforce` input                         | --  |   false |
 | `m`         | Vehicle mass                         | kg  |   1400.0 |
 | `share`         | Static fraction of weight and downforce on the driven axle                         | --  |   0.55 |
 | `h_over_L`         | Center-of-mass height over wheelbase                         | --  |   0.17 |
@@ -47,7 +46,7 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
 | `a`         | Vehicle acceleration                         | m/s2  |
 | `a_pitch`         | Acceleration seen by the suspension                         | m/s2  |
 """
-@component function AxleLoad(; name = nothing, var"use_downforce"=false, var"m"=Float64(1400.0), var"share"=0.55, var"h_over_L"=0.17, var"T_pitch"=0.1, var"g"=9.80665, __overrides = Dict{String, Any}())
+@component function AxleLoad(; name = nothing, var"m"=Float64(1400.0), var"share"=0.55, var"h_over_L"=0.17, var"T_pitch"=0.1, var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -66,7 +65,6 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "use_downforce") && (use_downforce = pop!(__overrides, "use_downforce"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "share") && (share = pop!(__overrides, "share"))
   haskey(__overrides, "h_over_L") && (h_over_L = pop!(__overrides, "h_over_L"))
@@ -148,13 +146,7 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   push!(__eqs, a ~ ModelingToolkit.D_nounits(v))
   push!(__eqs, flange.f ~ 0)
   push!(__eqs, T_pitch * ModelingToolkit.D_nounits(a_pitch) ~ a - a_pitch)
-
-  ### Control Structures
-  if use_downforce
-    push!(__eqs, F_z ~ share * (m * g + downforce) + m * a_pitch * h_over_L)
-  else
-    push!(__eqs, F_z ~ share * m * g + m * a_pitch * h_over_L)
-  end
+  push!(__eqs, F_z ~ share * (m * g + downforce) + m * a_pitch * h_over_L)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

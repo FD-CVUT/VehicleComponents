@@ -5,13 +5,13 @@
 
 
 @doc Markdown.doc"""
-   Vehicle(; name, use_grade, m, CdA, rho, v_nominal, f_r, g, __overrides)
+   Vehicle(; name, m, CdA, rho, v_nominal, f_r, g, __overrides)
 
-Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `RoadLoad`, with
-drag, rolling resistance and, with `use_grade = true`, the road grade.
+Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `RoadLoad`: drag,
+rolling resistance and the road grade.
 
-Ports: `flange` takes the tractive force and moves with the vehicle; `grade`, the road gradient
-tan(alpha), exists only with `use_grade = true`. Without it the road is flat.
+Ports: `flange` takes the tractive force and moves with the vehicle; `grade` is the road gradient
+tan(alpha). Wire a constant 0 for a flat road.
 
 The body extends `RoadLoad` and adds only `mass`, so the parameters and parts (`drag`,
 `rolling`, `gradeforce`, `cr_const`, `ground`) are the road load's, and the same resistance law
@@ -21,7 +21,6 @@ serves a planar car whose mass lives in its multibody body.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `use_grade`         | Adds the `grade` input; without it the road is flat                         | --  |   false |
 | `m`         | Vehicle mass; the road load uses it for the normal load and the along-slope weight (assumed)                         | kg  |   1400.0 |
 | `CdA`         | Aerodynamic drag area, Cd * A (assumed)                         | m2  |   0.63 |
 | `rho`         | Air density at sea level (textbook)                         | kg/m3  |   1.2 |
@@ -34,7 +33,7 @@ serves a planar car whose mass lives in its multibody body.
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function Vehicle(; name = nothing, var"use_grade"=false, var"m"=Float64(1400.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"f_r"=0.012, var"g"=9.80665, __overrides = Dict{String, Any}())
+@component function Vehicle(; name = nothing, var"m"=Float64(1400.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"f_r"=0.012, var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -53,7 +52,6 @@ serves a planar car whose mass lives in its multibody body.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "use_grade") && (use_grade = pop!(__overrides, "use_grade"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
   haskey(__overrides, "rho") && (rho = pop!(__overrides, "rho"))
@@ -118,9 +116,7 @@ serves a planar car whose mass lives in its multibody body.
   push!(__systems, @named cr_const = BlockComponents.Sources.Constant(; k=f_r, __overrides = cr_const_overrides))
   # Subcomponent gradeforce of type VehicleComponents.Body.Longitudinal.GradeForce
   gradeforce_overrides = __pop_subcomponent_overrides!(__overrides, "gradeforce")
-  if use_grade
-    push!(__systems, @named gradeforce = VehicleComponents.Body.Longitudinal.GradeForce(; m=m, g=g, __overrides = gradeforce_overrides))
-  end
+  push!(__systems, @named gradeforce = VehicleComponents.Body.Longitudinal.GradeForce(; m=m, g=g, __overrides = gradeforce_overrides))
   # Subcomponent ground of type TranslationalComponents.Components.Fixed
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; __overrides = ground_overrides))
@@ -144,17 +140,11 @@ serves a planar car whose mass lives in its multibody body.
   push!(__eqs, connect(drag.support, ground.flange))
   push!(__eqs, connect(rolling.support, ground.flange))
   push!(__eqs, connect(cr_const.y, rolling.cr))
+  push!(__eqs, connect(flange, gradeforce.flange))
+  push!(__eqs, connect(gradeforce.support, ground.flange))
+  push!(__eqs, connect(grade, rolling.inclination))
+  push!(__eqs, connect(grade, gradeforce.grade))
   push!(__eqs, connect(flange, mass.flange_a))
-
-  ### Control Structures
-  if use_grade
-    push!(__eqs, connect(flange, gradeforce.flange))
-    push!(__eqs, connect(gradeforce.support, ground.flange))
-    push!(__eqs, connect(grade, rolling.inclination))
-    push!(__eqs, connect(grade, gradeforce.grade))
-  else
-    push!(__eqs, rolling.inclination ~ 0)
-  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -8,12 +8,12 @@ not listed has not moved yet.
 
 | Course | Library | Notes |
 |---|---|---|
-| `Vehicle.VehicleBody` | `Body.Longitudinal.Vehicle` | The `grade` input exists only with `use_grade = true`; without it the road is flat. |
-| `HandsOn.GradeBody` | `Body.Longitudinal.Vehicle(use_grade = true)` | Same equations as `Vehicle.VehicleBody`. |
-| `Vehicle.RoadLoad` | `Body.Longitudinal.RoadLoad` | As `Vehicle`: set `use_grade = true` to keep the `grade` input. Flat, it has no `gradeforce` part. |
+| `Vehicle.VehicleBody` | `Body.Longitudinal.Vehicle` | |
+| `HandsOn.GradeBody` | `Body.Longitudinal.Vehicle` | Same equations as `Vehicle.VehicleBody`. |
+| `Vehicle.RoadLoad` | `Body.Longitudinal.RoadLoad` | |
 | `Vehicle.GradeForce` | `Body.Longitudinal.GradeForce` | |
 | `HandsOn.GradeForce` | `Body.Longitudinal.GradeForce` | |
-| `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | The `downforce` input exists only with `use_downforce = true`. Default `m` is 1400 kg, was 2000 kg. |
+| `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | Default `m` is 1400 kg, was 2000 kg. |
 | `Driver` | `Driver.Interface` | |
 | `ClockedDriver` | not yet in the library | Needs `DiscreteComponents`; FD-CVUT/VehicleComponents#29. |
 | `ScriptedDriver` | `Driver.Scripted` | Unclocked: a breakpoint takes effect at its own time, not at the next 10 ms tick. The `period`, `clock`, `*_hold`, `*_sampler` and `*_clock` parts are gone. |

@@ -15,19 +15,27 @@ component Scripted
   structural parameter brake_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["brake"])
   "Steer command table"
   structural parameter steer_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["steer"])
-  throttle_table = BlockComponents.Tables.Interpolation(dataset = throttle_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
-  brake_table = BlockComponents.Tables.Interpolation(dataset = brake_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
-  steer_table = BlockComponents.Tables.Interpolation(dataset = steer_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
+  throttle_table = BlockComponents.Tables.Interpolation(dataset = throttle_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^throttle_table}
+  brake_table = BlockComponents.Tables.Interpolation(dataset = brake_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^brake_table}
+  steer_table = BlockComponents.Tables.Interpolation(dataset = steer_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^steer_table}
 relations
   throttle_table.u = time
   brake_table.u = time
   steer_table.u = time
-  connect(throttle_table.y, throttle_signal)
-  connect(brake_table.y, brake_signal)
-  connect(steer_table.y, steer_signal)
+  connect(throttle_table.y, throttle_signal) {^w1}
+  connect(brake_table.y, brake_signal) {^w2}
+  connect(steer_table.y, steer_signal) {^w3}
 metadata {
   "Dyad": {
     "icons": {"default": "dyad://VehicleComponents/Driver/Scripted.svg"}
+  },
+  "_links": {
+    "throttle_table": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 150, "y2": 350}}}},
+    "brake_table": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}},
+    "steer_table": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 650, "y2": 850}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 250}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 500}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 750}], "E": 2}]}}
   }
 }
 end

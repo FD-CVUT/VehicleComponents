@@ -1,14 +1,14 @@
 """
 Normal load on the driven axle during straight-line acceleration.
 
-The driven axle carries `share` of the weight, and of the downforce with `use_downforce = true`,
-at rest. Acceleration `a` moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with
+The driven axle carries `share` of the weight and of the downforce at rest. Acceleration `a`
+moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with
 `h_over_L = 0`: weight transfer only moves load between driven wheels. A front-wheel-drive car
 needs a negative `h_over_L`, because acceleration takes load off the front axle.
 
 Ports: `flange` attaches to the vehicle body to measure its motion and takes no force; `F_z` is
-the normal load on the driven axle; `downforce`, a force pushing the car onto the road, exists
-only with `use_downforce = true`.
+the normal load on the driven axle; `downforce` is a force pushing the car onto the road, 0 for a
+car without aerodynamic downforce.
 
 Assumptions: the transfer follows the acceleration through a first-order lag of `T_pitch`, the
 time the suspension takes to pitch the body. The lag also keeps the solver from solving the load
@@ -18,11 +18,9 @@ component AxleLoad
   "Connection to the vehicle body, used to measure its acceleration"
   flange = Flange() {^flange}
   "Downforce, as a force pushing the car onto the road"
-  downforce = RealInput() if use_downforce {^downforce}
+  downforce = RealInput() {^downforce}
   "Normal load on the driven axle"
   F_z = RealOutput() {^F_z}
-  "Adds the `downforce` input"
-  structural parameter use_downforce::Boolean = false
   "Vehicle mass"
   parameter m::Dyad.Mass = 1400.0
   "Static fraction of weight and downforce on the driven axle"
@@ -44,11 +42,7 @@ relations
   a = der(v)
   flange.f = 0
   T_pitch * der(a_pitch) = a - a_pitch
-  if use_downforce
-    F_z = share * (m * g + downforce) + m * a_pitch * h_over_L
-  else
-    F_z = share * m * g + m * a_pitch * h_over_L
-  end
+  F_z = share * (m * g + downforce) + m * a_pitch * h_over_L
 metadata {
   "Dyad": {
     "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/AxleLoad.svg"}

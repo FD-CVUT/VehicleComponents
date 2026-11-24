@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    Vehicle(; name, __overrides)
 
-500 N of traction on two bodies: `flat` from rest with the grade input left out, and `climbing`
+500 N of traction on two bodies: `flat` from rest on a 0 grade, and `climbing`
 at 10 m/s on a 2 % grade. On the flat the start acceleration is 500/1400 = 0.3571 m/s² and the
 speed settles where drag and rolling resistance take the whole 500 N. On the climb the road load
 at 10 m/s is 477.05 N, leaving 0.0164 m/s².
@@ -59,6 +59,9 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   # Subcomponent flat_traction of type TranslationalComponents.Sources.ConstantForce
   flat_traction_overrides = __pop_subcomponent_overrides!(__overrides, "flat_traction")
   push!(__systems, @named flat_traction = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(500.0), __overrides = flat_traction_overrides))
+  # Subcomponent level of type BlockComponents.Sources.Constant
+  level_overrides = __pop_subcomponent_overrides!(__overrides, "level")
+  push!(__systems, @named level = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = level_overrides))
   # Subcomponent flat of type VehicleComponents.Body.Longitudinal.Vehicle
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = flat_overrides))
@@ -70,7 +73,7 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=0.02, __overrides = grade_overrides))
   # Subcomponent climbing of type VehicleComponents.Body.Longitudinal.Vehicle
   climbing_overrides = __pop_subcomponent_overrides!(__overrides, "climbing")
-  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.Vehicle(; use_grade=true, __overrides = climbing_overrides))
+  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = climbing_overrides))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
@@ -94,6 +97,7 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   push!(__eqs, connect(climb_traction.flange, climbing.flange))
   push!(__eqs, connect(flat_traction.support, climb_traction.support, fixed.flange))
   push!(__eqs, connect(grade.y, climbing.grade))
+  push!(__eqs, connect(level.y, flat.grade))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

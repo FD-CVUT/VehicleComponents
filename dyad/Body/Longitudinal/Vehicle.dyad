@@ -1,9 +1,9 @@
 """
-Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `RoadLoad`, with
-drag, rolling resistance and, with `use_grade = true`, the road grade.
+Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `RoadLoad`: drag,
+rolling resistance and the road grade.
 
-Ports: `flange` takes the tractive force and moves with the vehicle; `grade`, the road gradient
-tan(alpha), exists only with `use_grade = true`. Without it the road is flat.
+Ports: `flange` takes the tractive force and moves with the vehicle; `grade` is the road gradient
+tan(alpha). Wire a constant 0 for a flat road.
 
 The body extends `RoadLoad` and adds only `mass`, so the parameters and parts (`drag`,
 `rolling`, `gradeforce`, `cr_const`, `ground`) are the road load's, and the same resistance law

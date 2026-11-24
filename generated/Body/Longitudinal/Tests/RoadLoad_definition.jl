@@ -7,8 +7,7 @@
 @doc Markdown.doc"""
    RoadLoad(; name, __overrides)
 
-Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` with the grade input
-left out. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
+Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
 f_r m g = 164.7517 N on the flat and that times cos(atan(0.1)) on the climb; the climb adds
 m g sin(atan(0.1)) = 1366.117 N. Reversing the speed flips drag and rolling resistance but not
 the grade force.
@@ -63,9 +62,12 @@ the grade force.
   # Subcomponent grade of type BlockComponents.Sources.Constant
   grade_overrides = __pop_subcomponent_overrides!(__overrides, "grade")
   push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=0.1, __overrides = grade_overrides))
+  # Subcomponent level of type BlockComponents.Sources.Constant
+  level_overrides = __pop_subcomponent_overrides!(__overrides, "level")
+  push!(__systems, @named level = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = level_overrides))
   # Subcomponent climbing of type VehicleComponents.Body.Longitudinal.RoadLoad
   climbing_overrides = __pop_subcomponent_overrides!(__overrides, "climbing")
-  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.RoadLoad(; use_grade=true, __overrides = climbing_overrides))
+  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.RoadLoad(; __overrides = climbing_overrides))
   # Subcomponent flat of type VehicleComponents.Body.Longitudinal.RoadLoad
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = VehicleComponents.Body.Longitudinal.RoadLoad(; __overrides = flat_overrides))
@@ -88,6 +90,7 @@ the grade force.
   push!(__eqs, connect(speed.flange, climbing.flange, flat.flange))
   push!(__eqs, connect(speed.support, fixed.flange))
   push!(__eqs, connect(grade.y, climbing.grade))
+  push!(__eqs, connect(level.y, flat.grade))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
