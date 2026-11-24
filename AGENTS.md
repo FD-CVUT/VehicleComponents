@@ -12,26 +12,23 @@ Dyad. If `agent_resources/` is missing, restore it with `dyad install skills --p
 
 - Dyad sources live in `dyad/`, one folder per module. `generated/` is compiler output: never edit
   it, always commit it in the same commit as the Dyad change that produced it (`mise run compile`).
-- Run Julia from the Dyad build: `julia +dyad-<kernel> --project=.`, where `<kernel>` is
-  `[dyad] kernel` in `Project.toml`. The default `julia` channel cannot load Dyad packages.
+- Run Julia from the Dyad build with `scripts/dyad-julia --project=.`, which picks channel
+  `dyad-<kernel>` from `[dyad] kernel` in `Project.toml`. The default `julia` channel cannot load
+  Dyad packages. The build bundles the Dyad standard libraries in its system image, so they need no
+  registry and no precompiling.
 
 ## Version pin
 
 `DYAD_STUDIO_VERSION` in `mise.toml` is the one line that pins the toolchain. It names the Dyad
-Studio release (the VSIX on Open VSX) whose compiler generates `generated/`. CI derives the rest:
-
-1. downloads that VSIX and runs its `extension/out/dyad-cli.js` with Node,
-2. reads the kernel version the compiler reports (`dyad-cli.js --version`, e.g. `3.5.0`),
-3. requires `[dyad] kernel` in `Project.toml` to equal it, and
-4. installs juliaup channel `dyad-<kernel>` from `https://juliahub.com/juliabin`.
-
-The Studio version and the kernel version differ (Studio 3.5.1 carries kernel 3.5.0), which is why
-the pin names the Studio release and the channel comes from the compiler, not from the pin.
+Studio release (the VSIX on Open VSX) whose compiler generates `generated/`. The Studio and kernel
+versions differ (Studio 3.5.1 carries kernel 3.5.0): CI installs the Julia build of the kernel that
+compiler reports, and `scripts/check-generated` requires `[dyad] kernel` in `Project.toml` to match
+it.
 
 Upgrade Dyad only through the extension, in a PR of its own: let the extension migrate the
-project, bump `DYAD_STUDIO_VERSION` to the installed Studio version, regenerate `generated/`, and
-commit all three together. `mise run check` fails when the pin, `Project.toml` and `generated/`
-disagree.
+project (including the kernel channel in `.vscode/settings.json`), bump `DYAD_STUDIO_VERSION` to
+the installed Studio version, regenerate `generated/`, and commit them together. `mise run check`
+fails when the pin, `Project.toml` and `generated/` disagree.
 
 ## Module tree
 
@@ -110,15 +107,14 @@ Two tiers, chosen by where the test model lives:
 
 | Tier | Test models | Runs | Budget |
 |---|---|---|---|
-| fast | in a domain's `Tests` submodule | every PR, one process | 30 s per rig, under 10 min in all |
-| example | under `Examples` | before merging a PR that touches an example, one process per model | under 60 min |
+| fast | in a domain's `Tests` submodule | every PR and push to `main`, one process | 30 s per rig, under 10 min in all |
+| example | under `Examples` | nightly, one process per model | under 60 min |
 
 A test model anywhere else fails the fast tier. The fast tier warms the compiler up on a one-state
-model first, then times each rig (one test model, all its cases) and fails any over 30 s. A rig
+model first, then times each rig (one test model, all its cases) and fails any over budget. A rig
 that needs longer is an example, or a sign the component's test is too big.
 
-Run `mise run test` and `mise run test:examples`, or `julia +dyad-<kernel> --project=.
-test/runtests.jl fast|examples`.
+Run `mise run test` (fast) and `mise run test examples`.
 
 The library starts with zero pinned failures, and new failures are fixed, not pinned.
 
@@ -129,19 +125,14 @@ purpose, in the same PR as the model change that moves them: rerun the affected 
 `DYAD_UPDATE_REFS=1` and commit the new `.ref` files, so the reviewer sees every output change. A
 test model run without a snapshot writes one; commit it with the model.
 
-## PR gate
-
-Every PR passes `mise run check` on the author's machine before review, and its description says
-so. The check runs the fast tier and the generated-code check, which compiles from an empty
-`generated/` (the compiler leaves a deleted module's files in place) and fails on any difference
-from the committed code. A PR that touches an example also passes `mise run test:examples`.
-
 ## CI
 
-The `CI` and `Nightly` workflows run only by manual dispatch, so no check on a PR shows a result
-that never ran. The repo has no long-term JuliaHub token, and the Dyad dependencies resolve only
-through the authenticated JuliaHub package server. Once a long-term token is issued (request one
-from admin@juliahub.com for a dedicated CI user), store it base64-encoded as `JULIAHUB_AUTH_TOML`
-and restore the `pull_request`/`push` triggers and the nightly schedule. CI then writes it to
-`~/.julia/servers/juliahub.com/`, uses the `juliahub.com` package server and adds General and
-DyadRegistry. Fork PRs receive no secrets and get no CI.
+`CI` runs `scripts/check-generated` and the fast tier on every PR and push to `main`; `Nightly` runs
+the example tier. `mise run check` runs the same two checks locally. `scripts/check-generated`
+compiles a scratch copy of the package and fails on any difference from the committed
+`generated/`, including files left over from a deleted module.
+
+CI needs no secret: the Dyad build comes from the public JuliaHub juliabin server, and every
+dependency outside it is in General. A dependency only DyadRegistry serves (such as
+DiscreteComponents, unless a Dyad release bundles it) would need a long-term JuliaHub token, which
+only a JuliaHub admin issues.

@@ -8,17 +8,16 @@ The library is being filled domain by domain; see [the spec](https://github.com/
 
 ## Requirements
 
-- A JuliaHub account. The library depends on Dyad packages from DyadRegistry, which JuliaHub serves
-  only to signed-in users. Dyad is free for educational and personal use; commercial use needs a
-  JuliaHub license.
-- The Dyad Julia build and the Dyad Studio VS Code extension. The release in use is pinned by
-  `DYAD_STUDIO_VERSION` in `mise.toml`; `[dyad] kernel` in `Project.toml` names the matching
-  juliaup channel (`dyad-<kernel>`, served from `https://juliahub.com/juliabin`).
+- The Dyad Julia build: juliaup channel `dyad-<kernel>` from `https://juliahub.com/juliabin`, where
+  `<kernel>` is `[dyad] kernel` in `Project.toml`. It bundles the Dyad standard libraries; the few
+  other dependencies come from the General registry, so installing needs no sign-in.
+- The Dyad Studio VS Code extension (needs a JuliaHub account) to edit the models, at the release
+  pinned by `DYAD_STUDIO_VERSION` in `mise.toml`. Dyad is free for educational and personal use;
+  commercial use needs a JuliaHub license.
 
 ## Install
 
-The package is not registered. Sign in to JuliaHub (Dyad Studio does this for you, or set
-`JULIA_PKG_SERVER=juliahub.com` and authenticate), then add it by URL from the Dyad Julia build:
+The package is not registered. Add it by URL from the Dyad Julia build:
 
 ```julia
 using Pkg
@@ -33,39 +32,18 @@ To pin a commit from another package, list it under `[sources]` in that package'
 VehicleComponents = {url = "https://github.com/FD-CVUT/VehicleComponents", rev = "<commit>"}
 ```
 
-## Module tree
+## Module tree and tests
 
-Components live in nested submodules by vehicle domain. Each domain with tests has its own
-`Tests` submodule.
-
-| Module | Contents |
-|---|---|
-| `Body.Longitudinal`, `Body.Planar` | vehicle bodies |
-| `Chassis.Wheel`, `Chassis.Brakes` | tires and wheels, brake system |
-| `Powertrain.Engine`, `.Transmission`, `.Hybrid` | engines, gearboxes, hybrid couplings |
-| `Electrical.Machines`, `.PowerElectronics`, `.Battery` | electric drive |
-| `Control` | ABS, ESP, TCS, cruise, brake allocation, regen blend |
-| `CanBus`, `Driver`, `Road`, `Sensors`, `Blocks` | network, drivers, roads, sensors, utilities |
-| `Examples` | complete vehicles by what they demonstrate, on shared `Examples.Platforms` |
-
-## Tests
-
-Tests are Dyad test models that check start values, end values and signal snapshots. They run in
-two tiers:
-
-| Tier | What | When | Budget |
-|---|---|---|---|
-| fast | every test model in a domain's `Tests` submodule, one process | every pull request | 30 s per rig, under 10 min in all |
-| example | every test model under `Examples`, one process each | PRs that touch an example | under 60 min |
+Components live in nested submodules by vehicle domain (`Body`, `Chassis`, `Powertrain`,
+`Electrical`, `Control`, `CanBus`, `Driver`, `Road`, `Sensors`, `Blocks`), with complete vehicles
+under `Examples`. Tests are Dyad test models in each domain's `Tests` submodule (fast tier, every PR)
+and under `Examples` (example tier, nightly). [AGENTS.md](AGENTS.md) has the full tree and test rules.
 
 ```sh
-mise run test            # julia +dyad-<kernel> --project=. test/runtests.jl fast
-mise run test:examples   # julia +dyad-<kernel> --project=. test/runtests.jl examples
-mise run check           # the PR gate: fast tier, then fail if generated/ is stale
+mise run test            # fast tier
+mise run test examples   # example tier
+mise run check           # what CI runs on every PR: generated-code check and fast tier
 ```
-
-The checks run locally: CI is manual-only until the repo has a long-term JuliaHub token (see
-[AGENTS.md](AGENTS.md)).
 
 ## Contributing
 

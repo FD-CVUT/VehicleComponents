@@ -1,7 +1,8 @@
 name: Nightly
 
-# Manual only until JULIAHUB_AUTH_TOML holds a long-term token; restore the schedule then.
 on:
+  schedule:
+    - cron: "17 2 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -21,11 +22,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - id: dyad
-        uses: ./.github/actions/setup-dyad
-        with:
-          juliahub-auth-toml: ${{ secrets.JULIAHUB_AUTH_TOML }}
+      - uses: ./.github/actions/setup-dyad
       - name: Run the example tier
-        env:
-          CHANNEL: ${{ steps.dyad.outputs.channel }}
-        run: julia "+$CHANNEL" --project=. test/runtests.jl examples
+        run: scripts/dyad-julia --project=. test/runtests.jl examples

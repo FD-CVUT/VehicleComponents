@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Fails unless the pinned compiler carries the kernel Project.toml names and generated/ is exactly
+# what it produces from dyad/. Compiles a scratch copy, so the working tree is never touched and a
+# compile error cannot leave the package without generated code.
+set -euo pipefail
+: "${DYAD_CLI:?set DYAD_CLI to the pinned dyad-cli.js, or run through mise}"
+root=$(cd "$(dirname "$0")/.." && pwd)
+
+kernel=$(node "$DYAD_CLI" --version | cut -d' ' -f1)
+project=$(sed -n 's/^kernel = "\([^"]*\)"$/\1/p' "$root/Project.toml")
+if [ "$kernel" != "$project" ]; then
+  echo "The pinned Dyad Studio carries kernel $kernel, but Project.toml names $project." >&2
+  echo "Upgrade through the extension and bump DYAD_STUDIO_VERSION in mise.toml together." >&2
+  exit 1
+fi
+
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
+cp -r "$root/Project.toml" "$root/Manifest.toml" "$root/dyad" "$scratch/"
+node "$DYAD_CLI" compile "$scratch" >/dev/null
+if ! diff -r "$root/generated" "$scratch/generated" >/dev/null; then
+  diff -rq "$root/generated" "$scratch/generated" >&2 || true
+  echo "generated/ does not match the Dyad sources: run 'mise run compile' and commit the result." >&2
+  exit 1
+fi

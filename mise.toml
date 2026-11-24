@@ -1,35 +1,23 @@
 [env]
 # The Dyad Studio release whose compiler generates `generated/`; see AGENTS.md.
 DYAD_STUDIO_VERSION = "3.5.1"
+DYAD_CLI = "{{ env.HOME }}/.vscode/extensions/juliacomputing.dyad-studio-{{ env.DYAD_STUDIO_VERSION }}/out/dyad-cli.js"
 
 [tools]
 node = "22"
 
 [tasks.compile]
-description = "Regenerate generated/ with the installed Dyad Studio's compiler"
-run = "node ~/.vscode/extensions/juliacomputing.dyad-studio-$DYAD_STUDIO_VERSION/out/dyad-cli.js compile ."
-
-[tasks.test]
-description = "Run the fast tier: every test model under a Tests submodule, 30 s budget per rig"
-run = "julia +dyad-$(sed -n 's/^kernel = \"\\(.*\\)\"$/\\1/p' Project.toml) --project=. test/runtests.jl fast"
+description = "Regenerate generated/ with the pinned Dyad Studio's compiler"
+run = 'node "$DYAD_CLI" compile .'
 
 [tasks."check:generated"]
 description = "Fail unless generated/ is exactly what the pinned compiler produces from dyad/"
-run = """
-rm -rf generated
-node ~/.vscode/extensions/juliacomputing.dyad-studio-$DYAD_STUDIO_VERSION/out/dyad-cli.js compile .
-if [ -n "$(git status --porcelain -- generated)" ]; then
-  git status --short -- generated
-  echo "generated/ differs from the committed code: commit the regenerated files" >&2
-  exit 1
-fi
-"""
+run = "scripts/check-generated"
+
+[tasks.test]
+description = "Run a test tier: fast (default) or examples, e.g. `mise run test examples`"
+run = "scripts/dyad-julia --project=. test/runtests.jl"
 
 [tasks.check]
-description = "The PR gate: the generated-code check, then the fast tier"
-# Sequential: the fast tier loads generated/, which check:generated deletes and rewrites.
-run = "mise run check:generated && mise run test"
-
-[tasks."test:examples"]
-description = "Run the example tier: every test model under Examples, each in its own process"
-run = "julia +dyad-$(sed -n 's/^kernel = \"\\(.*\\)\"$/\\1/p' Project.toml) --project=. test/runtests.jl examples"
+description = "The PR gate CI runs: the generated-code check and the fast tier"
+depends = ["check:generated", "test"]
