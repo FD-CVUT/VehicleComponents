@@ -13,7 +13,7 @@ not listed has not moved yet.
 | `Vehicle.RoadLoad` | `Body.Longitudinal.RoadLoad` | |
 | `Vehicle.GradeForce` | `Body.Longitudinal.GradeForce` | |
 | `HandsOn.GradeForce` | `Body.Longitudinal.GradeForce` | |
-| `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | Default `m` is 1400 kg, was 2000 kg. |
+| `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | `F_z` output and `downforce` input are now flanges: wire `load` to the wheel's load flange and push `downforce` with a force source; positive force presses the car onto the road. Default `m` is 1400 kg, was 2000 kg. |
 | `Driver` | `Driver.Interface` | |
 | `ClockedDriver` | not yet in the library | Needs `DiscreteComponents`; FD-CVUT/VehicleComponents#29. |
 | `ScriptedDriver` | `Driver.Scripted` | Unclocked: a breakpoint takes effect at its own time, not at the next 10 ms tick. The `period`, `clock`, `*_hold`, `*_sampler` and `*_clock` parts are gone. |

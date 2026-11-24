@@ -1,14 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
   <g fill="none" stroke="#263238" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M150 560 V470 Q150 420 200 415 L350 400 L440 300 Q455 285 480 285 H640 Q665 285 680 300 L780 410 Q850 420 850 480 V560 Z" fill="#eceff1"/>
-    <circle cx="300" cy="610" r="85" fill="#ffffff"/>
-    <circle cx="700" cy="610" r="85" fill="#ffffff"/>
-    <path d="M80 695 H920"/>
-    <circle cx="500" cy="430" r="28" fill="#263238"/>
-    <path d="M700 720 V860 M650 800 L700 860 L750 800" stroke="#0277bd" stroke-width="40"/>
-    <path d="M0 500 H150" stroke-width="20"/>
-    <path d="M780 300 H1000" stroke="#0277bd" stroke-width="20"/>
-    <path d="M850 520 Q920 520 920 600 V750 H1000" stroke-width="20"/>
+    <path d="M500 0 V230 M450 170 L500 230 L550 170" stroke="#0277bd" stroke-width="35"/>
+    <path d="M150 640 V550 Q150 500 200 495 L350 480 L440 380 Q455 365 480 365 H640 Q665 365 680 380 L780 490 Q850 500 850 560 V640 Z" fill="#eceff1"/>
+    <circle cx="300" cy="690" r="85" fill="#ffffff"/>
+    <circle cx="700" cy="690" r="85" fill="#ffffff"/>
+    <circle cx="500" cy="510" r="28" fill="#263238"/>
+    <path d="M700 790 V1000 M650 920 L700 980 L750 920" stroke="#0277bd" stroke-width="35"/>
+    <path d="M850 500 H1000" stroke-width="20"/>
   </g>
-  <text x="500" y="160" text-anchor="middle" font-family="sans-serif" font-size="85" fill="#263238">AXLE LOAD</text>
+  <text x="250" y="160" text-anchor="middle" font-family="sans-serif" font-size="70" fill="#263238">AXLE</text>
+  <text x="250" y="240" text-anchor="middle" font-family="sans-serif" font-size="70" fill="#263238">LOAD</text>
 </svg>

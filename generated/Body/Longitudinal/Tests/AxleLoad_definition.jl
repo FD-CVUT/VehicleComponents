@@ -8,8 +8,9 @@
    AxleLoad(; name, __overrides)
 
 A 1400 kg mass pushed by 2800 N accelerates at 2 m/s². The driven axle starts at its static share
-0.55 m g = 7551.12 N and, once the body has pitched, carries m a h/L = 476 N more. `axle` sees no
-downforce; `aero` reads 1000 N of it, of which 0.55 lands on the axle.
+0.55 m g = 7551.12 N and, once the body has pitched, carries m a h/L = 476 N more. `axle` has
+nothing on its downforce flange; `aero` is pressed down with 1000 N, of which 0.55 lands on the
+axle. Both push their load onto a fixed road.
 """
 @component function AxleLoad(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -64,18 +65,21 @@ downforce; `aero` reads 1000 N of it, of which 0.55 lands on the axle.
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
-  # Subcomponent no_downforce of type BlockComponents.Sources.Constant
-  no_downforce_overrides = __pop_subcomponent_overrides!(__overrides, "no_downforce")
-  push!(__systems, @named no_downforce = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_downforce_overrides))
   # Subcomponent axle of type VehicleComponents.Body.Longitudinal.AxleLoad
   axle_overrides = __pop_subcomponent_overrides!(__overrides, "axle")
   push!(__systems, @named axle = VehicleComponents.Body.Longitudinal.AxleLoad(; m=Float64(1400.0), __overrides = axle_overrides))
-  # Subcomponent downforce of type BlockComponents.Sources.Constant
+  # Subcomponent road of type TranslationalComponents.Components.Fixed
+  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
+  push!(__systems, @named road = TranslationalComponents.Components.Fixed(; __overrides = road_overrides))
+  # Subcomponent downforce of type TranslationalComponents.Sources.ConstantForce
   downforce_overrides = __pop_subcomponent_overrides!(__overrides, "downforce")
-  push!(__systems, @named downforce = BlockComponents.Sources.Constant(; k=Float64(1000.0), __overrides = downforce_overrides))
+  push!(__systems, @named downforce = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(1000.0), __overrides = downforce_overrides))
   # Subcomponent aero of type VehicleComponents.Body.Longitudinal.AxleLoad
   aero_overrides = __pop_subcomponent_overrides!(__overrides, "aero")
   push!(__systems, @named aero = VehicleComponents.Body.Longitudinal.AxleLoad(; m=Float64(1400.0), __overrides = aero_overrides))
+  # Subcomponent aero_road of type TranslationalComponents.Components.Fixed
+  aero_road_overrides = __pop_subcomponent_overrides!(__overrides, "aero_road")
+  push!(__systems, @named aero_road = TranslationalComponents.Components.Fixed(; __overrides = aero_road_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -94,8 +98,9 @@ downforce; `aero` reads 1000 N of it, of which 0.55 lands on the axle.
   ### Equations
   push!(__eqs, connect(traction.flange, mass.flange_a, axle.flange, aero.flange))
   push!(__eqs, connect(traction.support, fixed.flange))
-  push!(__eqs, connect(downforce.y, aero.downforce))
-  push!(__eqs, connect(no_downforce.y, axle.downforce))
+  push!(__eqs, connect(axle.load, road.flange))
+  push!(__eqs, connect(aero.load, aero_road.flange, downforce.support))
+  push!(__eqs, connect(downforce.flange, aero.downforce))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -24,6 +24,7 @@ __dyad_run_test_case!(
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 8027.1205, 0.01, 1e-5),
     (m -> m.aero.F_z, "aero.F_z", 8577.1205, 0.01, 1e-5),
+    (m -> m.road.flange.f, "road.flange.f", 8027.1205, 0.01, 1e-5),
   ],
   signals=Tuple[(m -> m.axle.F_z, "axle.F_z", 0.01, 1e-5)],
 )

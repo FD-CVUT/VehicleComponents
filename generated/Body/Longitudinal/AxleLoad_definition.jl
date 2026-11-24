@@ -10,13 +10,17 @@
 Normal load on the driven axle during straight-line acceleration.
 
 The driven axle carries `share` of the weight and of the downforce at rest. Acceleration `a`
-moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with
-`h_over_L = 0`: weight transfer only moves load between driven wheels. A front-wheel-drive car
-needs a negative `h_over_L`, because acceleration takes load off the front axle.
+moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with `h_over_L = 0`: weight
+transfer only moves load between driven wheels. A front-wheel-drive car needs a negative
+`h_over_L`, because acceleration takes load off the front axle.
 
-Ports: `flange` attaches to the vehicle body to measure its motion and takes no force; `F_z` is
-the normal load on the driven axle; `downforce` is a force pushing the car onto the road, 0 for a
-car without aerodynamic downforce.
+Ports, with the sign convention of the planar wheels' `load` flange (positive force presses the
+tire onto the road):
+- `flange` attaches to the vehicle body to measure its motion and takes no force.
+- `load` pushes the normal load `F_z` onto the driven wheels, which hold it at zero travel. It
+  must be connected, to a wheel's load flange or to a `Fixed`.
+- `downforce` takes a force pushing the car onto the road and moves with `load`. Left
+  unconnected it carries no force.
 
 Assumptions: the transfer follows the acceleration through a first-order lag of `T_pitch`, the
 time the suspension takes to pitch the body. The lag also keeps the solver from solving the load
@@ -35,13 +39,14 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
 ## Connectors
 
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
- * `downforce` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `F_z` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `load` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
+ * `downforce` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
+| `F_z`         | Normal load on the driven axle                         | N  |
 | `v`         | Vehicle speed                         | m/s  |
 | `a`         | Vehicle acceleration                         | m/s2  |
 | `a_pitch`         | Acceleration seen by the suspension                         | m/s2  |
@@ -103,15 +108,17 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (downforce(t)::Real), [input = true])
-  append!(__vars, @variables (F_z(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (F_z(t)::Real), [description = "Normal load on the driven axle"])
   append!(__vars, @variables (v(t)::Real), [description = "Vehicle speed"])
   append!(__vars, @variables (a(t)::Real), [description = "Vehicle acceleration"])
   append!(__vars, @variables (a_pitch(t)::Real), [description = "Acceleration seen by the suspension"])
 
   ### Variables (assignments)
+  __ovr_F_z = pop!(__overrides, "F_z", nothing); isnothing(__ovr_F_z) || push!(__eqs, F_z ~ __ovr_F_z)
+  __ovr_F_z__initial = pop!(__overrides, "F_z.initial", nothing); isnothing(__ovr_F_z__initial) || (__initial_conditions[F_z] = __ovr_F_z__initial)
+  __ovr_F_z__guess = pop!(__overrides, "F_z.guess", nothing)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
   __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
   __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
@@ -127,11 +134,14 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
 
   ### Components
   push!(__systems, @named flange = __Dyad__Flange())
+  push!(__systems, @named load = __Dyad__Flange())
+  push!(__systems, @named downforce = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_F_z__guess) || (__guesses[F_z] = __ovr_F_z__guess)
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
   isnothing(__ovr_a__guess) || (__guesses[a] = __ovr_a__guess)
   isnothing(__ovr_a_pitch__guess) || (__guesses[a_pitch] = __ovr_a_pitch__guess)
@@ -146,7 +156,9 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   push!(__eqs, a ~ ModelingToolkit.D_nounits(v))
   push!(__eqs, flange.f ~ 0)
   push!(__eqs, T_pitch * ModelingToolkit.D_nounits(a_pitch) ~ a - a_pitch)
-  push!(__eqs, F_z ~ share * (m * g + downforce) + m * a_pitch * h_over_L)
+  push!(__eqs, F_z ~ share * (m * g + downforce.f) + m * a_pitch * h_over_L)
+  push!(__eqs, load.f ~ -F_z)
+  push!(__eqs, downforce.s ~ load.s)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
