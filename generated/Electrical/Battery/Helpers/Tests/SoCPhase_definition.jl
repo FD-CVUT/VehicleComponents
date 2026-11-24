@@ -7,7 +7,8 @@
 @doc Markdown.doc"""
    SoCPhase(; name, __overrides)
 
-With a 2 s period, 0.5 s is 0.5 s into the first cycle and 5 s is 1 s into the third.
+With a 2 s period, 0.5 s is 0.5 s into the first cycle, 2 s is the start of the second, and 5 s
+is 1 s into the third.
 """
 @component function SoCPhase(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -53,18 +54,12 @@ With a 2 s period, 0.5 s is 0.5 s into the first cycle and 5 s is 1 s into the t
   __constants = Any[]
 
   ### Components
-  # Subcomponent early of type BlockComponents.Sources.Constant
-  early_overrides = __pop_subcomponent_overrides!(__overrides, "early")
-  push!(__systems, @named early = BlockComponents.Sources.Constant(; k=0.5, __overrides = early_overrides))
-  # Subcomponent late of type BlockComponents.Sources.Constant
-  late_overrides = __pop_subcomponent_overrides!(__overrides, "late")
-  push!(__systems, @named late = BlockComponents.Sources.Constant(; k=Float64(5.0), __overrides = late_overrides))
-  # Subcomponent first_cycle of type VehicleComponents.Electrical.Battery.Helpers.SoCPhase
-  first_cycle_overrides = __pop_subcomponent_overrides!(__overrides, "first_cycle")
-  push!(__systems, @named first_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(; period=Float64(2.0), __overrides = first_cycle_overrides))
-  # Subcomponent third_cycle of type VehicleComponents.Electrical.Battery.Helpers.SoCPhase
-  third_cycle_overrides = __pop_subcomponent_overrides!(__overrides, "third_cycle")
-  push!(__systems, @named third_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(; period=Float64(2.0), __overrides = third_cycle_overrides))
+  # Subcomponent elapsed of type BlockComponents.Sources.Constant
+  elapsed_overrides = __pop_subcomponent_overrides!(__overrides, "elapsed")
+  push!(__systems, @named elapsed = BlockComponents.Sources.Constant(; k=0.5, __overrides = elapsed_overrides))
+  # Subcomponent phase of type VehicleComponents.Electrical.Battery.Helpers.SoCPhase
+  phase_overrides = __pop_subcomponent_overrides!(__overrides, "phase")
+  push!(__systems, @named phase = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(; period=Float64(2.0), __overrides = phase_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -77,8 +72,7 @@ With a 2 s period, 0.5 s is 0.5 s into the first cycle and 5 s is 1 s into the t
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(early.y, first_cycle.u))
-  push!(__eqs, connect(late.y, third_cycle.u))
+  push!(__eqs, connect(elapsed.y, phase.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

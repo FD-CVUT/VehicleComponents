@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest,
-  "three_requests for VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest";
-  case_name="three_requests",
+  "bleeding for VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest";
+  case_name="bleeding",
   component_stem="BalancerRequest",
   module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
@@ -18,10 +18,57 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.bleeding.y, "bleeding.y", 0.5, 1e-9, 1e-8),
-    (m -> m.too_low.y, "too_low.y", 0, 1e-9, 1e-8),
-    (m -> m.on_threshold.y, "on_threshold.y", 0.125, 1e-9, 1e-8),
-  ],
+  expected_final=Tuple[(m -> m.balancer.y, "balancer.y", 0.5, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest,
+  "below_allowed_voltage for VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest";
+  case_name="below_allowed_voltage",
+  component_stem="BalancerRequest",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("allowed.k" => 4.2),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.balancer.y, "balancer.y", 0, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest,
+  "level_with_lowest_cell for VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest";
+  case_name="level_with_lowest_cell",
+  component_stem="BalancerRequest",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("delta.k" => 0.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.balancer.y, "balancer.y", 0, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest,
+  "on_both_thresholds for VehicleComponents.Electrical.Battery.Helpers.Tests.BalancerRequest";
+  case_name="on_both_thresholds",
+  component_stem="BalancerRequest",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("delta.k" => 0.01, "allowed.k" => 4.15),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.balancer.y, "balancer.y", 0.125, 1e-9, 1e-8)],
   signals=Tuple[],
 )

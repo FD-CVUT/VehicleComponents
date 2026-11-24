@@ -76,7 +76,10 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=0.02, __overrides = grade_overrides))
   # Subcomponent climbing of type VehicleComponents.Body.Longitudinal.Vehicle
   climbing_overrides = __pop_subcomponent_overrides!(__overrides, "climbing")
-  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = climbing_overrides))
+  climbing_dict = Dict{String, Any}()
+  climbing_dict["mass.v.initial"] = ModelingToolkit.default_to_parentscope(10.0)
+  merge!(climbing_dict, climbing_overrides)
+  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = climbing_dict))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
@@ -87,10 +90,6 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, flat.mass.s ~ 0.0)
-  push!(__initialization_eqs, flat.mass.v ~ 0.0)
-  push!(__initialization_eqs, climbing.mass.s ~ 0.0)
-  push!(__initialization_eqs, climbing.mass.v ~ 10.0)
 
   ### Assertions
   __assertions = []
@@ -98,10 +97,12 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   ### Equations
   push!(__eqs, connect(flat_traction.flange, flat.flange))
   push!(__eqs, connect(climb_traction.flange, climbing.flange))
-  push!(__eqs, connect(flat_traction.support, climb_traction.support, fixed.flange))
+  push!(__eqs, connect(flat_traction.support, climb_traction.support))
+  push!(__eqs, connect(flat_traction.support, fixed.flange))
   push!(__eqs, connect(grade.y, climbing.grade))
   push!(__eqs, connect(level.y, flat.grade))
-  push!(__eqs, connect(tire.y, flat.f_r, climbing.f_r))
+  push!(__eqs, connect(tire.y, flat.f_r))
+  push!(__eqs, connect(tire.y, climbing.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

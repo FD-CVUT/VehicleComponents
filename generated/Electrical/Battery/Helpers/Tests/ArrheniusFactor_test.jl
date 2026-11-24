@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor,
-  "two_temperatures for VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor";
-  case_name="two_temperatures",
+  "reference for VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor";
+  case_name="reference",
   component_stem="ArrheniusFactor",
   module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
@@ -18,9 +18,23 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.warm.y, "warm.y", 1, 1e-9, 1e-8),
-    (m -> m.cold.y, "cold.y", 1.586506296539818, 1e-9, 1e-8),
-  ],
+  expected_final=Tuple[(m -> m.factor.y, "factor.y", 1, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor,
+  "freezing for VehicleComponents.Electrical.Battery.Helpers.Tests.ArrheniusFactor";
+  case_name="freezing",
+  component_stem="ArrheniusFactor",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("temperature.k" => 273.15),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.factor.y, "factor.y", 1.586506296539818, 1e-9, 1e-8)],
   signals=Tuple[],
 )

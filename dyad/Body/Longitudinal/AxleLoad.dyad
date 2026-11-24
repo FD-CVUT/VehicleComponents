@@ -42,7 +42,7 @@ component AxleLoad
   "Vehicle acceleration"
   variable a::Acceleration
   "Acceleration seen by the suspension"
-  variable a_pitch::Acceleration
+  variable a_pitch::Acceleration = initial 0.0
 relations
   v = der(flange.s)
   a = der(v)

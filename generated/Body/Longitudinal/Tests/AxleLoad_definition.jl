@@ -61,7 +61,11 @@ axle. Both push their load onto a fixed road.
   push!(__systems, @named traction = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(2800.0), __overrides = traction_overrides))
   # Subcomponent mass of type TranslationalComponents.Components.Mass
   mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
-  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = mass_overrides))
+  mass_dict = Dict{String, Any}()
+  mass_dict["s.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  mass_dict["v.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(mass_dict, mass_overrides)
+  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = mass_dict))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
@@ -87,19 +91,18 @@ axle. Both push their load onto a fixed road.
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, mass.s ~ 0.0)
-  push!(__initialization_eqs, mass.v ~ 0.0)
-  push!(__initialization_eqs, axle.a_pitch ~ 0.0)
-  push!(__initialization_eqs, aero.a_pitch ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(traction.flange, mass.flange_a, axle.flange, aero.flange))
+  push!(__eqs, connect(traction.flange, mass.flange_a))
+  push!(__eqs, connect(traction.flange, axle.flange))
+  push!(__eqs, connect(traction.flange, aero.flange))
   push!(__eqs, connect(traction.support, fixed.flange))
   push!(__eqs, connect(axle.load, road.flange))
-  push!(__eqs, connect(aero.load, aero_road.flange, downforce.support))
+  push!(__eqs, connect(aero.load, aero_road.flange))
+  push!(__eqs, connect(aero.load, downforce.support))
   push!(__eqs, connect(downforce.flange, aero.downforce))
 
   # Return completely constructed System

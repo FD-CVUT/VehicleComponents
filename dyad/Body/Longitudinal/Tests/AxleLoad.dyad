@@ -6,92 +6,87 @@ axle. Both push their load onto a fixed road.
 """
 test component AxleLoad
   traction = TranslationalComponents.Sources.ConstantForce(f_constant = 2800.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 350, "y2": 450}}}
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 400, "y2": 500}}}
   }
-  mass = TranslationalComponents.Components.Mass(m = 1400.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 200, "y2": 300}}}
+  mass = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550, "rot": 90}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 650, "y2": 750}}}
   }
   axle = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0) {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 850, "x2": 950, "y1": 450, "y2": 550, "rot": 180}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 450, "y2": 550}}}
   }
   road = TranslationalComponents.Components.Fixed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1100, "x2": 1200, "y1": 350, "y2": 450, "rot": 270}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}
   }
   downforce = TranslationalComponents.Sources.ConstantForce(f_constant = 1000.0) {
     "Dyad": {
-      "placement": {"diagram": {"x1": 1100, "x2": 1200, "y1": 600, "y2": 700, "rot": 270}}
+      "placement": {"diagram": {"x1": 200, "x2": 300, "y1": 750, "y2": 850, "rot": 270}}
     }
   }
   aero = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0) {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 950, "x2": 850, "y1": 700, "y2": 800, "rot": 90}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 650, "y2": 750}}}
   }
   aero_road = TranslationalComponents.Components.Fixed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1500, "x2": 1600, "y1": 600, "y2": 700, "rot": 270}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 900, "y2": 1000}}}
   }
 relations
-  connect(traction.flange, mass.flange_a, axle.flange, aero.flange) {
+  connect(traction.flange, mass.flange_a) {
     "Dyad": {
-      "edges": [
-        {"S": 1, "M": [], "E": -1},
-        {"S": 2, "M": [{"x": 700, "y": 500}], "E": -1},
-        {"S": 3, "M": [{"x": 700, "y": 250}], "E": -1},
-        {"S": 4, "M": [{"x": 900, "y": 650}, {"x": 700, "y": 650}], "E": -1}
-      ],
-      "junctions": [{"x": 700, "y": 400}],
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 450}, {"x": 850, "y": 250}], "E": 2}],
       "path": {}
     }
   }
-  connect(traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 500}], "E": 2}], "path": {}}}
-  connect(axle.load, road.flange) {
+  connect(traction.flange, axle.flange) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 880.0000000000001, "y": 400}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 450}, {"x": 900, "y": 500}], "E": 2}],
       "path": {}
     }
   }
-  connect(aero.load, aero_road.flange, downforce.support) {
-    "Dyad": {
-      "edges": [
-        {"S": 1, "M": [], "E": -1},
-        {"S": 2, "M": [], "E": -1},
-        {
-          "S": 3,
-          "M": [{"x": 800, "y": 730}, {"x": 800, "y": 850}, {"x": 1350, "y": 850}],
-          "E": -1
-        }
-      ],
-      "junctions": [{"x": 1350, "y": 650}],
-      "path": {}
-    }
-  }
-  connect(downforce.flange, aero.downforce) {
+  connect(traction.flange, aero.flange) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 1150, "y": 550}, {"x": 1050, "y": 550}, {"x": 1050, "y": 750}],
+          "M": [
+            {"x": 850, "y": 450},
+            {"x": 850, "y": 350},
+            {"x": 600, "y": 350},
+            {"x": 600, "y": 700}
+          ],
           "E": 2
         }
       ],
       "path": {}
     }
   }
-  initial mass.s = 0.0
-  initial mass.v = 0.0
-  initial axle.a_pitch = 0.0
-  initial aero.a_pitch = 0.0
+  connect(traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(axle.load, road.flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 980.0000000000001, "y": 600}, {"x": 1000, "y": 600}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(aero.load, aero_road.flange) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 520, "y": 800}, {"x": 500, "y": 800}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(aero.load, downforce.support) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 800}], "E": 2}], "path": {}}}
+  connect(downforce.flange, aero.downforce) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 250, "y": 600}, {"x": 500, "y": 600}], "E": 2}],
+      "path": {}
+    }
+  }
 metadata {
   "Dyad": {
     "tests": {

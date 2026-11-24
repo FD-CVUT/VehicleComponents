@@ -19,7 +19,7 @@ to `u1`.
 
 Each condition is a tanh step `voltage_width` wide instead of a hard comparison, so the request
 changes continuously and the solver sees no events. When both conditions hold by several widths
-the request is `u1`.
+the request approaches `u1`; `voltage_width` must be positive.
 
 ## Parameters:
 

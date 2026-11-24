@@ -62,7 +62,11 @@ is m g sin(atan(0.1)) = 1366.12 N, which decelerates the mass at 0.9758 m/s².
   push!(__systems, @named force = VehicleComponents.Body.Longitudinal.GradeForce(; m=Float64(1400.0), __overrides = force_overrides))
   # Subcomponent mass of type TranslationalComponents.Components.Mass
   mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
-  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = mass_overrides))
+  mass_dict = Dict{String, Any}()
+  mass_dict["s.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  mass_dict["v.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(mass_dict, mass_overrides)
+  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = mass_dict))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
@@ -73,8 +77,6 @@ is m g sin(atan(0.1)) = 1366.12 N, which decelerates the mass at 0.9758 m/s².
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, mass.s ~ 0.0)
-  push!(__initialization_eqs, mass.v ~ 0.0)
 
   ### Assertions
   __assertions = []

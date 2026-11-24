@@ -126,7 +126,8 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   __ovr_a__initial = pop!(__overrides, "a.initial", nothing); isnothing(__ovr_a__initial) || (__initial_conditions[a] = __ovr_a__initial)
   __ovr_a__guess = pop!(__overrides, "a.guess", nothing)
   __ovr_a_pitch = pop!(__overrides, "a_pitch", nothing); isnothing(__ovr_a_pitch) || push!(__eqs, a_pitch ~ __ovr_a_pitch)
-  __ovr_a_pitch__initial = pop!(__overrides, "a_pitch.initial", nothing); isnothing(__ovr_a_pitch__initial) || (__initial_conditions[a_pitch] = __ovr_a_pitch__initial)
+  __ovr_a_pitch__initial = pop!(__overrides, "a_pitch.initial", nothing); __ic_a_pitch = @something(__ovr_a_pitch__initial, 0.0)
+  ismissing(__ic_a_pitch) || (__initial_conditions[a_pitch] = __ic_a_pitch)
   __ovr_a_pitch__guess = pop!(__overrides, "a_pitch.guess", nothing)
 
   ### Constants

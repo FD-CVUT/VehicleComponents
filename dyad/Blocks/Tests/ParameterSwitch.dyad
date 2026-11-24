@@ -4,62 +4,53 @@ Two switches fed the same two constants, one with `on` and one without: the firs
 """
 test component ParameterSwitch
   first = BlockComponents.Sources.Constant(k = 1.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
   }
   second = BlockComponents.Sources.Constant(k = 2.0) {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 550, "y2": 650}}}
   }
   on = VehicleComponents.Blocks.ParameterSwitch(on = true) {
-    "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 200, "y2": 300}}}
+    "Dyad": {
+      "placement": {"diagram": {"x1": 500, "x2": 600, "y1": 200, "y2": 300, "rot": 270}}
+    }
   }
   off = VehicleComponents.Blocks.ParameterSwitch(on = false) {
-    "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 450, "y2": 550}}}
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
   }
 relations
-  connect(first.y, on.u1, off.u1) {
+  connect(first.y, on.u1) {
     "Dyad": {
       "edges": [
-        {"S": 1, "M": [], "E": -1},
         {
-          "S": 2,
-          "M": [{"x": 550, "y": 470}, {"x": 550, "y": 450}, {"x": 450, "y": 450}],
-          "E": -1
-        },
-        {
-          "S": 3,
-          "M": [
-            {"x": 550, "y": 220.00000000000003},
-            {"x": 550, "y": 250},
-            {"x": 450, "y": 250}
-          ],
-          "E": -1
+          "S": 1,
+          "M": [{"x": 450, "y": 250}, {"x": 450, "y": 350}, {"x": 520, "y": 350}],
+          "E": 2
         }
       ],
-      "junctions": [{"x": 450, "y": 350}],
       "path": {}
     }
   }
-  connect(second.y, on.u2, off.u2) {
+  connect(first.y, off.u1) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 470}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(second.y, on.u2) {
     "Dyad": {
       "edges": [
-        {"S": 1, "M": [], "E": -1},
         {
-          "S": 2,
-          "M": [{"x": 550, "y": 530}, {"x": 550, "y": 550}, {"x": 450, "y": 550}],
-          "E": -1
-        },
-        {
-          "S": 3,
-          "M": [
-            {"x": 550, "y": 280},
-            {"x": 550, "y": 350},
-            {"x": 750, "y": 350},
-            {"x": 750, "y": 600}
-          ],
-          "E": -1
+          "S": 1,
+          "M": [{"x": 600, "y": 600}, {"x": 600, "y": 350}, {"x": 580, "y": 350}],
+          "E": 2
         }
       ],
-      "junctions": [{"x": 450, "y": 600}],
+      "path": {}
+    }
+  }
+  connect(second.y, off.u2) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 600}, {"x": 400, "y": 530}], "E": 2}],
       "path": {}
     }
   }

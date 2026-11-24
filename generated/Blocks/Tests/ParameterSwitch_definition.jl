@@ -78,8 +78,10 @@ Two switches fed the same two constants, one with `on` and one without: the firs
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(first.y, on.u1, off.u1))
-  push!(__eqs, connect(second.y, on.u2, off.u2))
+  push!(__eqs, connect(first.y, on.u1))
+  push!(__eqs, connect(first.y, off.u1))
+  push!(__eqs, connect(second.y, on.u2))
+  push!(__eqs, connect(second.y, off.u2))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

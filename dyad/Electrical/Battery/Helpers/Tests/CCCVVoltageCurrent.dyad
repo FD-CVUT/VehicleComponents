@@ -4,38 +4,42 @@ A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage
 403.2 V nothing.
 """
 test component CCCVVoltageCurrent
-  low = BlockComponents.Sources.Constant(k = 350.0) {
+  voltage = BlockComponents.Sources.Constant(k = 350.0) {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
   }
-  near_full = BlockComponents.Sources.Constant(k = 400.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
-  }
-  over = BlockComponents.Sources.Constant(k = 410.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
-  }
-  cc = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
+  ceiling = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
     "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
   }
-  cv = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
-  }
-  done = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 700, "y2": 800}}}
-  }
 relations
-  connect(low.y, cc.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(near_full.y, cv.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(over.y, done.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(voltage.y, ceiling.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {
-      "three_phases": {
+      "constant_current": {
         "stop": 1,
         "solver": "Auto",
         "abstol": 1e-9,
         "reltol": 1e-9,
-        "atol": {"cc.y": 1e-9, "cv.y": 1e-6, "done.y": 1e-9},
-        "expect": {"final": {"cc.y": 143.0, "cv.y": 32.0, "done.y": 0.0}}
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 143.0}}
+      },
+      "constant_voltage": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"voltage.k": 400.0},
+        "atol": {"ceiling.y": 1e-6},
+        "expect": {"final": {"ceiling.y": 32.0}}
+      },
+      "above_target": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"voltage.k": 410.0},
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 0.0}}
       }
     }
   }

@@ -3,131 +3,65 @@ A 143 A charger at 400 V: 20 kW gives 50 A, 100 kW would give 250 A and is cappe
 negative power gives nothing. At 0 V the one-volt floor turns 50 W into 50 A.
 """
 test component CCCVPowerCurrent
-  pack = BlockComponents.Sources.Constant(k = 400.0) {
+  voltage = BlockComponents.Sources.Constant(k = 400.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  power = BlockComponents.Sources.Constant(k = 20000.0) {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
   }
-  dead = BlockComponents.Sources.Constant(k = 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 750, "y2": 850}}}
-  }
-  moderate = BlockComponents.Sources.Constant(k = 20000.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 250, "y2": 350}}}
-  }
-  high = BlockComponents.Sources.Constant(k = 100000.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 650, "y2": 750}}}
-  }
-  negative = BlockComponents.Sources.Constant(k = -5000.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 1150, "y2": 1250}}}
-  }
-  small = BlockComponents.Sources.Constant(k = 50.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 1000, "y2": 1100}}}
-  }
-  limited = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(I_cc = 143.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
-  }
-  capped = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(I_cc = 143.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
-  }
-  blocked = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(I_cc = 143.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 800, "y2": 900}}}
-  }
-  floored = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(I_cc = 143.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 900, "y2": 1000}}}
+  ceiling = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(I_cc = 143.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 350, "y2": 450}}}
   }
 relations
-  connect(pack.y, limited.u1, capped.u1, blocked.u1) {
+  connect(voltage.y, ceiling.u1) {
     "Dyad": {
-      "edges": [
-        {"S": 1, "M": [], "E": -1},
-        {
-          "S": 2,
-          "M": [{"x": 650, "y": 570}, {"x": 650, "y": 550}, {"x": 450, "y": 550}],
-          "E": -1
-        },
-        {
-          "S": 3,
-          "M": [
-            {"x": 650, "y": 220.00000000000003},
-            {"x": 650, "y": 200},
-            {"x": 400, "y": 200},
-            {"x": 400, "y": 500}
-          ],
-          "E": -1
-        },
-        {
-          "S": 4,
-          "M": [
-            {"x": 650, "y": 819.9999999999999},
-            {"x": 650, "y": 750},
-            {"x": 850, "y": 750},
-            {"x": 850, "y": 500}
-          ],
-          "E": -1
-        }
-      ],
-      "junctions": [{"x": 450, "y": 500}],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 370}], "E": 2}],
       "path": {}
     }
   }
-  connect(dead.y, floored.u1) {
+  connect(power.y, ceiling.u2) {
     "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 400, "y": 800}, {"x": 400, "y": 919.9999999999999}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(moderate.y, limited.u2) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 650, "y": 300}, {"x": 650, "y": 280}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(high.y, capped.u2) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 650, "y": 700}, {"x": 650, "y": 630}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(negative.y, blocked.u2) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 650, "y": 1200}, {"x": 650, "y": 880.0000000000001}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(small.y, floored.u2) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 400, "y": 1050}, {"x": 400, "y": 980.0000000000001}],
-          "E": 2
-        }
-      ],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 430}], "E": 2}],
       "path": {}
     }
   }
 metadata {
   "Dyad": {
     "tests": {
-      "four_regions": {
+      "power_limited": {
         "stop": 1,
         "solver": "Auto",
         "abstol": 1e-9,
         "reltol": 1e-9,
-        "atol": {"limited.y": 1e-9, "capped.y": 1e-9, "blocked.y": 1e-9, "floored.y": 1e-9},
-        "expect": {
-          "final": {"limited.y": 50.0, "capped.y": 143.0, "blocked.y": 0.0, "floored.y": 50.0}
-        }
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 50.0}}
+      },
+      "current_capped": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"power.k": 100000.0},
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 143.0}}
+      },
+      "negative_power": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"power.k": -5000.0},
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 0.0}}
+      },
+      "voltage_floor": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"voltage.k": 0.0, "power.k": 50.0},
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 50.0}}
       }
     }
   }

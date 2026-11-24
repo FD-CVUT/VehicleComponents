@@ -69,6 +69,12 @@ submodule (`Electrical.Battery.Helpers.CCCVVoltageCurrent`). One that several do
 
 **Docstrings.** Each component's docstring states what is modeled, its ports and its assumptions.
 
+**Initial conditions.** A state's default initial value lives on the smallest component that owns
+the state: on the variable (`variable a_pitch::Acceleration = initial 0.0`), or on the part that
+holds it (`mass = Mass(m = m, s = initial 0.0, v = initial 0.0)` in `Body.Longitudinal.Vehicle`).
+A parent does not repeat it. A parent or test that needs another start overrides it at the
+declaration, without a new parameter: `climbing = Vehicle(mass(v = initial 10.0))`.
+
 **Data.** Library data is referenced as `dyad://VehicleComponents/...` and ships in `assets/`.
 
 **Icons.** Every public component with ports gets its own icon, in `assets/` under a path that
@@ -82,8 +88,10 @@ without crossing a block, and ports on the icon on the side they appear in the d
 component needs correct connector placement on its icon (fixed to a specific spot where that
 matters). Its diagram, and every test model's, comes from autolayout: run
 `node "$DYAD_CLI" layout VehicleComponents.<Module>.<Component> --dir .` after adding or rewiring
-a part, and never leave a model with parts unplaced. The layout grid gives a block 2 cells per
-edge, so a block with more than three ports on one edge fails to route
+a part, and never leave a model with parts unplaced. Write a signal that feeds several inputs as
+one two-port `connect` per input: on a `connect` with three or more ends, `dyad layout` attaches
+waypoints to the wrong branch and the Studio draws diagonals. The layout grid gives a block 2
+cells per edge, so a block with more than three ports on one edge fails to route
 (`connection(s) could not be routed legally`) until its placement in the parent is made taller;
 `Electrical.Battery.Helpers.Tests.BalancerRequest` is the example. When the one-step command still
 fails, pin the components with `dyad layout extract`, `solve` and `apply` (see the `dyad-cli`
@@ -109,8 +117,11 @@ A rig is one test model with all its cases. Assert only on external behavior: th
 values a model exposes. Prefer a physically meaningful number (master-cylinder pressure at a given
 pedal force, stopping distance, final SoC).
 
-- **Main seam: Dyad test models.** Each one sets fixed solver settings and checks start values, end
-  values and named-signal snapshots in its `tests` metadata.
+- **Main seam: Dyad test models.** Each case pins `solver`, `abstol` and `reltol`, and checks start
+  and end values in its `tests` metadata; a named-signal snapshot only for what those cannot show.
+  To check one component at several inputs, wire one instance to constant sources and give each
+  case its own `params` (`{"voltage.k": 400.0}`), rather than placing several instances that share
+  sources. A case can also override a start with `initial` (`{"body.mass.v": 10.0}`).
 - **Second seam: plain Julia test sets** against the public Julia API, only for what a test model
   cannot express (OpenCRG reading, CAN frame encoding and decoding, the realtime drive headless).
 

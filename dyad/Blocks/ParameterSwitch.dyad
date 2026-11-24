@@ -19,5 +19,4 @@ relations
   else
     y = u2
   end
-metadata {"Dyad": {"icons": {"default": "dyad://BlockComponents/Switch.svg"}}}
 end

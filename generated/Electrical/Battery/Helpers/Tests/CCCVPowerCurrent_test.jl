@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent,
-  "four_regions for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent";
-  case_name="four_regions",
+  "power_limited for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent";
+  case_name="power_limited",
   component_stem="CCCVPowerCurrent",
   module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
@@ -18,11 +18,57 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.limited.y, "limited.y", 50, 1e-9, 1e-8),
-    (m -> m.capped.y, "capped.y", 143, 1e-9, 1e-8),
-    (m -> m.blocked.y, "blocked.y", 0, 1e-9, 1e-8),
-    (m -> m.floored.y, "floored.y", 50, 1e-9, 1e-8),
-  ],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 50, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent,
+  "current_capped for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent";
+  case_name="current_capped",
+  component_stem="CCCVPowerCurrent",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("power.k" => 100000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 143, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent,
+  "negative_power for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent";
+  case_name="negative_power",
+  component_stem="CCCVPowerCurrent",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("power.k" => -5000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 0, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent,
+  "voltage_floor for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVPowerCurrent";
+  case_name="voltage_floor",
+  component_stem="CCCVPowerCurrent",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("voltage.k" => 0.0, "power.k" => 50.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 50, 1e-9, 1e-8)],
   signals=Tuple[],
 )

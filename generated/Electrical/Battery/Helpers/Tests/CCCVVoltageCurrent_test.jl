@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent,
-  "three_phases for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent";
-  case_name="three_phases",
+  "constant_current for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent";
+  case_name="constant_current",
   component_stem="CCCVVoltageCurrent",
   module_path=String["Electrical", "Battery", "Helpers", "Tests"],
   start=0e+0,
@@ -18,10 +18,40 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.cc.y, "cc.y", 143, 1e-9, 1e-8),
-    (m -> m.cv.y, "cv.y", 32, 0.000001, 1e-8),
-    (m -> m.done.y, "done.y", 0, 1e-9, 1e-8),
-  ],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 143, 1e-9, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent,
+  "constant_voltage for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent";
+  case_name="constant_voltage",
+  component_stem="CCCVVoltageCurrent",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("voltage.k" => 400.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 32, 0.000001, 1e-8)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent,
+  "above_target for VehicleComponents.Electrical.Battery.Helpers.Tests.CCCVVoltageCurrent";
+  case_name="above_target",
+  component_stem="CCCVVoltageCurrent",
+  module_path=String["Electrical", "Battery", "Helpers", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-9,
+  reltol=1e-9,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("voltage.k" => 410.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.ceiling.y, "ceiling.y", 0, 1e-9, 1e-8)],
   signals=Tuple[],
 )

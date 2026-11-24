@@ -54,36 +54,15 @@ negative power gives nothing. At 0 V the one-volt floor turns 50 W into 50 A.
   __constants = Any[]
 
   ### Components
-  # Subcomponent pack of type BlockComponents.Sources.Constant
-  pack_overrides = __pop_subcomponent_overrides!(__overrides, "pack")
-  push!(__systems, @named pack = BlockComponents.Sources.Constant(; k=Float64(400.0), __overrides = pack_overrides))
-  # Subcomponent dead of type BlockComponents.Sources.Constant
-  dead_overrides = __pop_subcomponent_overrides!(__overrides, "dead")
-  push!(__systems, @named dead = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = dead_overrides))
-  # Subcomponent moderate of type BlockComponents.Sources.Constant
-  moderate_overrides = __pop_subcomponent_overrides!(__overrides, "moderate")
-  push!(__systems, @named moderate = BlockComponents.Sources.Constant(; k=Float64(20000.0), __overrides = moderate_overrides))
-  # Subcomponent high of type BlockComponents.Sources.Constant
-  high_overrides = __pop_subcomponent_overrides!(__overrides, "high")
-  push!(__systems, @named high = BlockComponents.Sources.Constant(; k=Float64(100000.0), __overrides = high_overrides))
-  # Subcomponent negative of type BlockComponents.Sources.Constant
-  negative_overrides = __pop_subcomponent_overrides!(__overrides, "negative")
-  push!(__systems, @named negative = BlockComponents.Sources.Constant(; k=-5000.0, __overrides = negative_overrides))
-  # Subcomponent small of type BlockComponents.Sources.Constant
-  small_overrides = __pop_subcomponent_overrides!(__overrides, "small")
-  push!(__systems, @named small = BlockComponents.Sources.Constant(; k=Float64(50.0), __overrides = small_overrides))
-  # Subcomponent limited of type VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent
-  limited_overrides = __pop_subcomponent_overrides!(__overrides, "limited")
-  push!(__systems, @named limited = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(; I_cc=Float64(143.0), __overrides = limited_overrides))
-  # Subcomponent capped of type VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent
-  capped_overrides = __pop_subcomponent_overrides!(__overrides, "capped")
-  push!(__systems, @named capped = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(; I_cc=Float64(143.0), __overrides = capped_overrides))
-  # Subcomponent blocked of type VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent
-  blocked_overrides = __pop_subcomponent_overrides!(__overrides, "blocked")
-  push!(__systems, @named blocked = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(; I_cc=Float64(143.0), __overrides = blocked_overrides))
-  # Subcomponent floored of type VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent
-  floored_overrides = __pop_subcomponent_overrides!(__overrides, "floored")
-  push!(__systems, @named floored = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(; I_cc=Float64(143.0), __overrides = floored_overrides))
+  # Subcomponent voltage of type BlockComponents.Sources.Constant
+  voltage_overrides = __pop_subcomponent_overrides!(__overrides, "voltage")
+  push!(__systems, @named voltage = BlockComponents.Sources.Constant(; k=Float64(400.0), __overrides = voltage_overrides))
+  # Subcomponent power of type BlockComponents.Sources.Constant
+  power_overrides = __pop_subcomponent_overrides!(__overrides, "power")
+  push!(__systems, @named power = BlockComponents.Sources.Constant(; k=Float64(20000.0), __overrides = power_overrides))
+  # Subcomponent ceiling of type VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent
+  ceiling_overrides = __pop_subcomponent_overrides!(__overrides, "ceiling")
+  push!(__systems, @named ceiling = VehicleComponents.Electrical.Battery.Helpers.CCCVPowerCurrent(; I_cc=Float64(143.0), __overrides = ceiling_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -96,12 +75,8 @@ negative power gives nothing. At 0 V the one-volt floor turns 50 W into 50 A.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(pack.y, limited.u1, capped.u1, blocked.u1))
-  push!(__eqs, connect(dead.y, floored.u1))
-  push!(__eqs, connect(moderate.y, limited.u2))
-  push!(__eqs, connect(high.y, capped.u2))
-  push!(__eqs, connect(negative.y, blocked.u2))
-  push!(__eqs, connect(small.y, floored.u2))
+  push!(__eqs, connect(voltage.y, ceiling.u1))
+  push!(__eqs, connect(power.y, ceiling.u2))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

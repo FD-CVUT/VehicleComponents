@@ -54,18 +54,12 @@ exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
   __constants = Any[]
 
   ### Components
-  # Subcomponent reference of type BlockComponents.Sources.Constant
-  reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = BlockComponents.Sources.Constant(; k=298.15, __overrides = reference_overrides))
-  # Subcomponent freezing of type BlockComponents.Sources.Constant
-  freezing_overrides = __pop_subcomponent_overrides!(__overrides, "freezing")
-  push!(__systems, @named freezing = BlockComponents.Sources.Constant(; k=273.15, __overrides = freezing_overrides))
-  # Subcomponent warm of type VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor
-  warm_overrides = __pop_subcomponent_overrides!(__overrides, "warm")
-  push!(__systems, @named warm = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor(; __overrides = warm_overrides))
-  # Subcomponent cold of type VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor
-  cold_overrides = __pop_subcomponent_overrides!(__overrides, "cold")
-  push!(__systems, @named cold = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor(; __overrides = cold_overrides))
+  # Subcomponent temperature of type BlockComponents.Sources.Constant
+  temperature_overrides = __pop_subcomponent_overrides!(__overrides, "temperature")
+  push!(__systems, @named temperature = BlockComponents.Sources.Constant(; k=298.15, __overrides = temperature_overrides))
+  # Subcomponent factor of type VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor
+  factor_overrides = __pop_subcomponent_overrides!(__overrides, "factor")
+  push!(__systems, @named factor = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor(; __overrides = factor_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -78,8 +72,7 @@ exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(reference.y, warm.u))
-  push!(__eqs, connect(freezing.y, cold.u))
+  push!(__eqs, connect(temperature.y, factor.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

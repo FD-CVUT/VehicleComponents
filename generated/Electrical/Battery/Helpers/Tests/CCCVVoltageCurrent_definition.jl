@@ -55,24 +55,12 @@ A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage
   __constants = Any[]
 
   ### Components
-  # Subcomponent low of type BlockComponents.Sources.Constant
-  low_overrides = __pop_subcomponent_overrides!(__overrides, "low")
-  push!(__systems, @named low = BlockComponents.Sources.Constant(; k=Float64(350.0), __overrides = low_overrides))
-  # Subcomponent near_full of type BlockComponents.Sources.Constant
-  near_full_overrides = __pop_subcomponent_overrides!(__overrides, "near_full")
-  push!(__systems, @named near_full = BlockComponents.Sources.Constant(; k=Float64(400.0), __overrides = near_full_overrides))
-  # Subcomponent over of type BlockComponents.Sources.Constant
-  over_overrides = __pop_subcomponent_overrides!(__overrides, "over")
-  push!(__systems, @named over = BlockComponents.Sources.Constant(; k=Float64(410.0), __overrides = over_overrides))
-  # Subcomponent cc of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
-  cc_overrides = __pop_subcomponent_overrides!(__overrides, "cc")
-  push!(__systems, @named cc = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = cc_overrides))
-  # Subcomponent cv of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
-  cv_overrides = __pop_subcomponent_overrides!(__overrides, "cv")
-  push!(__systems, @named cv = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = cv_overrides))
-  # Subcomponent done of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
-  done_overrides = __pop_subcomponent_overrides!(__overrides, "done")
-  push!(__systems, @named done = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = done_overrides))
+  # Subcomponent voltage of type BlockComponents.Sources.Constant
+  voltage_overrides = __pop_subcomponent_overrides!(__overrides, "voltage")
+  push!(__systems, @named voltage = BlockComponents.Sources.Constant(; k=Float64(350.0), __overrides = voltage_overrides))
+  # Subcomponent ceiling of type VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent
+  ceiling_overrides = __pop_subcomponent_overrides!(__overrides, "ceiling")
+  push!(__systems, @named ceiling = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(; I_cc=Float64(143.0), V_max=403.2, R_reg=0.1, __overrides = ceiling_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -85,9 +73,7 @@ A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(low.y, cc.u))
-  push!(__eqs, connect(near_full.y, cv.u))
-  push!(__eqs, connect(over.y, done.u))
+  push!(__eqs, connect(voltage.y, ceiling.u))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
