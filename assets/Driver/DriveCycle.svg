@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect x="10" y="10" width="980" height="980" rx="60" fill="#eef3f7" stroke="#263238" stroke-width="20"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M120 120 V860 H900" stroke="#263238" stroke-width="30"/>
+    <path d="M120 860 L190 860 L230 760 L280 760 L320 860 L360 860 L410 650 L470 640 L510 720 L560 700 L610 860 L640 860 L700 480 L770 430 L820 300 L860 300 L900 860" stroke="#0277bd" stroke-width="35"/>
+    <path d="M900 500 H1000" stroke="#263238" stroke-width="20"/>
+  </g>
+  <text x="560" y="200" text-anchor="middle" font-family="sans-serif" font-size="90" fill="#263238">km/h</text>
+</svg>

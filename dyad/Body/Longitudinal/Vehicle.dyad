@@ -1,0 +1,32 @@
+"""
+Longitudinal vehicle body: a point mass driven at `flange` and resisted by a `RoadLoad`, with
+drag, rolling resistance and, with `use_grade = true`, the road grade.
+
+Ports: `flange` takes the tractive force and moves with the vehicle; `grade`, the road gradient
+tan(alpha), exists only with `use_grade = true`. Without it the road is flat.
+
+The body extends `RoadLoad` and adds only `mass`, so the parameters and parts (`drag`,
+`rolling`, `gradeforce`, `cr_const`, `ground`) are the road load's, and the same resistance law
+serves a planar car whose mass lives in its multibody body.
+"""
+component Vehicle
+  extends VehicleComponents.Body.Longitudinal.RoadLoad
+  mass = TranslationalComponents.Components.Mass(m = m) {^mass}
+relations
+  connect(flange, mass.flange_a) {^id2}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/Vehicle.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "mass": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 250, "y2": 350}}}},
+    "id2": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 900, "y": 500}, {"x": 900, "y": 380}, {"x": 700, "y": 380}, {"x": 700, "y": 300}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
+end

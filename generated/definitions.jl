@@ -15,7 +15,16 @@ if isfile(joinpath((@__DIR__) |> Base.dirname, "dyad", "definitions.jl"))
   include(joinpath((@__DIR__) |> Base.dirname, "dyad", "definitions.jl"))
 end
 
+import BlockComponents
+let api = isdefined(BlockComponents, :__dyad_constructor_api) ? BlockComponents.__dyad_constructor_api : 1
+  api == 2 || error("BlockComponents was generated with Dyad constructor API version $api, but VehicleComponents requires version 2 (the `__overrides` dict override channel). Regenerate BlockComponents with the same Dyad compiler that generated VehicleComponents.")
+end
+import DyadData
 import DyadInterface
+import TranslationalComponents
+let api = isdefined(TranslationalComponents, :__dyad_constructor_api) ? TranslationalComponents.__dyad_constructor_api : 1
+  api == 2 || error("TranslationalComponents was generated with Dyad constructor API version $api, but VehicleComponents requires version 2 (the `__overrides` dict override channel). Regenerate TranslationalComponents with the same Dyad compiler that generated VehicleComponents.")
+end
 @doc Markdown.doc"""
 This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively.
 """

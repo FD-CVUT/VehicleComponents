@@ -1,0 +1,36 @@
+"""
+A 1400 kg mass pushed by 2800 N accelerates at 2 m/s². The driven axle starts at its static share
+0.55 m g = 7551.12 N and, once the body has pitched, carries m a h/L = 476 N more. `aero` also
+reads 1000 N of downforce, of which 0.55 lands on the axle.
+"""
+test component AxleLoad
+  traction = TranslationalComponents.Sources.ConstantForce(f_constant = 2800.0)
+  mass = TranslationalComponents.Components.Mass(m = 1400.0)
+  fixed = TranslationalComponents.Components.Fixed()
+  axle = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0)
+  downforce = BlockComponents.Sources.Constant(k = 1000.0)
+  aero = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0, use_downforce = true)
+relations
+  connect(traction.flange, mass.flange_a, axle.flange, aero.flange)
+  connect(traction.support, fixed.flange)
+  connect(downforce.y, aero.downforce)
+  initial mass.s = 0.0
+  initial mass.v = 0.0
+  initial axle.a_pitch = 0.0
+  initial aero.a_pitch = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "launch": {
+        "stop": 2,
+        "atol": {"axle.F_z": 0.01, "aero.F_z": 0.01},
+        "expect": {
+          "initial": {"axle.F_z": 7551.1205, "aero.F_z": 8101.1205},
+          "final": {"axle.F_z": 8027.1205, "aero.F_z": 8577.1205},
+          "signals": ["axle.F_z"]
+        }
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,42 @@
+"""
+Driver that plays back a time table of throttle, brake and steering commands.
+
+The table is a CSV with `time`, `throttle`, `brake` and `steer` columns, read with constant
+interpolation: each row holds until the next breakpoint, and values outside the table use
+constant extrapolation. Ports are those of `Driver.Interface`.
+"""
+component Scripted
+  extends VehicleComponents.Driver.Interface
+  "CSV time table containing time, throttle, brake and steer columns"
+  structural parameter table::String = "dyad://VehicleComponents/data/drivers/coast_down.csv"
+  "Throttle command table"
+  structural parameter throttle_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["throttle"])
+  "Brake command table"
+  structural parameter brake_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["brake"])
+  "Steer command table"
+  structural parameter steer_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["steer"])
+  throttle_table = BlockComponents.Tables.Interpolation(dataset = throttle_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^throttle_table}
+  brake_table = BlockComponents.Tables.Interpolation(dataset = brake_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^brake_table}
+  steer_table = BlockComponents.Tables.Interpolation(dataset = steer_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^steer_table}
+relations
+  throttle_table.u = time
+  brake_table.u = time
+  steer_table.u = time
+  connect(throttle_table.y, throttle_signal) {^w1}
+  connect(brake_table.y, brake_signal) {^w2}
+  connect(steer_table.y, steer_signal) {^w3}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Driver/Scripted.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "throttle_table": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}},
+    "brake_table": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}},
+    "steer_table": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 700, "y2": 800}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

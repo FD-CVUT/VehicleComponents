@@ -1,0 +1,68 @@
+"""
+Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` with the grade input
+left out. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
+f_r m g = 164.7517 N on the flat and that times cos(atan(0.1)) on the climb; the climb adds
+m g sin(atan(0.1)) = 1366.117 N. Reversing the speed flips drag and rolling resistance but not
+the grade force.
+"""
+test component RoadLoad
+  "Holds both flanges at a fixed speed, overridden per case"
+  speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0)
+  grade = BlockComponents.Sources.Constant(k = 0.1)
+  climbing = VehicleComponents.Body.Longitudinal.RoadLoad(use_grade = true)
+  flat = VehicleComponents.Body.Longitudinal.RoadLoad()
+  fixed = TranslationalComponents.Components.Fixed()
+relations
+  connect(speed.flange, climbing.flange, flat.flange)
+  connect(speed.support, fixed.flange)
+  connect(grade.y, climbing.grade)
+  initial speed.s = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "forward": {
+        "stop": 1,
+        "params": {"speed.v_fixed": 30.0},
+        "atol": {
+          "climbing.flange.f": 0.001,
+          "climbing.drag.f": 0.001,
+          "climbing.rolling.f": 0.001,
+          "climbing.gradeforce.f": 0.001,
+          "flat.flange.f": 0.001
+        },
+        "expect": {
+          "initial": {"climbing.flange.f": 1870.2514931432536, "flat.flange.f": 504.95172},
+          "final": {
+            "climbing.flange.f": 1870.2514931432536,
+            "climbing.drag.f": 340.2,
+            "climbing.rolling.f": 163.93408855106287,
+            "climbing.gradeforce.f": 1366.1174045921907,
+            "flat.flange.f": 504.95172
+          }
+        }
+      },
+      "reverse": {
+        "stop": 1,
+        "params": {"speed.v_fixed": -30.0},
+        "atol": {
+          "climbing.flange.f": 0.001,
+          "climbing.drag.f": 0.001,
+          "climbing.rolling.f": 0.001,
+          "climbing.gradeforce.f": 0.001,
+          "flat.flange.f": 0.001
+        },
+        "expect": {
+          "initial": {"climbing.flange.f": 861.9833160411279, "flat.flange.f": -504.95172},
+          "final": {
+            "climbing.flange.f": 861.9833160411279,
+            "climbing.drag.f": -340.2,
+            "climbing.rolling.f": -163.93408855106287,
+            "climbing.gradeforce.f": 1366.1174045921907,
+            "flat.flange.f": -504.95172
+          }
+        }
+      }
+    }
+  }
+}
+end
