@@ -7,13 +7,15 @@
 @doc Markdown.doc"""
    HardStop(; name, F_drive, F_brake, __overrides)
 
-Hard stop on the longitudinal platform: the inherited coast-down driver is swapped for
-`Driver.HardStop` by redeclaration, the body is 1500 kg, and a speedometer reads the body speed.
+Hard stop on the longitudinal platform: the inherited driver is swapped for `Driver.HardStop` by
+redeclaration, the body is 1500 kg, and a speedometer and an accelerometer read the body's motion.
+It has no ports.
 
-Full throttle (3000 N) for 9 s, coast to 19 s, then full braking (6000 N). At rest the start
-acceleration is 3000/1500 = 2 m/s², since drag is zero and rolling resistance is regularized to
-zero at standstill. The car reaches 6.62 m/s at 21 s, still moving, so the ideal brake force
-has not yet reversed it; the coast-down driver the platform defaults to would still be near 14 m/s.
+At rest the start acceleration is F_drive / m = 3000/1500 = 2 m/s², since drag is zero and rolling
+resistance is regularized to zero at standstill.
+
+Assumptions: the platform's brake is an ideal force, so the run ends at 21 s, while the car still
+moves.
 
 ## Parameters:
 
@@ -100,6 +102,9 @@ has not yet reversed it; the coast-down driver the platform defaults to would st
   # Subcomponent speedometer of type TranslationalComponents.Sensors.VelocitySensor
   speedometer_overrides = __pop_subcomponent_overrides!(__overrides, "speedometer")
   push!(__systems, @named speedometer = TranslationalComponents.Sensors.VelocitySensor(; __overrides = speedometer_overrides))
+  # Subcomponent accelerometer of type TranslationalComponents.Sensors.AccelerationSensor
+  accelerometer_overrides = __pop_subcomponent_overrides!(__overrides, "accelerometer")
+  push!(__systems, @named accelerometer = TranslationalComponents.Sensors.AccelerationSensor(; __overrides = accelerometer_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -122,6 +127,7 @@ has not yet reversed it; the coast-down driver the platform defaults to would st
   push!(__eqs, connect(tire.y, body.f_r))
   push!(__eqs, connect(level.y, body.grade))
   push!(__eqs, connect(body.flange, speedometer.flange))
+  push!(__eqs, connect(body.flange, accelerometer.flange))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -18,7 +18,8 @@ Upgrade only through the Dyad Studio extension, in a PR of its own:
 4. Commit all of it together.
 
 Done when `mise run check` passes; it fails while the pin, `Project.toml` and `generated/`
-disagree.
+disagree. Then recheck the redeclaration rule in `AGENTS.md` (Examples and platforms): Dyad 3.5
+ignores a redeclaration written at a declaration site.
 
 ## Dependencies
 

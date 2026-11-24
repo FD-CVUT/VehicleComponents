@@ -18,12 +18,9 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
-    (m -> m.body.mass.a, "body.mass.a", 2, 0.001, 1e-5),
+    (m -> m.accelerometer.a, "accelerometer.a", 2, 0.001, 1e-5),
     (m -> m.speedometer.v, "speedometer.v", 0, 0.001, 1e-5),
   ],
   expected_final=Tuple[(m -> m.speedometer.v, "speedometer.v", 6.6229077, 0.001, 1e-5)],
-  signals=Tuple[
-    (m -> m.speedometer.v, "speedometer.v", 0.001, 1e-5),
-    (m -> m.body.mass.a, "body.mass.a", 0.001, 1e-5),
-  ],
+  signals=Tuple[(m -> m.speedometer.v, "speedometer.v", 0.001, 1e-5)],
 )

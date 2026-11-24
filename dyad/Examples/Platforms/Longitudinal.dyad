@@ -1,11 +1,7 @@
 """
 Longitudinal platform: a driver whose pedals command an ideal net force on a point-mass body on a
-flat road.
-
-Subsystems: `driver`, any `Driver.Interface` (default `Driver.CoastDown`), replaceable by
-redeclaration; `pedals`, the net force F_drive * throttle - F_brake * brake; `motor`, the ideal
-force source it drives against `fixed`; `body`, a `Body.Longitudinal.Vehicle` starting at rest;
-`level` and `tire`, its grade (0) and rolling resistance coefficient (0.012).
+flat road. It has no ports. `driver` is replaceable by any `Driver.Interface`; the body starts at
+rest.
 
 Assumptions: the brake is an ideal force, not friction, so it pushes the car backward once it has
 stopped; a run ends before standstill. The steering signal is unused.
