@@ -8,7 +8,7 @@ Used as a multiplier on a cell's internal resistance. Assumes a single activatio
 the whole temperature range; the defaults are a lithium-ion cell's (assumed).
 """
 component ArrheniusFactor
-  extends BlockComponents.Interfaces.SISO
+  extends BlockComponents.Interfaces.SISO(u(units = "K"))
   "Activation energy [J/mol]"
   parameter Ea::Real = 12500.0
   "Universal gas constant [J/(mol K)]"

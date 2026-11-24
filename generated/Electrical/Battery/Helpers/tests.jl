@@ -21,6 +21,5 @@ include("BalancerRequest_test.jl")
 include("CCCVPowerCurrent_test.jl")
 include("CCCVVoltageCurrent_test.jl")
 include("SoCPhase_test.jl")
-include("TerminalPowerCurrent_test.jl")
 end
 include("Tests/tests.jl")

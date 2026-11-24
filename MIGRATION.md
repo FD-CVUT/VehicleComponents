@@ -30,7 +30,7 @@ not listed has not moved yet.
 | `Vehicle.Blocks.CCCVPowerCurrentEquation` | `Electrical.Battery.Helpers.CCCVPowerCurrent` | |
 | `Vehicle.Blocks.CCCVVoltageCurrentEquation` | `Electrical.Battery.Helpers.CCCVVoltageCurrent` | Input `u1` is now `u`. |
 | `Vehicle.Blocks.SoCPhaseEquation` | `Electrical.Battery.Helpers.SoCPhase` | Input `u1` is now `u`. |
-| `Vehicle.Blocks.TerminalPowerCurrentEquation` | `Electrical.Battery.Helpers.TerminalPowerCurrent` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.TerminalPowerCurrentEquation` | not in the library | Its one use, voltage sensor into `P / v` into a current source, is a constant-power load. Use the pin-based constant-power load from FD-CVUT/VehicleComponents#14 instead; until it lands, the course's `Vehicle.Electric.AuxLoad` is the model. |
 
 ## Data
 
