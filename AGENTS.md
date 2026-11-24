@@ -33,6 +33,7 @@ Examples
   Network.CanBus
   Energy.Charging
   Platforms        partial platform bases the examples extend
+  HardStop         reference example of the platform pattern, until a domain example takes its role
 ```
 
 The course's coupled hybrid is P0/P1 (P0 as a variant inside P1); its output hybrid is P3/P4.
@@ -81,6 +82,14 @@ driver, body, wheels, brakes, powertrain, controllers and bus as separate blocks
 lives in partial platform bases in `Examples.Platforms`. An example extends a base, adds components
 and connections, changes parameters, and swaps an inherited subsystem by redeclaration. A base
 holds only what every child needs, since an inherited subsystem cannot be removed.
+
+A base declares each replaceable subsystem with its interface as the constraint
+(`driver::VehicleComponents.Driver.Interface = VehicleComponents.Driver.CoastDown()`), and the
+compiler rejects a replacement missing one of its members (`incompatible-redeclaration`). Redeclare
+only in the `extends` clause, together with the parameter changes:
+`extends VehicleComponents.Examples.Platforms.Longitudinal(driver = VehicleComponents.Driver.HardStop(), body(m = 1500.0))`.
+A redeclaration at a declaration site (`sub = Child(inner = Other())`) compiles but is not applied.
+`Examples.HardStop` is the reference.
 
 ## Tests
 

@@ -21,3 +21,4 @@ include("test_internals.jl")
 end
 include("Body/tests.jl")
 include("Driver/tests.jl")
+include("Examples/tests.jl")

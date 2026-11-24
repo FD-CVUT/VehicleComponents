@@ -1,0 +1,43 @@
+"""
+Hard stop on the longitudinal platform: the inherited driver is swapped for `Driver.HardStop` by
+redeclaration, the body is 1500 kg, and a speedometer and an accelerometer read the body's motion.
+It has no ports.
+
+At rest the start acceleration is F_drive / m = 3000/1500 = 2 m/s², since drag is zero and rolling
+resistance is regularized to zero at standstill.
+
+Assumptions: the platform's brake is an ideal force, so the run ends at 21 s, while the car still
+moves.
+"""
+test component HardStop
+  extends VehicleComponents.Examples.Platforms.Longitudinal(driver = VehicleComponents.Driver.HardStop(), body(m = 1500.0))
+  speedometer = TranslationalComponents.Sensors.VelocitySensor() {^speedometer}
+  accelerometer = TranslationalComponents.Sensors.AccelerationSensor() {^accelerometer}
+relations
+  connect(body.flange, speedometer.flange) {^w8}
+  connect(body.flange, accelerometer.flange) {^w9}
+metadata {
+  "Dyad": {
+    "tests": {
+      "hard_stop": {
+        "stop": 21,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"accelerometer.a": 0.001, "speedometer.v": 0.001},
+        "expect": {
+          "initial": {"accelerometer.a": 2.0, "speedometer.v": 0},
+          "final": {"speedometer.v": 6.6229077},
+          "signals": ["speedometer.v"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "speedometer": {"Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 280, "y2": 380}}}},
+    "accelerometer": {"Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 430, "y2": 530}}}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1170, "y": 330}, {"x": 1170, "y": 480}], "E": 2}]}}
+  }
+}
+end
