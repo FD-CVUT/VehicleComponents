@@ -1,0 +1,95 @@
+name: Set up Dyad
+description: >-
+  Install the Dyad compiler from the Dyad Studio release pinned in mise.toml and the Julia build
+  of the kernel it carries, then instantiate the package.
+
+outputs:
+  cli:
+    description: Path to the pinned compiler's dyad-cli.js, run with Node.
+    value: ${{ steps.kernel.outputs.cli }}
+
+runs:
+  using: composite
+  steps:
+    - name: Read the Dyad Studio pin
+      id: pin
+      shell: bash
+      run: |
+        studio=$(sed -n 's/^DYAD_STUDIO_VERSION = "\([^"]*\)"$/\1/p' mise.toml)
+        if [ -z "$studio" ]; then
+          echo "::error file=mise.toml::mise.toml has no DYAD_STUDIO_VERSION = \"x.y.z\" line"
+          exit 1
+        fi
+        echo "studio=$studio" >> "$GITHUB_OUTPUT"
+        echo "dir=$HOME/.cache/dyad-studio/$studio" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 22
+
+    - name: Restore the Dyad Studio compiler
+      id: studio-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pin.outputs.dir }}
+        key: dyad-studio-${{ steps.pin.outputs.studio }}
+
+    - name: Download the Dyad Studio compiler
+      if: steps.studio-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        STUDIO: ${{ steps.pin.outputs.studio }}
+        DIR: ${{ steps.pin.outputs.dir }}
+      run: |
+        vsix="$RUNNER_TEMP/dyad-studio.vsix"
+        curl -fsSL --retry 3 -o "$vsix" \
+          "https://open-vsx.org/api/JuliaComputing/dyad-studio/$STUDIO/file/JuliaComputing.dyad-studio-$STUDIO.vsix"
+        mkdir -p "$DIR"
+        unzip -q "$vsix" 'extension/out/*' -d "$DIR"
+
+    # Saved straight away, like the Julia build, so a failing run still keeps it.
+    - name: Save the Dyad Studio compiler
+      if: steps.studio-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pin.outputs.dir }}
+        key: dyad-studio-${{ steps.pin.outputs.studio }}
+
+    # The Studio and kernel versions differ, so the Julia build's channel comes from the kernel the
+    # compiler reports, not from the pin.
+    - name: Read the kernel the compiler carries
+      id: kernel
+      shell: bash
+      env:
+        DIR: ${{ steps.pin.outputs.dir }}
+      run: |
+        cli="$DIR/extension/out/dyad-cli.js"
+        echo "channel=dyad-$(node "$cli" --version | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+        echo "cli=$cli" >> "$GITHUB_OUTPUT"
+        echo "DYAD_CLI=$cli" >> "$GITHUB_ENV"
+
+    - name: Restore the Dyad Julia build
+      id: julia-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.julia/juliaup
+        key: dyad-julia-${{ steps.kernel.outputs.channel }}-${{ runner.os }}-${{ runner.arch }}
+
+    - uses: julia-actions/install-juliaup@ac1bed66e8369307bff3d25a4fa3f6b85cdfcfe7 # v3.1.7
+      env:
+        JULIAUP_SERVER: https://juliahub.com/juliabin
+      with:
+        channel: ${{ steps.kernel.outputs.channel }}
+
+    # A failing test run must still keep the ~1.1 GB build.
+    - name: Save the Dyad Julia build
+      if: steps.julia-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.julia/juliaup
+        key: dyad-julia-${{ steps.kernel.outputs.channel }}-${{ runner.os }}-${{ runner.arch }}
+
+    # The Dyad build bundles the Dyad libraries; what the Manifest still needs comes from General.
+    - name: Instantiate the package
+      shell: bash
+      run: scripts/dyad-julia --project=. -e 'using Pkg; Pkg.instantiate()'

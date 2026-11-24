@@ -1,0 +1,23 @@
+[env]
+# The Dyad Studio release whose compiler generates `generated/`; see docs/agents/toolchain.md.
+DYAD_STUDIO_VERSION = "3.5.1"
+DYAD_CLI = "{{ env.HOME }}/.vscode/extensions/juliacomputing.dyad-studio-{{ env.DYAD_STUDIO_VERSION }}/out/dyad-cli.js"
+
+[tools]
+node = "22"
+
+[tasks.compile]
+description = "Regenerate generated/ with the pinned Dyad Studio's compiler"
+run = 'node "$DYAD_CLI" compile .'
+
+[tasks."check:generated"]
+description = "Fail unless generated/ is exactly what the pinned compiler produces from dyad/"
+run = "scripts/check-generated"
+
+[tasks.test]
+description = "Run a test tier: fast (default) or examples, e.g. `mise run test examples`"
+run = "scripts/dyad-julia --project=. test/runtests.jl"
+
+[tasks.check]
+description = "The PR gate CI runs: the generated-code check and the fast tier"
+depends = ["check:generated", "test"]

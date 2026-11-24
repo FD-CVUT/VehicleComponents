@@ -1,0 +1,121 @@
+# VehicleComponents
+
+A Dyad library of vehicle components. The plan behind these rules is the spec,
+FD-CVUT/VehicleComponents#1.
+
+## Toolchain
+
+- Load the `dyad-language` skill before reading or writing any `.dyad` file.
+- Load the `forensic-debugging` skill when a compile, a test or a simulation fails and the error
+  does not name the cause.
+- Dyad sources live in `dyad/`, one folder per module. `generated/` is compiler output: change it
+  only with `mise run compile`, and commit it in the same commit as the Dyad change that produced
+  it.
+- Run Julia as `scripts/dyad-julia --project=.`; only the Dyad build loads Dyad packages.
+- `mise tasks` lists the commands. `mise run check` is the PR gate CI runs. Tasks and scripts need
+  a POSIX shell (Linux, macOS, WSL).
+- `DYAD_STUDIO_VERSION` in `mise.toml` pins the toolchain; changing it is a Dyad upgrade.
+- Before upgrading Dyad, adding a dependency, or editing `.github/`, `scripts/` or `mise.toml`,
+  read `docs/agents/toolchain.md`.
+
+## Module tree
+
+```
+Body.Longitudinal, Body.Planar
+Chassis.Wheel, Chassis.Brakes
+Powertrain.Engine, Powertrain.Transmission, Powertrain.Hybrid
+Electrical.Machines, Electrical.PowerElectronics, Electrical.Battery
+Control            ABS, ESP, TCS, Cruise, brake allocation, regen blend
+CanBus, Driver, Road, Sensors, Blocks
+Examples
+  Powertrain       ICE, BEV, Hybrid.Series, Hybrid.Parallel.P1/P2/P3/P4
+  Chassis          ABS, ESP, TCS, Brakes
+  Network.CanBus
+  Energy.Charging
+  Platforms        partial platform bases the examples extend
+```
+
+The course's coupled hybrid is P0/P1 (P0 as a variant inside P1); its output hybrid is P3/P4.
+
+The realtime drive, the human driver and the hardware extensions go in the second package,
+`VehicleComponentsRealtime` under `lib/`, so `using VehicleComponents` stays light.
+
+## Component rules
+
+**Promotion.** A lecture component enters the library only if it has ports, models a real vehicle
+part, controller, sensor or driver (not a teaching device), has no twin already in the library,
+and arrives with its own test.
+
+**Simplification.** If a general component only adds to a simple one, it extends it. If it
+replaces part of the simple one's equations, keep only the general one, with a structural parameter
+selecting the simple form. A reduction that only works numerically (a zero time constant) does not
+count; then both stay.
+
+**Naming.** A name leaves out what its module path already says (`Chassis.Brakes.MasterCylinder`).
+Every public name is US English. Every rename of a course component gets its row in
+`MIGRATION.md`, the old-to-new name table.
+
+**Docstrings.** Each component's docstring states what is modeled, its ports and its assumptions.
+
+**Data.** Library data is referenced as `dyad://VehicleComponents/...` and ships in `assets/`.
+
+**Icons.** Every public component with ports gets its own icon, in `assets/` under a path that
+mirrors its module path. Partials, tests, examples and `Blocks` utilities need none.
+
+**Layout.** Important components get a strict diagram layout. Important means every example and
+platform, every component they place directly at their top level, and any component whose
+docstring marks it as an exception. Strict layout is: explicit non-overlapping positions, signal
+flow left to right, physical chains in physical order, every connection routed orthogonally
+without crossing a block, and ports on the icon on the side they appear in the diagram. Every other
+component needs correct connector placement on its icon (fixed to a specific spot where that
+matters); its diagram may be auto-laid-out.
+
+**Examples and platforms.** An example's top level shows the vehicle's subsystems one level deep:
+driver, body, wheels, brakes, powertrain, controllers and bus as separate blocks. Shared wiring
+lives in partial platform bases in `Examples.Platforms`. An example extends a base, adds components
+and connections, changes parameters, and swaps an inherited subsystem by redeclaration. A base
+holds only what every child needs, since an inherited subsystem cannot be removed.
+
+## Tests
+
+A rig is one test model with all its cases. Assert only on external behavior: the signals and
+values a model exposes. Prefer a physically meaningful number (master-cylinder pressure at a given
+pedal force, stopping distance, final SoC).
+
+- **Main seam: Dyad test models.** Each one sets fixed solver settings and checks start values, end
+  values and named-signal snapshots in its `tests` metadata.
+- **Second seam: plain Julia test sets** against the public Julia API, only for what a test model
+  cannot express (OpenCRG reading, CAN frame encoding and decoding, the realtime drive headless).
+
+Two tiers, chosen by where the test model lives:
+
+| Tier | Test models | Runs | Budget |
+|---|---|---|---|
+| fast | in a `Tests` submodule of its domain or subdomain (`Chassis.Brakes.Tests`) | every PR and push to `main`, one process | 30 s per rig, under 10 min in all |
+| example | under `Examples` | nightly, one process per model | under 60 min |
+
+Place every test model in one of the two; the fast tier fails on a test model anywhere else, and
+on any rig over budget. A rig that needs longer is an example, or a sign the component's test is
+too big. CI runs the example tier only nightly, so run `mise run test examples` yourself when a
+change reaches an example.
+
+The library starts with zero pinned failures, and a new failure gets fixed.
+
+## Snapshots
+
+Snapshots are committed under `test/snapshots/`, mirroring the module path. A snapshot changes in
+the same PR as the model change that moves it: rerun the affected tier with `DYAD_UPDATE_REFS=1`
+and commit the new `.ref` files, so the reviewer sees every output change. A test model run
+without a committed snapshot seeds one and fails its tier; commit the seeded file with the model.
+
+## Done
+
+A PR that adds, moves or renames a component is done when every line holds for every component it
+touches:
+
+- [ ] `mise run check` passes, with `generated/` committed alongside the Dyad change.
+- [ ] Every component rule applies: place in the module tree, name, docstring, data, icon, layout.
+- [ ] Each lecture component meets all four promotion conditions.
+- [ ] Each renamed course component has its `MIGRATION.md` row.
+- [ ] Every new or changed `.ref` file is committed and traces to a model change in this PR.
+- [ ] A change that reaches an example passes `mise run test examples`.

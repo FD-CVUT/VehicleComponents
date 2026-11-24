@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Runs the Julia build of the Dyad kernel that Project.toml names; the default channel cannot load
+# Dyad packages.
+set -euo pipefail
+kernel=$(sed -n 's/^kernel = "\([^"]*\)"$/\1/p' "$(dirname "$0")/../Project.toml")
+exec julia "+dyad-$kernel" "$@"
