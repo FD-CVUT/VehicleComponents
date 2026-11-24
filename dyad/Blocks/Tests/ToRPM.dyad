@@ -1,0 +1,23 @@
+"""
+100 rad/s is 100 * 60 / (2 pi) = 954.93 rpm.
+"""
+test component ToRPM
+  source = BlockComponents.Sources.Constant(k = 100.0)
+  conversion = VehicleComponents.Blocks.ToRPM()
+relations
+  connect(source.y, conversion.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "constant": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"conversion.y": 1e-9},
+        "expect": {"final": {"conversion.y": 954.9296585513721}}
+      }
+    }
+  }
+}
+end

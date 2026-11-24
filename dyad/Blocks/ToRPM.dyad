@@ -1,0 +1,15 @@
+"""
+Unit conversion of an angular speed signal from rad/s to revolutions per minute:
+y = 60 / (2 pi) u.
+
+Ports: `u` angular speed [rad/s], `y` angular speed [rpm].
+
+Named for the same reason as `ToKmPerHour`: a `Gain` with k = 9.5493 does not say what it
+converts.
+"""
+component ToRPM
+  extends BlockComponents.Interfaces.SISO
+relations
+  y = 60 / (2 * pi) * u
+metadata {"Dyad": {"icons": {"default": "dyad://BlockComponents/To_rpm.svg"}}}
+end

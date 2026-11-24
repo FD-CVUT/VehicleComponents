@@ -1,0 +1,22 @@
+"""
+Current ceiling of a constant-current, constant-voltage (CC-CV) charger from the battery's
+terminal voltage: y = min(I_cc, max(0, (V_max - u) / R_reg)).
+
+Ports: `u` terminal voltage [V], `y` current ceiling [A].
+
+Below V_max - I_cc R_reg the ceiling is the constant current `I_cc`; above it the ceiling falls
+linearly to 0 at `V_max`, a proportional voltage regulator with gain 1 / R_reg. It is never
+negative, so the charger does not discharge. Defaults are a 400 V pack charged at 143 A
+(assumed).
+"""
+component CCCVVoltageCurrent
+  extends BlockComponents.Interfaces.SISO
+  "Constant-current phase current"
+  parameter I_cc::Current = 143.0
+  "Constant-voltage phase target voltage"
+  parameter V_max::Voltage = 403.2
+  "Voltage regulator droop: volts of headroom per ampere of ceiling"
+  parameter R_reg::Resistance = 1e-5
+relations
+  y = min(I_cc, max(0.0, (V_max - u) / R_reg))
+end

@@ -1,0 +1,31 @@
+"""
+A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage band starts at
+403.2 - 14.3 = 388.9 V. At 350 V it gives the full 143 A, at 400 V (3.2 / 0.1) = 32 A, and above
+403.2 V nothing.
+"""
+test component CCCVVoltageCurrent
+  low = BlockComponents.Sources.Constant(k = 350.0)
+  near_full = BlockComponents.Sources.Constant(k = 400.0)
+  over = BlockComponents.Sources.Constant(k = 410.0)
+  cc = VehicleComponents.Blocks.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+  cv = VehicleComponents.Blocks.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+  done = VehicleComponents.Blocks.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+relations
+  connect(low.y, cc.u)
+  connect(near_full.y, cv.u)
+  connect(over.y, done.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "three_phases": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"cc.y": 1e-9, "cv.y": 1e-6, "done.y": 1e-9},
+        "expect": {"final": {"cc.y": 143.0, "cv.y": 32.0, "done.y": 0.0}}
+      }
+    }
+  }
+}
+end

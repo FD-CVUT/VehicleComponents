@@ -1,0 +1,23 @@
+"""
+A fraction of 0.5 is 50 %.
+"""
+test component ToPercent
+  source = BlockComponents.Sources.Constant(k = 0.5)
+  conversion = VehicleComponents.Blocks.ToPercent()
+relations
+  connect(source.y, conversion.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "constant": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"conversion.y": 1e-9},
+        "expect": {"final": {"conversion.y": 50.0}}
+      }
+    }
+  }
+}
+end

@@ -19,6 +19,7 @@ include("test_internals.jl")
 
 @testset "`VehicleComponents`" begin
 end
+include("Blocks/tests.jl")
 include("Body/tests.jl")
 include("Driver/tests.jl")
 include("Examples/tests.jl")

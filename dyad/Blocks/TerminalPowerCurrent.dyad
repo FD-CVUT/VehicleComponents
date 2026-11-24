@@ -1,0 +1,16 @@
+"""
+Current that carries a fixed power at the measured terminal voltage: y = P / max(u, 1 V).
+
+Ports: `u` terminal voltage [V], `y` current [A].
+
+The one-volt floor on the denominator keeps the current finite while the voltage starts at or
+passes through zero; above 1 V it does not act. The sign of `P` carries through, so the block
+serves charging and discharging alike.
+"""
+component TerminalPowerCurrent
+  extends BlockComponents.Interfaces.SISO
+  "Power to carry"
+  parameter P::Power = 20000.0
+relations
+  y = P / max(u, 1.0)
+end

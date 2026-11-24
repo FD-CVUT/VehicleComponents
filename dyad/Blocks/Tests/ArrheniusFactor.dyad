@@ -1,0 +1,27 @@
+"""
+The factor is 1 at the reference temperature, 298.15 K, and at 0 °C (273.15 K) it is
+exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
+"""
+test component ArrheniusFactor
+  reference = BlockComponents.Sources.Constant(k = 298.15)
+  freezing = BlockComponents.Sources.Constant(k = 273.15)
+  warm = VehicleComponents.Blocks.ArrheniusFactor()
+  cold = VehicleComponents.Blocks.ArrheniusFactor()
+relations
+  connect(reference.y, warm.u)
+  connect(freezing.y, cold.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "two_temperatures": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"warm.y": 1e-9, "cold.y": 1e-9},
+        "expect": {"final": {"warm.y": 1.0, "cold.y": 1.586506296539818}}
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,20 @@
+"""
+Arrhenius temperature factor of a thermally activated quantity, relative to its value at a
+reference temperature: y = exp(Ea / Rg (1 / u - 1 / Tref)).
+
+Ports: `u` absolute temperature [K], `y` the dimensionless factor, 1 at `Tref`, above 1 below it.
+
+Used as a multiplier on a cell's internal resistance. Assumes a single activation energy over
+the whole temperature range; the defaults are a lithium-ion cell's (assumed).
+"""
+component ArrheniusFactor
+  extends BlockComponents.Interfaces.SISO
+  "Activation energy [J/mol]"
+  parameter Ea::Real = 12500.0
+  "Universal gas constant [J/(mol K)]"
+  parameter Rg::Real = 8.314
+  "Reference temperature, where the factor is 1"
+  parameter Tref::Temperature = 298.15
+relations
+  y = exp(Ea / Rg * (1.0 / u - 1.0 / Tref))
+end

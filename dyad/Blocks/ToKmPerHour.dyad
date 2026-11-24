@@ -1,0 +1,14 @@
+"""
+Unit conversion of a speed signal from m/s to km/h: y = 3.6 u.
+
+Ports: `u` speed [m/s], `y` speed [km/h].
+
+`BlockComponents.Math.Gain(k = 3.6)` computes the same, but a bare gain on a diagram does not say
+what it converts; this block names the unit.
+"""
+component ToKmPerHour
+  extends BlockComponents.Interfaces.SISO
+relations
+  y = 3.6 * u
+metadata {"Dyad": {"icons": {"default": "dyad://BlockComponents/To_kmh.svg"}}}
+end

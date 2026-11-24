@@ -1,0 +1,27 @@
+"""
+Two switches fed the same two constants, one with `on` and one without: the first passes `u1`
+(1), the second `u2` (2).
+"""
+test component ParameterSwitch
+  first = BlockComponents.Sources.Constant(k = 1.0)
+  second = BlockComponents.Sources.Constant(k = 2.0)
+  on = VehicleComponents.Blocks.ParameterSwitch(on = true)
+  off = VehicleComponents.Blocks.ParameterSwitch(on = false)
+relations
+  connect(first.y, on.u1, off.u1)
+  connect(second.y, on.u2, off.u2)
+metadata {
+  "Dyad": {
+    "tests": {
+      "both_settings": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"on.y": 1e-9, "off.y": 1e-9},
+        "expect": {"final": {"on.y": 1.0, "off.y": 2.0}}
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,17 @@
+"""
+Current ceiling of a charger limited by its power rating: y = min(I_cc, max(0, u2) / max(u1, 1 V)).
+
+Ports: `u1` terminal voltage [V], `u2` available charging power [W], `y` current ceiling [A].
+
+Negative power gives a zero ceiling, so the charger does not discharge, and the ceiling never
+exceeds the constant-current phase current `I_cc`. The one-volt floor keeps the current finite
+at zero voltage. Combine with `CCCVVoltageCurrent` through a minimum to get a power-limited CC-CV
+charger.
+"""
+component CCCVPowerCurrent
+  extends BlockComponents.Interfaces.SI2SO
+  "Constant-current phase current"
+  parameter I_cc::Current = 143.0
+relations
+  y = min(I_cc, max(0.0, u2) / max(u1, 1.0))
+end

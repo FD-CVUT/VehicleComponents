@@ -1,0 +1,39 @@
+"""
+Three balancers on a cell at 4.15 V that sits 20 mV above the lowest cell, with a 10 mV
+difference threshold and the default 0.2 mV step width. With balancing allowed above 4.10 V
+both conditions hold by at least 50 widths, so the request is the 0.5 enable. With the allowed voltage
+at 4.20 V the second condition fails and the request is 0. With both thresholds exactly met
+each tanh is 0 and the request is u1 / 4 = 0.125.
+"""
+test component BalancerRequest
+  enable = BlockComponents.Sources.Constant(k = 0.5)
+  delta = BlockComponents.Sources.Constant(k = 0.020)
+  delta_threshold = BlockComponents.Sources.Constant(k = 0.010)
+  cell = BlockComponents.Sources.Constant(k = 4.15)
+  allowed_below = BlockComponents.Sources.Constant(k = 4.10)
+  allowed_above = BlockComponents.Sources.Constant(k = 4.20)
+  bleeding = VehicleComponents.Blocks.BalancerRequest()
+  too_low = VehicleComponents.Blocks.BalancerRequest()
+  on_threshold = VehicleComponents.Blocks.BalancerRequest()
+relations
+  connect(enable.y, bleeding.u1, too_low.u1, on_threshold.u1)
+  connect(delta.y, bleeding.u2, too_low.u2)
+  connect(delta_threshold.y, bleeding.u3, too_low.u3, on_threshold.u2, on_threshold.u3)
+  connect(cell.y, bleeding.u4, too_low.u4, on_threshold.u4, on_threshold.u5)
+  connect(allowed_below.y, bleeding.u5)
+  connect(allowed_above.y, too_low.u5)
+metadata {
+  "Dyad": {
+    "tests": {
+      "three_requests": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"bleeding.y": 1e-9, "too_low.y": 1e-9, "on_threshold.y": 1e-9},
+        "expect": {"final": {"bleeding.y": 0.5, "too_low.y": 0.0, "on_threshold.y": 0.125}}
+      }
+    }
+  }
+}
+end

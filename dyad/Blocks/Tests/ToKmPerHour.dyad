@@ -1,0 +1,23 @@
+"""
+10 m/s is 36 km/h.
+"""
+test component ToKmPerHour
+  source = BlockComponents.Sources.Constant(k = 10.0)
+  conversion = VehicleComponents.Blocks.ToKmPerHour()
+relations
+  connect(source.y, conversion.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "constant": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"conversion.y": 1e-9},
+        "expect": {"final": {"conversion.y": 36.0}}
+      }
+    }
+  }
+}
+end
