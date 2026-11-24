@@ -77,8 +77,12 @@ declaration, without a new parameter: `climbing = Vehicle(mass(v = initial 10.0)
 
 **Data.** Library data is referenced as `dyad://VehicleComponents/...` and ships in `assets/`.
 
-**Icons.** Every public component with ports gets its own icon, in `assets/` under a path that
-mirrors its module path. Partials, tests, examples, `Blocks` and `Helpers` blocks need none.
+**Icons.** Every public component with ports gets an icon, `Blocks` and `Helpers` included: the
+generic block icon says nothing about what a block does. Use a stdlib icon only when it shows
+exactly this component, ports included (`dyad://BlockComponents/To_kmh.svg` for `ToKmPerHour`);
+the stdlib `Switch.svg`, for one, draws a Boolean control input. Otherwise draw one in the stdlib
+style, in `assets/` under a path that mirrors its module path, with its lines meeting each port
+where the component places it. Partials, tests and examples need none.
 
 **Layout.** Important components get a strict diagram layout. Important means every example and
 platform, every component they place directly at their top level, and any component whose

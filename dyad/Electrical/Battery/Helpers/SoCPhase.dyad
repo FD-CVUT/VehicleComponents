@@ -13,4 +13,9 @@ component SoCPhase
   parameter period::Time = 86400.0
 relations
   y = mod(u, period)
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/SoCPhase.svg"}
+  }
+}
 end

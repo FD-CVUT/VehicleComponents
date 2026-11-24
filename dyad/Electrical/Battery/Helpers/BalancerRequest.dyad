@@ -31,7 +31,10 @@ component BalancerRequest
 relations
   y = u1 * 0.25 * (1 + tanh((u2 - u3) / voltage_width)) * (1 + tanh((u4 - u5) / voltage_width))
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "Dyad": {
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}],
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/BalancerRequest.svg"}
+  },
   "_links": {
     "u1": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 50, "x2": 0, "y2": 150}}}},
     "u2": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 250, "x2": 0, "y2": 350}}}},

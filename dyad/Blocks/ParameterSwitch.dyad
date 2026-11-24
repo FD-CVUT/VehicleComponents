@@ -19,4 +19,5 @@ relations
   else
     y = u2
   end
+metadata {"Dyad": {"icons": {"default": "dyad://VehicleComponents/Blocks/ParameterSwitch.svg"}}}
 end

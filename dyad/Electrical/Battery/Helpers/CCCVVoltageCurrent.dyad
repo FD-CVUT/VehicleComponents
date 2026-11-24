@@ -19,4 +19,9 @@ component CCCVVoltageCurrent
   parameter R_reg::Resistance = 1e-5
 relations
   y = min(I_cc, max(0.0, (V_max - u) / R_reg))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/CCCVVoltageCurrent.svg"}
+  }
+}
 end

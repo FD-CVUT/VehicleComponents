@@ -17,4 +17,9 @@ component ArrheniusFactor
   parameter Tref::Temperature = 298.15
 relations
   y = exp(Ea / Rg * (1.0 / u - 1.0 / Tref))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/ArrheniusFactor.svg"}
+  }
+}
 end

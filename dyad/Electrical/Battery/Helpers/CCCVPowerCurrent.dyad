@@ -14,4 +14,9 @@ component CCCVPowerCurrent
   parameter I_cc::Current = 143.0
 relations
   y = min(I_cc, max(0.0, u2) / max(u1, 1.0))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/CCCVPowerCurrent.svg"}
+  }
+}
 end

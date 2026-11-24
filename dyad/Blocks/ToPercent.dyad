@@ -9,4 +9,5 @@ component ToPercent
   extends BlockComponents.Interfaces.SISO
 relations
   y = 100 * u
+metadata {"Dyad": {"icons": {"default": "dyad://VehicleComponents/Blocks/ToPercent.svg"}}}
 end
