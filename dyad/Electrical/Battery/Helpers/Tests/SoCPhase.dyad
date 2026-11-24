@@ -1,0 +1,46 @@
+"""
+With a 2 s period, 0.5 s is 0.5 s into the first cycle, 2 s is the start of the second, and 5 s
+is 1 s into the third.
+"""
+test component SoCPhase
+  elapsed = BlockComponents.Sources.Constant(k = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  phase = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(elapsed.y, phase.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "first_cycle": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"phase.y": 1e-9},
+        "expect": {"final": {"phase.y": 0.5}}
+      },
+      "wrap_point": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"elapsed.k": 2.0},
+        "atol": {"phase.y": 1e-9},
+        "expect": {"final": {"phase.y": 0.0}}
+      },
+      "third_cycle": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"elapsed.k": 5.0},
+        "atol": {"phase.y": 1e-9},
+        "expect": {"final": {"phase.y": 1.0}}
+      }
+    }
+  }
+}
+end

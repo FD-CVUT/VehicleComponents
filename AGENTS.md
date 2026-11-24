@@ -25,6 +25,7 @@ Body.Longitudinal, Body.Planar
 Chassis.Wheel, Chassis.Brakes
 Powertrain.Engine, Powertrain.Transmission, Powertrain.Hybrid
 Electrical.Machines, Electrical.PowerElectronics, Electrical.Battery
+  Helpers          signal blocks one domain's components share; any domain may have one
 Control            ABS, ESP, TCS, Cruise, brake allocation, regen blend
 CanBus, Driver, Road, Sensors, Blocks
 Examples
@@ -62,12 +63,26 @@ user feeds it its neutral value (0 for a flat road's `grade`). To choose between
 structural parameter, route them through a gate block whose ports always exist. When the value a
 port needs takes a calculation, that calculation is a block of its own, wired in.
 
+**Helpers.** A signal block that only one domain's components use goes in that domain's `Helpers`
+submodule (`Electrical.Battery.Helpers.CCCVVoltageCurrent`). One that several domains use goes in
+`Blocks`.
+
 **Docstrings.** Each component's docstring states what is modeled, its ports and its assumptions.
+
+**Initial conditions.** A state's default initial value lives on the smallest component that owns
+the state: on the variable (`variable a_pitch::Acceleration = initial 0.0`), or on the part that
+holds it (`mass = Mass(m = m, s = initial 0.0, v = initial 0.0)` in `Body.Longitudinal.Vehicle`).
+A parent does not repeat it. A parent or test that needs another start overrides it at the
+declaration, without a new parameter: `climbing = Vehicle(mass(v = initial 10.0))`.
 
 **Data.** Library data is referenced as `dyad://VehicleComponents/...` and ships in `assets/`.
 
-**Icons.** Every public component with ports gets its own icon, in `assets/` under a path that
-mirrors its module path. Partials, tests, examples and `Blocks` utilities need none.
+**Icons.** Every public component with ports gets an icon, `Blocks` and `Helpers` included: the
+generic block icon says nothing about what a block does. Use a stdlib icon only when it shows
+exactly this component, ports included (`dyad://BlockComponents/To_kmh.svg` for `ToKmPerHour`);
+the stdlib `Switch.svg`, for one, draws a Boolean control input. Otherwise draw one in the stdlib
+style, in `assets/` under a path that mirrors its module path, with its lines meeting each port
+where the component places it. Partials, tests and examples need none.
 
 **Layout.** Important components get a strict diagram layout. Important means every example and
 platform, every component they place directly at their top level, and any component whose
@@ -75,7 +90,19 @@ docstring marks it as an exception. Strict layout is: explicit non-overlapping p
 flow left to right, physical chains in physical order, every connection routed orthogonally
 without crossing a block, and ports on the icon on the side they appear in the diagram. Every other
 component needs correct connector placement on its icon (fixed to a specific spot where that
-matters); its diagram may be auto-laid-out.
+matters). Its diagram, and every test model's, comes from autolayout: run
+`node "$DYAD_CLI" layout VehicleComponents.<Module>.<Component> --dir .` after adding or rewiring
+a part, and never leave a model with parts unplaced. Write a signal that feeds several inputs as
+one two-port `connect` per input: on a `connect` with three or more ends, `dyad layout` attaches
+waypoints to the wrong branch and the Studio draws diagonals. A part's placement in a diagram keeps
+its icon's aspect ratio: square for the default icon and for any 1000 x 1000 icon, otherwise the
+icon's own width to height. A placement stretched to another shape draws the icon at its own
+shape inside a larger box, with the ports outside it. The layout grid gives a default-size block 2
+cells per edge, so a block with more than three ports on one edge fails to route
+(`connection(s) could not be routed legally`); scale its placement up in both directions (250 x 250
+for five ports, as `Electrical.Battery.Helpers.Tests.BalancerRequest` does), or give the component
+a wider or taller icon of its own. When the one-step command still fails, pin the components with
+`dyad layout extract`, `solve` and `apply` (see the `dyad-cli` skill).
 
 **Examples and platforms.** An example's top level shows the vehicle's subsystems one level deep:
 driver, body, wheels, brakes, powertrain, controllers and bus as separate blocks. Shared wiring
@@ -97,8 +124,11 @@ A rig is one test model with all its cases. Assert only on external behavior: th
 values a model exposes. Prefer a physically meaningful number (master-cylinder pressure at a given
 pedal force, stopping distance, final SoC).
 
-- **Main seam: Dyad test models.** Each one sets fixed solver settings and checks start values, end
-  values and named-signal snapshots in its `tests` metadata.
+- **Main seam: Dyad test models.** Each case pins `solver`, `abstol` and `reltol`, and checks start
+  and end values in its `tests` metadata; a named-signal snapshot only for what those cannot show.
+  To check one component at several inputs, wire one instance to constant sources and give each
+  case its own `params` (`{"voltage.k": 400.0}`), rather than placing several instances that share
+  sources. A case can also override a start with `initial` (`{"body.mass.v": 10.0}`).
 - **Second seam: plain Julia test sets** against the public Julia API, only for what a test model
   cannot express (OpenCRG reading, CAN frame encoding and decoding, the realtime drive headless).
 

@@ -3,8 +3,13 @@ The two presets read their tables: `CoastDown` holds full throttle until 9 s and
 `HardStop` coasts the same way and brakes fully from 19 s. Neither steers.
 """
 test component Scripted
-  coast = VehicleComponents.Driver.CoastDown()
-  stop = VehicleComponents.Driver.HardStop()
+  coast = VehicleComponents.Driver.CoastDown() {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  stop = VehicleComponents.Driver.HardStop() {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+relations
 metadata {
   "Dyad": {
     "tests": {
@@ -13,7 +18,11 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"coast.throttle_signal": 1e-9, "coast.brake_signal": 1e-9, "coast.steer_signal": 1e-9},
+        "atol": {
+          "coast.throttle_signal": 1e-9,
+          "coast.brake_signal": 1e-9,
+          "coast.steer_signal": 1e-9
+        },
         "expect": {
           "initial": {"coast.throttle_signal": 1, "coast.brake_signal": 0, "coast.steer_signal": 0},
           "final": {"coast.throttle_signal": 0, "coast.brake_signal": 0, "coast.steer_signal": 0},

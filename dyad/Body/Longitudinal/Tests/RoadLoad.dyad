@@ -7,20 +7,74 @@ the grade force.
 """
 test component RoadLoad
   "Holds both flanges at a fixed speed, overridden per case"
-  speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0)
-  grade = BlockComponents.Sources.Constant(k = 0.1)
-  level = BlockComponents.Sources.Constant(k = 0.0)
+  speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 550, "y2": 650}}}
+  }
+  grade = BlockComponents.Sources.Constant(k = 0.1) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 250, "y2": 350}}}
+  }
+  level = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 750, "y2": 850}}}
+  }
   "Car tire on asphalt"
-  tire = BlockComponents.Sources.Constant(k = 0.012)
-  climbing = VehicleComponents.Body.Longitudinal.RoadLoad()
-  flat = VehicleComponents.Body.Longitudinal.RoadLoad()
-  fixed = TranslationalComponents.Components.Fixed()
+  tire = BlockComponents.Sources.Constant(k = 0.012) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
+  }
+  climbing = VehicleComponents.Body.Longitudinal.RoadLoad() {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 200, "y2": 300}}}
+  }
+  flat = VehicleComponents.Body.Longitudinal.RoadLoad() {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 750, "y2": 850}}}
+  }
+  fixed = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 800, "y2": 900}}}
+  }
 relations
-  connect(speed.flange, climbing.flange, flat.flange)
-  connect(speed.support, fixed.flange)
-  connect(grade.y, climbing.grade)
-  connect(level.y, flat.grade)
-  connect(tire.y, climbing.f_r, flat.f_r)
+  connect(speed.flange, climbing.flange) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 600}, {"x": 650, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(speed.flange, flat.flange) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 600}, {"x": 650, "y": 800}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(speed.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(grade.y, climbing.grade) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 450, "y": 300}, {"x": 450, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(level.y, flat.grade) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(tire.y, climbing.f_r) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 550},
+            {"x": 350, "y": 450},
+            {"x": 150, "y": 450},
+            {"x": 150, "y": 150},
+            {"x": 450, "y": 150},
+            {"x": 450, "y": 225}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.y, flat.f_r) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 450, "y": 550}, {"x": 450, "y": 775}], "E": 2}],
+      "path": {}
+    }
+  }
   initial speed.s = 0.0
 metadata {
   "Dyad": {

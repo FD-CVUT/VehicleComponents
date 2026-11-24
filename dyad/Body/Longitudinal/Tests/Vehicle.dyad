@@ -5,26 +5,88 @@ speed settles where drag and rolling resistance take the whole 500 N. On the cli
 at 10 m/s is 477.05 N, leaving 0.0164 m/s².
 """
 test component Vehicle
-  flat_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0)
-  level = BlockComponents.Sources.Constant(k = 0.0)
+  flat_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 350, "y2": 450}}}
+  }
+  level = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 200, "y2": 300}}}
+  }
   "Car tire on asphalt"
-  tire = BlockComponents.Sources.Constant(k = 0.012)
-  flat = VehicleComponents.Body.Longitudinal.Vehicle()
-  climb_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0)
-  grade = BlockComponents.Sources.Constant(k = 0.02)
-  climbing = VehicleComponents.Body.Longitudinal.Vehicle()
-  fixed = TranslationalComponents.Components.Fixed()
+  tire = BlockComponents.Sources.Constant(k = 0.012) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  flat = VehicleComponents.Body.Longitudinal.Vehicle() {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 350, "y2": 450}}}
+  }
+  climb_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 850, "x2": 950, "y1": 700, "y2": 800, "rot": 180}}
+    }
+  }
+  grade = BlockComponents.Sources.Constant(k = 0.02) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 700, "y2": 800}}}
+  }
+  climbing = VehicleComponents.Body.Longitudinal.Vehicle(mass(v = initial 10.0)) {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 700, "y2": 800}}}
+  }
+  fixed = TranslationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1000, "x2": 1100, "y1": 450, "y2": 550, "rot": 270}}
+    }
+  }
 relations
-  connect(flat_traction.flange, flat.flange)
-  connect(climb_traction.flange, climbing.flange)
-  connect(flat_traction.support, climb_traction.support, fixed.flange)
-  connect(grade.y, climbing.grade)
-  connect(level.y, flat.grade)
-  connect(tire.y, flat.f_r, climbing.f_r)
-  initial flat.mass.s = 0.0
-  initial flat.mass.v = 0.0
-  initial climbing.mass.s = 0.0
-  initial climbing.mass.v = 10.0
+  connect(flat_traction.flange, flat.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(climb_traction.flange, climbing.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(flat_traction.support, climb_traction.support) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 800, "y": 650}, {"x": 900, "y": 650}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(flat_traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 500}], "E": 2}], "path": {}}}
+  connect(grade.y, climbing.grade) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(level.y, flat.grade) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 400, "y": 250},
+            {"x": 400, "y": 450},
+            {"x": 450, "y": 450},
+            {"x": 450, "y": 400}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.y, flat.f_r) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 500},
+            {"x": 350, "y": 400},
+            {"x": 150, "y": 400},
+            {"x": 150, "y": 100},
+            {"x": 450, "y": 100},
+            {"x": 450, "y": 375}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.y, climbing.f_r) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 450, "y": 500}, {"x": 450, "y": 725}], "E": 2}],
+      "path": {}
+    }
+  }
 metadata {
   "Dyad": {
     "tests": {

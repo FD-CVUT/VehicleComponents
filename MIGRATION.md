@@ -20,6 +20,17 @@ not listed has not moved yet.
 | `CoastDownDriver` | `Driver.CoastDown` | |
 | `HardStopDriver` | `Driver.HardStop` | |
 | `Vehicle.DriveCycle` | `Driver.DriveCycle` | |
+| `Vehicle.ToKmPerHour` | `Blocks.ToKmPerHour` | |
+| `Vehicle.ToRPM` | `Blocks.ToRPM` | |
+| `Vehicle.ToPercent` | `Blocks.ToPercent` | |
+| `Vehicle.ParameterSwitch` | `Blocks.ParameterSwitch` | |
+| `Vehicle.ParameterGate` | `Blocks.ParameterSwitch` | Wire the gated signal to `u1` and a `BlockComponents.Sources.Constant(k = fallback)` to `u2`; `on` keeps its meaning. |
+| `Vehicle.Blocks.ArrheniusFactorEquation` | `Electrical.Battery.Helpers.ArrheniusFactor` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.BalancerRequestEquation` | `Electrical.Battery.Helpers.BalancerRequest` | |
+| `Vehicle.Blocks.CCCVPowerCurrentEquation` | `Electrical.Battery.Helpers.CCCVPowerCurrent` | |
+| `Vehicle.Blocks.CCCVVoltageCurrentEquation` | `Electrical.Battery.Helpers.CCCVVoltageCurrent` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.SoCPhaseEquation` | `Electrical.Battery.Helpers.SoCPhase` | Input `u1` is now `u`. |
+| `Vehicle.Blocks.TerminalPowerCurrentEquation` | not in the library | It computed `P / max(v, 1 V)` with no state; its one use, a voltage sensor into it into a current source, is a constant-power load. The pin-based constant-power load comes with FD-CVUT/VehicleComponents#14. The course's `Vehicle.Electric.AuxLoad` shows the pattern but is not equivalent: its current is a state that lags `P / v` with a time constant, and it has no 1 V floor. |
 
 ## Data
 

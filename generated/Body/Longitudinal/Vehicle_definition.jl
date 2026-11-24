@@ -117,7 +117,11 @@ serves a planar car whose mass lives in its multibody body.
   push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; __overrides = ground_overrides))
   # Subcomponent mass of type TranslationalComponents.Components.Mass
   mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
-  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=m, __overrides = mass_overrides))
+  mass_dict = Dict{String, Any}()
+  mass_dict["s.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  mass_dict["v.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(mass_dict, mass_overrides)
+  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=m, __overrides = mass_dict))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

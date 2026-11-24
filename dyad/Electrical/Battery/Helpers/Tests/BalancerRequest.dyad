@@ -1,0 +1,122 @@
+"""
+A cell at 4.15 V that sits 20 mV above the lowest cell, with a 10 mV difference threshold, the
+default 0.2 mV step width and a 0.5 enable. With balancing allowed above 4.10 V both conditions
+hold by at least 50 widths and the request is the enable, 0.5. With the allowed voltage at 4.20 V
+the voltage condition fails, and with the cell level with the lowest one the difference condition
+fails: either way the request is 0. With both thresholds exactly met each tanh is 0 and the
+request is 0.5 / 4 = 0.125.
+"""
+test component BalancerRequest
+  enable = BlockComponents.Sources.Constant(k = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 200, "y2": 300}}}
+  }
+  delta = BlockComponents.Sources.Constant(k = 0.020) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  delta_threshold = BlockComponents.Sources.Constant(k = 0.010) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
+  }
+  cell = BlockComponents.Sources.Constant(k = 4.15) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 950, "y2": 1050}}}
+  }
+  allowed = BlockComponents.Sources.Constant(k = 4.10) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1200, "y2": 1300}}}
+  }
+  balancer = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 700, "y1": 650, "y2": 900}}}
+  }
+relations
+  connect(enable.y, balancer.u1) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 675}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(delta.y, balancer.u2) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 500},
+            {"x": 350, "y": 700},
+            {"x": 400, "y": 700},
+            {"x": 400, "y": 725}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(delta_threshold.y, balancer.u3) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 750}, {"x": 400, "y": 775}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(cell.y, balancer.u4) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 1000},
+            {"x": 350, "y": 850},
+            {"x": 400, "y": 850},
+            {"x": 400, "y": 825}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(allowed.y, balancer.u5) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 1250}, {"x": 400, "y": 875}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "bleeding": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"balancer.y": 1e-9},
+        "expect": {"final": {"balancer.y": 0.5}}
+      },
+      "below_allowed_voltage": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"allowed.k": 4.20},
+        "atol": {"balancer.y": 1e-9},
+        "expect": {"final": {"balancer.y": 0.0}}
+      },
+      "level_with_lowest_cell": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"delta.k": 0.0},
+        "atol": {"balancer.y": 1e-9},
+        "expect": {"final": {"balancer.y": 0.0}}
+      },
+      "on_both_thresholds": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"delta.k": 0.010, "allowed.k": 4.15},
+        "atol": {"balancer.y": 1e-9},
+        "expect": {"final": {"balancer.y": 0.125}}
+      }
+    }
+  }
+}
+end

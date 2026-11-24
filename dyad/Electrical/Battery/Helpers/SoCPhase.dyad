@@ -1,0 +1,21 @@
+"""
+Phase of a repeating cycle from elapsed time: y = mod(u, period).
+
+Ports: `u` elapsed time [s], `y` time since the start of the current cycle [s], in [0, period)
+for non-negative `u`.
+
+Used to run a daily state-of-charge schedule from a clock. The output jumps back to 0 at each
+whole period.
+"""
+component SoCPhase
+  extends BlockComponents.Interfaces.SISO
+  "Cycle length, one day by default"
+  parameter period::Time = 86400.0
+relations
+  y = mod(u, period)
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/SoCPhase.svg"}
+  }
+}
+end

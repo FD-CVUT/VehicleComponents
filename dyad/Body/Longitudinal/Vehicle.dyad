@@ -12,7 +12,7 @@ serves a planar car whose mass lives in its multibody body.
 """
 component Vehicle
   extends VehicleComponents.Body.Longitudinal.RoadLoad
-  mass = TranslationalComponents.Components.Mass(m = m) {^mass}
+  mass = TranslationalComponents.Components.Mass(m = m, s = initial 0.0, v = initial 0.0) {^mass}
 relations
   connect(flange, mass.flange_a) {^id2}
 metadata {

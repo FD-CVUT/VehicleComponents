@@ -1,0 +1,47 @@
+"""
+Request of a passive cell balancer to bleed a cell through its shunt, a smooth AND of two
+voltage conditions:
+
+    y = u1 (1 + tanh((u2 - u3) / voltage_width)) (1 + tanh((u4 - u5) / voltage_width)) / 4
+
+Ports: `u1` enable, the largest request (normally 0 to 1); `u2` the cell's voltage above the
+lowest cell's [V]; `u3` the voltage difference above which the cell is balanced [V]; `u4` the
+cell voltage [V]; `u5` the voltage above which balancing is allowed [V]; `y` the request, from 0
+to `u1`.
+
+Each condition is a tanh step `voltage_width` wide instead of a hard comparison, so the request
+changes continuously and the solver sees no events. When both conditions hold by several widths
+the request approaches `u1`; `voltage_width` must be positive.
+"""
+component BalancerRequest
+  "Enable, the largest request"
+  u1 = RealInput() {^u1}
+  "Cell voltage above the lowest cell's"
+  u2 = RealInput() {^u2}
+  "Voltage difference above which the cell is balanced"
+  u3 = RealInput() {^u3}
+  "Cell voltage"
+  u4 = RealInput() {^u4}
+  "Voltage above which balancing is allowed"
+  u5 = RealInput() {^u5}
+  "Balancing request"
+  y = RealOutput() {^y}
+  "Width of each smooth voltage step"
+  parameter voltage_width::Voltage = 0.0002
+relations
+  y = u1 * 0.25 * (1 + tanh((u2 - u3) / voltage_width)) * (1 + tanh((u4 - u5) / voltage_width))
+metadata {
+  "Dyad": {
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}],
+    "icons": {"default": "dyad://VehicleComponents/Electrical/Battery/Helpers/BalancerRequest.svg"}
+  },
+  "_links": {
+    "u1": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 50, "x2": 0, "y2": 150}}}},
+    "u2": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 250, "x2": 0, "y2": 350}}}},
+    "u3": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 450, "x2": 0, "y2": 550}}}},
+    "u4": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 650, "x2": 0, "y2": 750}}}},
+    "u5": {"Dyad": {"placement": {"icon": {"x1": -100, "y1": 850, "x2": 0, "y2": 950}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 1000, "y1": 450, "x2": 1100, "y2": 550}}}}
+  }
+}
+end

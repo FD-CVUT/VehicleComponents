@@ -91,11 +91,13 @@ the grade force.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(speed.flange, climbing.flange, flat.flange))
+  push!(__eqs, connect(speed.flange, climbing.flange))
+  push!(__eqs, connect(speed.flange, flat.flange))
   push!(__eqs, connect(speed.support, fixed.flange))
   push!(__eqs, connect(grade.y, climbing.grade))
   push!(__eqs, connect(level.y, flat.grade))
-  push!(__eqs, connect(tire.y, climbing.f_r, flat.f_r))
+  push!(__eqs, connect(tire.y, climbing.f_r))
+  push!(__eqs, connect(tire.y, flat.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

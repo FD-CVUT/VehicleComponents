@@ -1,0 +1,13 @@
+"""
+Unit conversion of a fraction to percent: y = 100 u.
+
+Ports: `u` fraction (1 is the whole), `y` the same quantity in percent.
+
+Named for the same reason as `ToKmPerHour`: a `Gain` with k = 100 does not say what it converts.
+"""
+component ToPercent
+  extends BlockComponents.Interfaces.SISO
+relations
+  y = 100 * u
+metadata {"Dyad": {"icons": {"default": "dyad://VehicleComponents/Blocks/ToPercent.svg"}}}
+end

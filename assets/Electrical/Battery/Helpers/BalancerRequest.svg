@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path fill="#fff" d="M4 4h992v992H4z"/>
+  <path fill="#84bfed" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
+  <path stroke="#000" stroke-width="8" fill="none" d="M0 100h120M0 300h120M0 500h120M0 700h120M0 900h120M120 100v800"/>
+  <path stroke="#000" stroke-width="8" fill="none" d="M360 300v130M300 430h120M330 470h60M360 470v130"/>
+  <path stroke="#000" stroke-width="8" fill="none" d="M360 300h300v40l-40 20 80 40-80 40 80 40-80 40 40 20v40H360"/>
+  <path stroke="#bf0000" stroke-width="8" d="M700 500h150"/>
+  <path fill="#bf0000" d="m950 500-100 40v-80z"/>
+  <text x="500" y="200" fill="#939598" font-family="sans-serif" font-size="90" text-anchor="middle">bleed</text>
+</svg>

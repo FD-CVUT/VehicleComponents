@@ -1,0 +1,47 @@
+"""
+A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage band starts at
+403.2 - 14.3 = 388.9 V. At 350 V it gives the full 143 A, at 400 V (3.2 / 0.1) = 32 A, and above
+403.2 V nothing.
+"""
+test component CCCVVoltageCurrent
+  voltage = BlockComponents.Sources.Constant(k = 350.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  ceiling = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(voltage.y, ceiling.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "constant_current": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 143.0}}
+      },
+      "constant_voltage": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"voltage.k": 400.0},
+        "atol": {"ceiling.y": 1e-6},
+        "expect": {"final": {"ceiling.y": 32.0}}
+      },
+      "above_target": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"voltage.k": 410.0},
+        "atol": {"ceiling.y": 1e-9},
+        "expect": {"final": {"ceiling.y": 0.0}}
+      }
+    }
+  }
+}
+end
