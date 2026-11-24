@@ -3,13 +3,21 @@ The factor is 1 at the reference temperature, 298.15 K, and at 0 °C (273.15 K) 
 exp(12500 / 8.314 (1 / 273.15 - 1 / 298.15)) = 1.5865.
 """
 test component ArrheniusFactor
-  reference = BlockComponents.Sources.Constant(k = 298.15)
-  freezing = BlockComponents.Sources.Constant(k = 273.15)
-  warm = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor()
-  cold = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor()
+  reference = BlockComponents.Sources.Constant(k = 298.15) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  freezing = BlockComponents.Sources.Constant(k = 273.15) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  warm = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  cold = VehicleComponents.Electrical.Battery.Helpers.ArrheniusFactor() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
 relations
-  connect(reference.y, warm.u)
-  connect(freezing.y, cold.u)
+  connect(reference.y, warm.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(freezing.y, cold.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {

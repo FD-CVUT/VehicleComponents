@@ -8,10 +8,10 @@
    BalancerRequest(; name, __overrides)
 
 Three balancers on a cell at 4.15 V that sits 20 mV above the lowest cell, with a 10 mV
-difference threshold and the default 0.2 mV step width. With balancing allowed above 4.10 V
-both conditions hold by at least 50 widths, so the request is the 0.5 enable. With the allowed voltage
-at 4.20 V the second condition fails and the request is 0. With both thresholds exactly met
-each tanh is 0 and the request is u1 / 4 = 0.125.
+difference threshold and the default 0.2 mV step width. With balancing allowed above 4.10 V both
+conditions hold by at least 50 widths, so the request is the 0.5 enable. With the allowed voltage
+at 4.20 V the second condition fails and the request is 0. With both thresholds exactly met each
+tanh is 0 and the request is u1 / 4 = 0.125.
 """
 @component function BalancerRequest(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -75,6 +75,12 @@ each tanh is 0 and the request is u1 / 4 = 0.125.
   # Subcomponent allowed_above of type BlockComponents.Sources.Constant
   allowed_above_overrides = __pop_subcomponent_overrides!(__overrides, "allowed_above")
   push!(__systems, @named allowed_above = BlockComponents.Sources.Constant(; k=4.2, __overrides = allowed_above_overrides))
+  # Subcomponent delta_at_threshold of type BlockComponents.Sources.Constant
+  delta_at_threshold_overrides = __pop_subcomponent_overrides!(__overrides, "delta_at_threshold")
+  push!(__systems, @named delta_at_threshold = BlockComponents.Sources.Constant(; k=0.01, __overrides = delta_at_threshold_overrides))
+  # Subcomponent allowed_at_cell of type BlockComponents.Sources.Constant
+  allowed_at_cell_overrides = __pop_subcomponent_overrides!(__overrides, "allowed_at_cell")
+  push!(__systems, @named allowed_at_cell = BlockComponents.Sources.Constant(; k=4.15, __overrides = allowed_at_cell_overrides))
   # Subcomponent bleeding of type VehicleComponents.Electrical.Battery.Helpers.BalancerRequest
   bleeding_overrides = __pop_subcomponent_overrides!(__overrides, "bleeding")
   push!(__systems, @named bleeding = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest(; __overrides = bleeding_overrides))
@@ -98,10 +104,12 @@ each tanh is 0 and the request is u1 / 4 = 0.125.
   ### Equations
   push!(__eqs, connect(enable.y, bleeding.u1, too_low.u1, on_threshold.u1))
   push!(__eqs, connect(delta.y, bleeding.u2, too_low.u2))
-  push!(__eqs, connect(delta_threshold.y, bleeding.u3, too_low.u3, on_threshold.u2, on_threshold.u3))
-  push!(__eqs, connect(cell.y, bleeding.u4, too_low.u4, on_threshold.u4, on_threshold.u5))
+  push!(__eqs, connect(delta_threshold.y, bleeding.u3, too_low.u3, on_threshold.u3))
+  push!(__eqs, connect(cell.y, bleeding.u4, too_low.u4, on_threshold.u4))
   push!(__eqs, connect(allowed_below.y, bleeding.u5))
   push!(__eqs, connect(allowed_above.y, too_low.u5))
+  push!(__eqs, connect(delta_at_threshold.y, on_threshold.u2))
+  push!(__eqs, connect(allowed_at_cell.y, on_threshold.u5))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

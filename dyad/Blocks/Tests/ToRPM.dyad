@@ -1,11 +1,13 @@
-"""
-100 rad/s is 100 * 60 / (2 pi) = 954.93 rpm.
-"""
+"100 rad/s is 100 * 60 / (2 pi) = 954.93 rpm."
 test component ToRPM
-  source = BlockComponents.Sources.Constant(k = 100.0)
-  conversion = VehicleComponents.Blocks.ToRPM()
+  source = BlockComponents.Sources.Constant(k = 100.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  conversion = VehicleComponents.Blocks.ToRPM() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
 relations
-  connect(source.y, conversion.u)
+  connect(source.y, conversion.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {

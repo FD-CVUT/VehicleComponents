@@ -1,11 +1,13 @@
-"""
-10 m/s is 36 km/h.
-"""
+"10 m/s is 36 km/h."
 test component ToKmPerHour
-  source = BlockComponents.Sources.Constant(k = 10.0)
-  conversion = VehicleComponents.Blocks.ToKmPerHour()
+  source = BlockComponents.Sources.Constant(k = 10.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  conversion = VehicleComponents.Blocks.ToKmPerHour() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
 relations
-  connect(source.y, conversion.u)
+  connect(source.y, conversion.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {

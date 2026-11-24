@@ -80,7 +80,14 @@ docstring marks it as an exception. Strict layout is: explicit non-overlapping p
 flow left to right, physical chains in physical order, every connection routed orthogonally
 without crossing a block, and ports on the icon on the side they appear in the diagram. Every other
 component needs correct connector placement on its icon (fixed to a specific spot where that
-matters); its diagram may be auto-laid-out.
+matters). Its diagram, and every test model's, comes from autolayout: run
+`node "$DYAD_CLI" layout VehicleComponents.<Module>.<Component> --dir .` after adding or rewiring
+a part, and never leave a model with parts unplaced. The layout grid gives a block 2 cells per
+edge, so a block with more than three ports on one edge fails to route
+(`connection(s) could not be routed legally`) until its placement in the parent is made taller;
+`Electrical.Battery.Helpers.Tests.BalancerRequest` is the example. When the one-step command still
+fails, pin the components with `dyad layout extract`, `solve` and `apply` (see the `dyad-cli`
+skill).
 
 **Examples and platforms.** An example's top level shows the vehicle's subsystems one level deep:
 driver, body, wheels, brakes, powertrain, controllers and bus as separate blocks. Shared wiring

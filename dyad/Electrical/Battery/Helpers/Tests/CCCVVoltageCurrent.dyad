@@ -4,16 +4,28 @@ A 143 A, 403.2 V charger with a 0.1 ohm regulator droop, so the constant-voltage
 403.2 V nothing.
 """
 test component CCCVVoltageCurrent
-  low = BlockComponents.Sources.Constant(k = 350.0)
-  near_full = BlockComponents.Sources.Constant(k = 400.0)
-  over = BlockComponents.Sources.Constant(k = 410.0)
-  cc = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
-  cv = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
-  done = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1)
+  low = BlockComponents.Sources.Constant(k = 350.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  near_full = BlockComponents.Sources.Constant(k = 400.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  over = BlockComponents.Sources.Constant(k = 410.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
+  }
+  cc = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  cv = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
+  done = VehicleComponents.Electrical.Battery.Helpers.CCCVVoltageCurrent(I_cc = 143.0, V_max = 403.2, R_reg = 0.1) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 700, "y2": 800}}}
+  }
 relations
-  connect(low.y, cc.u)
-  connect(near_full.y, cv.u)
-  connect(over.y, done.u)
+  connect(low.y, cc.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(near_full.y, cv.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(over.y, done.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {

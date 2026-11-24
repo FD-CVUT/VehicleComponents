@@ -1,27 +1,201 @@
 """
 Three balancers on a cell at 4.15 V that sits 20 mV above the lowest cell, with a 10 mV
-difference threshold and the default 0.2 mV step width. With balancing allowed above 4.10 V
-both conditions hold by at least 50 widths, so the request is the 0.5 enable. With the allowed voltage
-at 4.20 V the second condition fails and the request is 0. With both thresholds exactly met
-each tanh is 0 and the request is u1 / 4 = 0.125.
+difference threshold and the default 0.2 mV step width. With balancing allowed above 4.10 V both
+conditions hold by at least 50 widths, so the request is the 0.5 enable. With the allowed voltage
+at 4.20 V the second condition fails and the request is 0. With both thresholds exactly met each
+tanh is 0 and the request is u1 / 4 = 0.125.
 """
 test component BalancerRequest
-  enable = BlockComponents.Sources.Constant(k = 0.5)
-  delta = BlockComponents.Sources.Constant(k = 0.020)
-  delta_threshold = BlockComponents.Sources.Constant(k = 0.010)
-  cell = BlockComponents.Sources.Constant(k = 4.15)
-  allowed_below = BlockComponents.Sources.Constant(k = 4.10)
-  allowed_above = BlockComponents.Sources.Constant(k = 4.20)
-  bleeding = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest()
-  too_low = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest()
-  on_threshold = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest()
+  enable = BlockComponents.Sources.Constant(k = 0.5) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 250, "x2": 350, "y1": 350, "y2": 450, "rot": 90}}
+    }
+  }
+  delta = BlockComponents.Sources.Constant(k = 0.020) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 550, "y2": 650}}}
+  }
+  delta_threshold = BlockComponents.Sources.Constant(k = 0.010) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 750, "y2": 850}}}
+  }
+  cell = BlockComponents.Sources.Constant(k = 4.15) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 950, "y2": 1050}}}
+  }
+  allowed_below = BlockComponents.Sources.Constant(k = 4.10) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 150, "y2": 250}}}
+  }
+  allowed_above = BlockComponents.Sources.Constant(k = 4.20) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1150, "y2": 1250}}}
+  }
+  delta_at_threshold = BlockComponents.Sources.Constant(k = 0.010) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1350, "y2": 1450}}}
+  }
+  allowed_at_cell = BlockComponents.Sources.Constant(k = 4.15) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1550, "y2": 1650}}}
+  }
+  bleeding = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest() {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 275, "y2": 525}}}
+  }
+  too_low = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest() {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 875, "y2": 1125}}}
+  }
+  on_threshold = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 1475, "y2": 1725, "rot": 90}}
+    }
+  }
 relations
-  connect(enable.y, bleeding.u1, too_low.u1, on_threshold.u1)
-  connect(delta.y, bleeding.u2, too_low.u2)
-  connect(delta_threshold.y, bleeding.u3, too_low.u3, on_threshold.u2, on_threshold.u3)
-  connect(cell.y, bleeding.u4, too_low.u4, on_threshold.u4, on_threshold.u5)
-  connect(allowed_below.y, bleeding.u5)
-  connect(allowed_above.y, too_low.u5)
+  connect(enable.y, bleeding.u1, too_low.u1, on_threshold.u1) {
+    "Dyad": {
+      "edges": [
+        {"S": 1, "M": [{"x": 750, "y": 900}, {"x": 750, "y": 750}], "E": -1},
+        {
+          "S": 2,
+          "M": [
+            {"x": 300, "y": 500},
+            {"x": 200, "y": 500},
+            {"x": 200, "y": 700},
+            {"x": 650, "y": 700},
+            {"x": 650, "y": 750}
+          ],
+          "E": -1
+        },
+        {
+          "S": 3,
+          "M": [
+            {"x": 150, "y": 300},
+            {"x": 150, "y": 700},
+            {"x": 650, "y": 700},
+            {"x": 650, "y": 750}
+          ],
+          "E": -1
+        },
+        {
+          "S": 4,
+          "M": [
+            {"x": 1200, "y": 1500},
+            {"x": 1250, "y": 1500},
+            {"x": 1250, "y": 1750},
+            {"x": 100, "y": 1750},
+            {"x": 100, "y": 700},
+            {"x": 650, "y": 700},
+            {"x": 650, "y": 750}
+          ],
+          "E": -1
+        }
+      ],
+      "junctions": [{"x": 670.4545454545455, "y": 727.2727272727273}],
+      "path": {}
+    }
+  }
+  connect(delta.y, bleeding.u2, too_low.u2) {
+    "Dyad": {
+      "edges": [
+        {"S": 1, "M": [{"x": 650, "y": 600}, {"x": 650, "y": 550}], "E": -1},
+        {"S": 2, "M": [{"x": 650, "y": 350}, {"x": 650, "y": 550}], "E": -1},
+        {"S": 3, "M": [{"x": 700, "y": 950}, {"x": 700, "y": 550}], "E": -1}
+      ],
+      "junctions": [{"x": 670.4545454545455, "y": 527.2727272727273}],
+      "path": {}
+    }
+  }
+  connect(delta_threshold.y, bleeding.u3, too_low.u3, on_threshold.u3) {
+    "Dyad": {
+      "edges": [
+        {"S": 1, "M": [{"x": 650, "y": 800}, {"x": 650, "y": 950}], "E": -1},
+        {"S": 2, "M": [{"x": 650, "y": 1000}, {"x": 650, "y": 950}], "E": -1},
+        {
+          "S": 3,
+          "M": [
+            {"x": 800, "y": 400},
+            {"x": 800, "y": 850},
+            {"x": 650, "y": 850},
+            {"x": 650, "y": 950}
+          ],
+          "E": -1
+        },
+        {
+          "S": 4,
+          "M": [
+            {"x": 1100, "y": 1450},
+            {"x": 450, "y": 1450},
+            {"x": 450, "y": 1500},
+            {"x": 150, "y": 1500},
+            {"x": 150, "y": 900},
+            {"x": 650, "y": 900},
+            {"x": 650, "y": 950}
+          ],
+          "E": -1
+        }
+      ],
+      "junctions": [{"x": 670.4545454545455, "y": 927.2727272727274}],
+      "path": {}
+    }
+  }
+  connect(cell.y, bleeding.u4, too_low.u4, on_threshold.u4) {
+    "Dyad": {
+      "edges": [
+        {"S": 1, "M": [{"x": 600, "y": 1000}, {"x": 600, "y": 1100}], "E": -1},
+        {"S": 2, "M": [{"x": 600, "y": 1050}, {"x": 600, "y": 1100}], "E": -1},
+        {
+          "S": 3,
+          "M": [{"x": 1050, "y": 1300}, {"x": 200, "y": 1300}, {"x": 200, "y": 1100}],
+          "E": -1
+        },
+        {
+          "S": 4,
+          "M": [
+            {"x": 950, "y": 450},
+            {"x": 950, "y": 800},
+            {"x": 1250, "y": 800},
+            {"x": 1250, "y": 1300},
+            {"x": 200, "y": 1300},
+            {"x": 200, "y": 1100}
+          ],
+          "E": -1
+        }
+      ],
+      "junctions": [{"x": 620.4545454545455, "y": 1077.2727272727273}],
+      "path": {}
+    }
+  }
+  connect(allowed_below.y, bleeding.u5) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 1200, "y": 200},
+            {"x": 1200, "y": 550},
+            {"x": 1000, "y": 550},
+            {"x": 1000, "y": 500}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(allowed_above.y, too_low.u5) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1000, "y": 1200}, {"x": 1000, "y": 1100}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(delta_at_threshold.y, on_threshold.u2) {
+    "Dyad": {"edges": [{"S": 1, "M": [{"x": 1150, "y": 1400}], "E": 2}], "path": {}}
+  }
+  connect(allowed_at_cell.y, on_threshold.u5) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 950, "y": 1600}, {"x": 950, "y": 1500}, {"x": 1000, "y": 1500}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
 metadata {
   "Dyad": {
     "tests": {

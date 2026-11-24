@@ -1,14 +1,20 @@
-"""
-With a 2 s period, 0.5 s is 0.5 s into the first cycle and 5 s is 1 s into the third.
-"""
+"With a 2 s period, 0.5 s is 0.5 s into the first cycle and 5 s is 1 s into the third."
 test component SoCPhase
-  early = BlockComponents.Sources.Constant(k = 0.5)
-  late = BlockComponents.Sources.Constant(k = 5.0)
-  first_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0)
-  third_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0)
+  early = BlockComponents.Sources.Constant(k = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  late = BlockComponents.Sources.Constant(k = 5.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  first_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  third_cycle = VehicleComponents.Electrical.Battery.Helpers.SoCPhase(period = 2.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
 relations
-  connect(early.y, first_cycle.u)
-  connect(late.y, third_cycle.u)
+  connect(early.y, first_cycle.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(late.y, third_cycle.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {
