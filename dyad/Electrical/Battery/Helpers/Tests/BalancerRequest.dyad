@@ -23,7 +23,7 @@ test component BalancerRequest
     "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1200, "y2": 1300}}}
   }
   balancer = VehicleComponents.Electrical.Battery.Helpers.BalancerRequest() {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 650, "y2": 900}}}
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 700, "y1": 650, "y2": 900}}}
   }
 relations
   connect(enable.y, balancer.u1) {

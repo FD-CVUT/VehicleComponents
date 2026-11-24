@@ -90,12 +90,15 @@ matters). Its diagram, and every test model's, comes from autolayout: run
 `node "$DYAD_CLI" layout VehicleComponents.<Module>.<Component> --dir .` after adding or rewiring
 a part, and never leave a model with parts unplaced. Write a signal that feeds several inputs as
 one two-port `connect` per input: on a `connect` with three or more ends, `dyad layout` attaches
-waypoints to the wrong branch and the Studio draws diagonals. The layout grid gives a block 2
+waypoints to the wrong branch and the Studio draws diagonals. A part's placement in a diagram keeps
+its icon's aspect ratio: square for the default icon and for any 1000 x 1000 icon, otherwise the
+icon's own width to height. A placement stretched to another shape draws the icon at its own
+shape inside a larger box, with the ports outside it. The layout grid gives a default-size block 2
 cells per edge, so a block with more than three ports on one edge fails to route
-(`connection(s) could not be routed legally`) until its placement in the parent is made taller;
-`Electrical.Battery.Helpers.Tests.BalancerRequest` is the example. When the one-step command still
-fails, pin the components with `dyad layout extract`, `solve` and `apply` (see the `dyad-cli`
-skill).
+(`connection(s) could not be routed legally`); scale its placement up in both directions (250 x 250
+for five ports, as `Electrical.Battery.Helpers.Tests.BalancerRequest` does), or give the component
+a wider or taller icon of its own. When the one-step command still fails, pin the components with
+`dyad layout extract`, `solve` and `apply` (see the `dyad-cli` skill).
 
 **Examples and platforms.** An example's top level shows the vehicle's subsystems one level deep:
 driver, body, wheels, brakes, powertrain, controllers and bus as separate blocks. Shared wiring
