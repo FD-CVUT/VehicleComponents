@@ -19,7 +19,8 @@ Upgrade only through the Dyad Studio extension, in a PR of its own:
 
 Done when `mise run check` passes; it fails while the pin, `Project.toml` and `generated/`
 disagree. Then recheck the redeclaration rule in `AGENTS.md` (Examples and platforms): Dyad 3.5
-ignores a redeclaration written at a declaration site.
+ignores a redeclaration written at a declaration site. Work through `docs/agents/stdlib-upgrades.md`
+for the library parts the new standard library replaces.
 
 ## Dependencies
 
