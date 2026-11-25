@@ -165,8 +165,8 @@ Two tiers, chosen by where the test model lives:
 Place every test model in one of the two; the fast tier fails on a test model anywhere else, and
 on any rig over budget. A rig's budget is its warm time inside a tier run, after the compilation
 the process shares; a cold single-rig run takes longer and is not the measure. A rig that needs
-longer is an example, or a sign the component's test is too big. CI runs the example tier only nightly, so run `mise run test examples` yourself when a
-change reaches an example.
+longer is an example, or a sign the component's test is too big. CI runs the example tier only
+nightly, so run `mise run test examples` yourself when a change reaches an example.
 
 The library starts with zero pinned failures, and a new failure gets fixed.
 
