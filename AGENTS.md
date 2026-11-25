@@ -66,8 +66,11 @@ hidden connection: time comes from a wired `BlockComponents.Sources.ContinuousCl
 `u = time`. To choose between signal paths by a structural parameter, route them through a gate
 block whose ports always exist. When a model that places parts needs a calculation to feed a
 part's input, that calculation is a block of its own, wired in; a component's constitutive
-equations on its own variables and ports stay equations. Record each such block in
-`docs/agents/stdlib-upgrades.md`: a BlockComponents release with an equation block replaces them.
+equations on its own variables and ports stay equations. Build it from stdlib blocks where they
+cover it: a clamp is `BlockComponents.Nonlinear.Limiter` (parameter bounds) or `VariableLimiter`
+(input bounds), and `Math.Min` / `Math.Max` compare two signals. A block written only to carry a
+calculation the stdlib cannot express goes in `docs/agents/stdlib-upgrades.md`: a BlockComponents
+release with an equation block replaces it.
 
 **Helpers.** A signal block that only one domain's components use goes in that domain's `Helpers`
 submodule (`Electrical.Battery.Helpers.CCCVVoltageCurrent`). One that several domains use goes in
