@@ -1,0 +1,66 @@
+"""
+Massless Ackermann steering linkage between the steering column and the two front road wheels.
+
+The input shaft turns by the virtual center-wheel angle delta, measured from `support`. The road
+wheels turn by the signed Ackermann angles
+
+    delta_left = atan(tan(delta) / (1 - k tan(delta))),
+    delta_right = atan(tan(delta) / (1 + k tan(delta))),    k = ackermann t_k / (2 L),
+
+so in a left turn (delta > 0) the inner, left wheel turns further. With `ackermann = 1` both
+wheels' axes meet the rear axle's line at one point; `ackermann = 0` is parallel steer. The
+shaft torques satisfy virtual work, so the road wheels' aligning torques reach the column.
+
+Ports: `spline_in` the column side; `spline_left`, `spline_right` the road-wheel steering
+shafts; `support` the linkage housing, which takes the reaction.
+
+Assumptions: rigid and massless, no compliance, friction or play. Defaults are the course's
+planar car (wheelbase 2.7 m, kingpin track 1.55 m).
+"""
+component AckermannSteering
+  "Column side: the virtual center-wheel angle"
+  spline_in = Spline() {^spline_in}
+  "Left road-wheel steering shaft"
+  spline_left = Spline() {^spline_left}
+  "Right road-wheel steering shaft"
+  spline_right = Spline() {^spline_right}
+  "Linkage housing"
+  support = Spline() {^support}
+  "Wheelbase"
+  parameter L::Length = 2.7
+  "Kingpin track"
+  parameter t_k::Length = 1.55
+  "Ackermann fraction: 1 for full Ackermann, 0 for parallel steer"
+  parameter ackermann::Real = 1.0
+  "Signed Ackermann geometry factor"
+  final parameter k::Real = ackermann * t_k / (2 * L)
+  "Virtual center-wheel angle"
+  variable delta::Angle
+  "Left road-wheel angle"
+  variable delta_left::Angle
+  "Right road-wheel angle"
+  variable delta_right::Angle
+  "Left road-wheel angle rate per unit input rate"
+  variable g_left::Real
+  "Right road-wheel angle rate per unit input rate"
+  variable g_right::Real
+relations
+  delta = spline_in.phi - support.phi
+  delta_left = atan(tan(delta) / (1 - k * tan(delta)))
+  delta_right = atan(tan(delta) / (1 + k * tan(delta)))
+  spline_left.phi = support.phi + delta_left
+  spline_right.phi = support.phi + delta_right
+  g_left = (1 + tan(delta) ^ 2) / ((1 - k * tan(delta)) ^ 2 + tan(delta) ^ 2)
+  g_right = (1 + tan(delta) ^ 2) / ((1 + k * tan(delta)) ^ 2 + tan(delta) ^ 2)
+  0 = spline_in.tau + g_left * spline_left.tau + g_right * spline_right.tau
+  0 = support.tau + spline_in.tau + spline_left.tau + spline_right.tau
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/AckermannSteering.svg"}},
+  "_links": {
+    "spline_in": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}}}},
+    "spline_left": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "spline_right": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}}
+  }
+}
+end

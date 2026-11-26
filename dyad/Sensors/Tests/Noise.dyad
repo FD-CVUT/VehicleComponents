@@ -1,0 +1,48 @@
+"""
+`Noise` on a constant 90 km/h carrier, with the default six sines of amplitude 0.2 at 0.5, 1,
+2, 4, 8 and 16 Hz and phases 0, 0.7, 1.5, 2.2, 3.0 and 3.9 rad.
+
+At t = 0 every sine is at its phase: sin 0 + sin 0.7 + sin 1.5 + sin 2.2 + sin 3.0 + sin 3.9 =
+0 + 0.644218 + 0.997495 + 0.808496 + 0.141120 - 0.687766 = 1.903563, so y = 90 + 0.2 · 1.903563
+= 90.380713.
+
+- `repeat` stops at 2 s, where every sine has run a whole number of cycles (1 to 32), so y is
+  back at 90.380713.
+- `half_second` stops at 0.5 s. The 1 to 16 Hz sines have run whole cycles and sit at their
+  phases again, the 0.5 Hz sine a quarter cycle, sin(pi/2) = 1, instead of sin 0 = 0, and the
+  1 Hz sine half a cycle, sin(pi + 0.7) = -0.644218, instead of 0.644218. The sum is
+  1.903563 + 1 - 2 · 0.644218 = 1.615127, so y = 90 + 0.2 · 1.615127 = 90.323025.
+"""
+test component Noise
+  "Constant carrier the noise rides on"
+  carrier = BlockComponents.Sources.Constant(k = 90.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  noise = VehicleComponents.Sensors.Noise() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(carrier.y, noise.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "repeat": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"noise.y": 1e-6},
+        "expect": {"initial": {"noise.y": 90.380713}, "final": {"noise.y": 90.380713}}
+      },
+      "half_second": {
+        "stop": 0.5,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"noise.y": 1e-6},
+        "expect": {"final": {"noise.y": 90.323025}}
+      }
+    }
+  }
+}
+end

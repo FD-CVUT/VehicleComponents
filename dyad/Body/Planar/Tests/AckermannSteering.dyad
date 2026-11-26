@@ -1,0 +1,158 @@
+"""
+`AckermannSteering` with the default wheelbase L = 2.7 m and kingpin track t_k = 1.55 m, its input
+shaft held at the angle `delta_in` from the housing, and the torque `tau_load` applied to each
+road-wheel shaft. The housing is fixed at angle 0, so each road-wheel shaft's angle is its
+steering angle.
+
+With full Ackermann, k = t_k/(2 L) = 1.55/5.4 = 0.287037.
+
+- `left_turn`: delta = 0.1 rad, tan 0.1 = 0.1003347. delta_left = atan(0.1003347/(1 -
+  0.287037 · 0.1003347)) = atan(0.1033100) = 0.1029448 rad and delta_right =
+  atan(0.1003347/(1 + 0.0287998)) = 0.0972185 rad: the inner, left wheel turns further.
+- `right_turn`: delta = -0.1 rad mirrors it, delta_left = -0.0972185 and delta_right =
+  -0.1029448 rad.
+- `tight`: delta = 0.2 rad, tan 0.2 = 0.2027100, gives delta_left = 0.2119993 and delta_right =
+  0.1892709 rad.
+- `parallel`: `ackermann` = 0 makes k = 0, so both wheels turn by delta = 0.1 rad.
+- `torque`: 10 N m on each road-wheel shaft at delta = 0.1 rad. Virtual work puts
+  g_left + g_right times it on the input, with g = (1 + tan² delta)/((1 ∓ k tan delta)² +
+  tan² delta): g_left = 1.0595513 and g_right = 0.9453166, so the input shaft carries
+  -(1.0595513 + 0.9453166) · 10 = -20.0486797 N m through the torque sensor.
+"""
+test component AckermannSteering
+  "Input shaft angle from the housing"
+  parameter delta_in::Angle = 0.1
+  "Torque applied to each road-wheel shaft"
+  parameter tau_load::Torque = 0.0
+  command = BlockComponents.Sources.Constant(k = delta_in) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 350, "y2": 450}}}
+  }
+  source = RotationalComponents.Sources.Position(ref_type = RotationalComponents.Sources.ReferenceType.Exact()) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 350, "y2": 450}}}
+  }
+  torque_sensor = RotationalComponents.Sensors.TorqueSensor() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 350, "y2": 450}}}
+  }
+  linkage = VehicleComponents.Body.Planar.AckermannSteering() {
+    "Dyad": {"placement": {"diagram": {"x1": 1300, "x2": 1200, "y1": 200, "y2": 300}}}
+  }
+  load_left = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load) {
+    "Dyad": {"placement": {"diagram": {"x1": 1550, "x2": 1450, "y1": 200, "y2": 300}}}
+  }
+  load_right = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load) {
+    "Dyad": {"placement": {"diagram": {"x1": 1400, "x2": 1300, "y1": 450, "y2": 550}}}
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 550, "y2": 650, "rot": 90}}
+    }
+  }
+relations
+  connect(command.y, source.phi_ref) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(source.spline, torque_sensor.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(torque_sensor.spline_b, linkage.spline_in) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 1100, "y": 400}, {"x": 1100, "y": 150}, {"x": 1250, "y": 150}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(linkage.spline_left, load_left.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(linkage.spline_right, load_right.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1150, "y": 250}, {"x": 1150, "y": 500}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(source.support, housing.spline) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 500, "y": 500}, {"x": 1100, "y": 500}, {"x": 1100, "y": 600}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(linkage.support, housing.spline) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 1250, "y": 350}, {"x": 1450, "y": 350}, {"x": 1450, "y": 600}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(load_left.support, housing.spline) {
+    "Dyad": {"edges": [{"S": 1, "M": [{"x": 1500, "y": 600}], "E": 2}], "path": {}}
+  }
+  connect(load_right.support, housing.spline) {
+    "Dyad": {"edges": [{"S": 1, "M": [{"x": 1350, "y": 600}], "E": 2}], "path": {}}
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "left_turn": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"linkage.spline_left.phi": 1e-7, "linkage.spline_right.phi": 1e-7},
+        "expect": {
+          "final": {"linkage.spline_left.phi": 0.1029448, "linkage.spline_right.phi": 0.0972185}
+        }
+      },
+      "right_turn": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"delta_in": -0.1},
+        "atol": {"linkage.spline_left.phi": 1e-7, "linkage.spline_right.phi": 1e-7},
+        "expect": {
+          "final": {"linkage.spline_left.phi": -0.0972185, "linkage.spline_right.phi": -0.1029448}
+        }
+      },
+      "tight": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"delta_in": 0.2},
+        "atol": {"linkage.spline_left.phi": 1e-7, "linkage.spline_right.phi": 1e-7},
+        "expect": {
+          "final": {"linkage.spline_left.phi": 0.2119993, "linkage.spline_right.phi": 0.1892709}
+        }
+      },
+      "parallel": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"linkage.ackermann": 0.0},
+        "atol": {"linkage.spline_left.phi": 1e-9, "linkage.spline_right.phi": 1e-9},
+        "expect": {"final": {"linkage.spline_left.phi": 0.1, "linkage.spline_right.phi": 0.1}}
+      },
+      "torque": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"tau_load": 10.0},
+        "atol": {"torque_sensor.tau": 1e-5},
+        "expect": {"final": {"torque_sensor.tau": -20.0486797}}
+      }
+    }
+  }
+}
+end

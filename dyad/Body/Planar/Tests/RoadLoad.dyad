@@ -1,0 +1,124 @@
+"""
+A planar chassis under `RoadLoad` and the longitudinal `Body.Longitudinal.Vehicle` of the same
+1500 kg coast down side by side on a flat road (grade 0, f_r = 0.012) from 30 m/s.
+
+The chassis heads 0.5 rad off the world x axis, so the road load has to read the speed and apply
+the force in the chassis frame. Both cars follow m dv/dt = -(c v² + A), with
+c = rho CdA/2 = 1.2 · 0.63/2 = 0.378 kg/m and A = f_r m g = 0.012 · 1500 · 9.80665 = 176.5197 N
+(the rolling resistance is at full value above a few mm/s). The solution is
+v(t) = s tan(theta0 - k t), with s = sqrt(A/c) = 21.609797 m/s, k = sqrt(A c)/m = 0.0054457 1/s and
+theta0 = atan(30/s) = 0.946558, so at 10 s both are at v = 26.794378 m/s.
+
+The chassis' velocity in its own frame is that speed along its heading and none across it, and
+it does not turn.
+"""
+test component RoadLoad
+  "Planar world with its gravity off: the road load carries the weight's effects"
+  world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  body = MultibodyComponents.PlanarMechanics.Body(m = 1500.0, I = 2500.0, render = false, r = initial [0.0, 0.0], v = initial [30.0 * cos(0.5), 30.0 * sin(0.5)], phi = initial 0.5, w = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 400, "y2": 500}}}
+  }
+  speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 500, "y2": 600}}}
+  }
+  roadload = VehicleComponents.Body.Planar.RoadLoad(m = 1500.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 400, "y2": 500}}}
+  }
+  flat = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  tire = BlockComponents.Sources.Constant(k = 0.012) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
+  }
+  "The longitudinal car, coasting on the same law"
+  reference = VehicleComponents.Body.Longitudinal.Vehicle(m = 1500.0, mass(v = initial 30.0)) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 750, "y2": 850}}}
+  }
+relations
+  connect(body.frame_a, roadload.chassis) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(body.frame_a, speed.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 450}, {"x": 650, "y": 550}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(flat.y, roadload.grade) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 450}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(flat.y, reference.grade) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 500},
+            {"x": 350, "y": 600},
+            {"x": 600, "y": 600},
+            {"x": 600, "y": 900},
+            {"x": 400, "y": 900},
+            {"x": 400, "y": 800}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.y, roadload.f_r) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 750},
+            {"x": 350, "y": 650},
+            {"x": 150, "y": 650},
+            {"x": 150, "y": 400},
+            {"x": 400, "y": 400},
+            {"x": 400, "y": 425}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.y, reference.f_r) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 750}, {"x": 400, "y": 775}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "coast": {
+        "stop": 10,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {
+          "speed.v_x": 1e-4,
+          "speed.v_y": 1e-6,
+          "speed.w": 1e-6,
+          "reference.mass.v": 1e-4
+        },
+        "expect": {
+          "initial": {"speed.v_x": 30.0, "speed.v_y": 0.0},
+          "final": {
+            "speed.v_x": 26.794378,
+            "speed.v_y": 0.0,
+            "speed.w": 0.0,
+            "reference.mass.v": 26.794378
+          }
+        }
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,106 @@
+"""
+Quasi-static normal loads on the four wheels of a planar car: the static axle shares of the
+weight, with longitudinal and lateral load transfer from the chassis acceleration.
+
+Each front wheel carries N_f = m g b/(2 L) at rest and each rear wheel N_r = m g a/(2 L), with
+L = a + b. A forward acceleration a_x moves m a_x h/L from the front axle to the rear, split
+evenly across each axle; a leftward acceleration a_y moves m a_y h/t_w from the left wheels to
+the right, split between the axles as b/L front and a/L rear:
+
+    F_fl = N_f - m a_x h/(2 L) - m a_y h (b/L)/t_w,    F_fr = N_f - m a_x h/(2 L) + m a_y h (b/L)/t_w,
+    F_rl = N_r + m a_x h/(2 L) - m a_y h (a/L)/t_w,    F_rr = N_r + m a_x h/(2 L) + m a_y h (a/L)/t_w.
+
+Ports:
+- `chassis` the chassis frame at the center of mass; the loads read its acceleration, resolved
+  in the chassis frame, and apply no force to it.
+- `fl`, `fr`, `rl`, `rr` each push one wheel's normal load onto that wheel's `load` flange, with
+  the planar wheels' convention (positive force presses the tire onto the road). The wheels hold
+  the flanges at zero travel, so each must be connected to a wheel's load flange or to a `Fixed`.
+
+With `load_transfer = false` the loads stay at their static values; with `true` the accelerations
+pass through a first-order lag of `T_lt`, the time the suspension takes to roll and pitch the
+body, before they move load.
+
+Assumptions: rigid suspension with no roll or pitch stiffness split, and no aerodynamic load.
+The wheels cannot pull on the road: once the transfer takes more than a wheel's static load, that
+wheel's load stays at zero and the tire is off the road. With the floor active the four loads add
+up to more than the weight, since the transfer the lifted wheel cannot give back is not passed to
+the others. Defaults are the course's planar car, with `h = 0`: no transfer until a CG height is
+given (0.55 m for a mid-size car, NHTSA).
+"""
+component QuasiStaticLoads
+  "Chassis frame at the center of mass"
+  chassis = Frame2D() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+  "Normal load pushed onto the front-left wheel"
+  fl = Flange() {"Dyad": {"placement": {"icon": {"x1": 200, "y1": -50, "x2": 300, "y2": 50}}}}
+  "Normal load pushed onto the front-right wheel"
+  fr = Flange() {"Dyad": {"placement": {"icon": {"x1": 700, "y1": -50, "x2": 800, "y2": 50}}}}
+  "Normal load pushed onto the rear-left wheel"
+  rl = Flange() {"Dyad": {"placement": {"icon": {"x1": 200, "y1": 950, "x2": 300, "y2": 1050}}}}
+  "Normal load pushed onto the rear-right wheel"
+  rr = Flange() {"Dyad": {"placement": {"icon": {"x1": 700, "y1": 950, "x2": 800, "y2": 1050}}}}
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1500.0
+  "CG distance to the front axle"
+  parameter a::Length = 1.2
+  "CG distance to the rear axle"
+  parameter b::Length = 1.5
+  "Track width"
+  parameter tw::Length = 1.55
+  "Gravitational acceleration, standard gravity"
+  parameter g::Acceleration = 9.80665
+  "CG height above the road"
+  parameter h::Length = 0.0
+  "Pass the chassis acceleration on to the loads"
+  structural parameter load_transfer::Boolean = false
+  "Suspension lag of the load transfer"
+  parameter T_lt::Time = 0.05
+  "Wheelbase"
+  final parameter L::Length = a + b
+  "Static normal load on each front wheel"
+  final parameter Nf::Dyad.Force = m * g * b / (2 * L)
+  "Static normal load on each rear wheel"
+  final parameter Nr::Dyad.Force = m * g * a / (2 * L)
+  "Longitudinal acceleration that moves load"
+  variable axf::Acceleration
+  "Lateral acceleration that moves load"
+  variable ayf::Acceleration
+  "Load the longitudinal transfer adds to each rear wheel and takes from each front wheel"
+  variable d_long::Dyad.Force
+  "Front-left normal load; never negative"
+  variable F_fl::Dyad.Force
+  "Front-right normal load; never negative"
+  variable F_fr::Dyad.Force
+  "Rear-left normal load; never negative"
+  variable F_rl::Dyad.Force
+  "Rear-right normal load; never negative"
+  variable F_rr::Dyad.Force
+  acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration() {
+    "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}
+  }
+relations
+  connect(chassis, acc.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  if load_transfer
+    T_lt * der(axf) = acc.a_x - axf
+    T_lt * der(ayf) = acc.a_y - ayf
+    initial axf = 0.0
+    initial ayf = 0.0
+  else
+    axf = 0.0
+    ayf = 0.0
+  end
+  d_long = m * axf * h / (2 * L)
+  F_fl = max(Nf - d_long - m * ayf * h * (b / L) / tw, 0.0)
+  F_fr = max(Nf - d_long + m * ayf * h * (b / L) / tw, 0.0)
+  F_rl = max(Nr + d_long - m * ayf * h * (a / L) / tw, 0.0)
+  F_rr = max(Nr + d_long + m * ayf * h * (a / L) / tw, 0.0)
+  fl.f = -F_fl
+  fr.f = -F_fr
+  rl.f = -F_rl
+  rr.f = -F_rr
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Body/Planar/QuasiStaticLoads.svg"}
+  }
+}
+end

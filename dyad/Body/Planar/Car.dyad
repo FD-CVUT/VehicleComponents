@@ -1,0 +1,212 @@
+"""
+Four-wheel planar car: a rigid chassis on four braked slip wheels, the front pair steered through
+a column and an Ackermann linkage, with quasi-static wheel loads, and an ideal sensor cluster
+that sends everything the car measures about itself on `bus`.
+
+The chassis is a planar body of mass `m` and yaw inertia `Iz` at the center of mass, with the
+front axle `a` ahead and the rear axle `b` behind it and the wheels `tw/2` to either side. The
+steering wheel turns the column, which turns the linkage's input by `1/i_s` of its angle; the
+linkage turns the front wheels on revolute joints. `QuasiStaticLoads` pushes each wheel's normal
+load onto its tire, and every `Wheel` reads its grip from the road `grip`.
+
+Ports:
+- `steering` the steering-wheel shaft; its angle steers the car, positive to the left.
+- `chassis` the chassis frame at the center of mass, for the road load and the road grade.
+- `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` the wheel-center frames.
+- `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft behind its brake, where a drive
+  attaches; open for an undriven wheel.
+- `tau_fl`, `tau_fr`, `tau_rl`, `tau_rr` each wheel's requested brake torque.
+- `bus` everything the car measures about itself (`CarBus`).
+
+Assumptions: no suspension, so no roll, pitch or camber; the road load is not part of the car
+(`RoadLoad` attaches to `chassis`); gravity enters only through the wheel loads, the world's
+gravity is off. The car starts at rest at the world origin heading along x, with every wheel at
+rest and every brake released; give another start at the declaration,
+`Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
+planar car (a mid-size sedan, assumed).
+"""
+component Car
+  "Steering-wheel shaft"
+  steering = Spline() {^steering}
+  "Chassis frame at the center of mass"
+  chassis = Frame2D() {^chassis}
+  "Front-left wheel center"
+  wheel_fl = Frame2D() {^wheel_fl}
+  "Front-right wheel center"
+  wheel_fr = Frame2D() {^wheel_fr}
+  "Rear-left wheel center"
+  wheel_rl = Frame2D() {^wheel_rl}
+  "Rear-right wheel center"
+  wheel_rr = Frame2D() {^wheel_rr}
+  "Front-left wheel shaft"
+  spin_fl = Spline() {^spin_fl}
+  "Front-right wheel shaft"
+  spin_fr = Spline() {^spin_fr}
+  "Rear-left wheel shaft"
+  spin_rl = Spline() {^spin_rl}
+  "Rear-right wheel shaft"
+  spin_rr = Spline() {^spin_rr}
+  "Front-left requested brake torque"
+  tau_fl = RealInput() {^tau_fl}
+  "Front-right requested brake torque"
+  tau_fr = RealInput() {^tau_fr}
+  "Rear-left requested brake torque"
+  tau_rl = RealInput() {^tau_rl}
+  "Rear-right requested brake torque"
+  tau_rr = RealInput() {^tau_rr}
+  "Everything the car measures about itself"
+  bus = VehicleComponents.Body.Planar.CarBus() {^bus}
+  "Road grip over world position, shared by the four wheels"
+  structural parameter grip::VehicleComponents.Road.Grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg")
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1500.0
+  "Yaw inertia"
+  parameter Iz::MomentOfInertia = 2500.0
+  "CG distance to the front axle"
+  parameter a::Length = 1.2
+  "CG distance to the rear axle"
+  parameter b::Length = 1.5
+  "Track width"
+  parameter tw::Length = 1.55
+  "Wheel rolling radius"
+  parameter radius::Length = 0.31
+  "One wheel's spin inertia"
+  parameter J::MomentOfInertia = 1.0
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.8
+  "Front slip ratio at peak adhesion"
+  parameter sAdhesion_f::Real = 0.12
+  "Rear slip ratio at peak adhesion"
+  parameter sAdhesion_r::Real = 0.09
+  "Brake actuator time constant"
+  parameter T_brake::Time = 0.03
+  "Maximum brake torque of each wheel"
+  parameter tau_max::Torque = 2500.0
+  "Steering ratio, steering-wheel angle over road-wheel angle"
+  parameter i_s::Real = 16.0
+  "Kingpin track"
+  parameter t_k::Length = tw
+  "Ackermann fraction: 1 for full Ackermann, 0 for parallel steer"
+  parameter ackermann::Real = 1.0
+  "CG height above the road"
+  parameter h_cg::Length = 0.0
+  "Pass the chassis acceleration on to the wheel loads"
+  structural parameter load_transfer::Boolean = false
+  "Suspension lag of the load transfer"
+  parameter T_lt::Time = 0.05
+  world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {^world}
+  body = MultibodyComponents.PlanarMechanics.Body(m = m, I = Iz, render = false, linearStatePriority = 2, r = initial [0.0, 0.0], v = initial [0.0, 0.0], phi = initial 0.0, w = initial 0.0) {^body}
+  front = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [a, 0.0], render = false) {^front}
+  rear = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [-b, 0.0], render = false) {^rear}
+  arm_fl = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0.0, tw / 2], render = false) {^arm_fl}
+  arm_fr = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0.0, -tw / 2], render = false) {^arm_fr}
+  arm_rl = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0.0, tw / 2], render = false) {^arm_rl}
+  arm_rr = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [0.0, -tw / 2], render = false) {^arm_rr}
+  kingpin_fl = MultibodyComponents.PlanarMechanics.Revolute(render = false) {^kingpin_fl}
+  kingpin_fr = MultibodyComponents.PlanarMechanics.Revolute(render = false) {^kingpin_fr}
+  column = RotationalComponents.Components.IdealGear(ratio = i_s) {^column}
+  linkage = VehicleComponents.Body.Planar.AckermannSteering(L = a + b, t_k = t_k, ackermann = ackermann) {^linkage}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  loads = VehicleComponents.Body.Planar.QuasiStaticLoads(m = m, a = a, b = b, tw = tw, h = h_cg, load_transfer = load_transfer, T_lt = T_lt) {^loads}
+  fl = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
+  fr = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
+  rl = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
+  rr = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
+  sensors = VehicleComponents.Sensors.PlanarCar(radius = radius) {^sensors}
+relations
+  connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, sensors.chassis) {^w1}
+  connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a) {^w2}
+  connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a) {^w3}
+  connect(arm_fl.frame_b, kingpin_fl.frame_a) {^w4}
+  connect(kingpin_fl.frame_b, fl.frame_a, wheel_fl, sensors.wheel_fl) {^w5}
+  connect(arm_fr.frame_b, kingpin_fr.frame_a) {^w6}
+  connect(kingpin_fr.frame_b, fr.frame_a, wheel_fr, sensors.wheel_fr) {^w7}
+  connect(arm_rl.frame_b, rl.frame_a, wheel_rl, sensors.wheel_rl) {^w8}
+  connect(arm_rr.frame_b, rr.frame_a, wheel_rr, sensors.wheel_rr) {^w9}
+  connect(steering, column.spline_a, sensors.steering) {^w10}
+  connect(column.spline_b, linkage.spline_in) {^w11}
+  connect(linkage.spline_left, kingpin_fl.flange_a) {^w12}
+  connect(linkage.spline_right, kingpin_fr.flange_a) {^w13}
+  connect(column.support, linkage.support, housing.spline) {^w14}
+  connect(loads.fl, fl.load) {^w15}
+  connect(loads.fr, fr.load) {^w16}
+  connect(loads.rl, rl.load) {^w17}
+  connect(loads.rr, rr.load) {^w18}
+  connect(fl.spin, spin_fl, sensors.spin_fl) {^w19}
+  connect(fr.spin, spin_fr, sensors.spin_fr) {^w20}
+  connect(rl.spin, spin_rl, sensors.spin_rl) {^w21}
+  connect(rr.spin, spin_rr, sensors.spin_rr) {^w22}
+  connect(tau_fl, fl.tau_cmd) {^w23}
+  connect(tau_fr, fr.tau_cmd) {^w24}
+  connect(tau_rl, rl.tau_cmd) {^w25}
+  connect(tau_rr, rr.tau_cmd) {^w26}
+  connect(sensors.bus, bus) {^w27}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/Car.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1570, "y1": 970, "x2": 1630, "y2": 1030}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 1500, "y1": 500, "x2": 1700, "y2": 700}}}},
+    "steering": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 250, "y1": -30, "x2": 350, "y2": 70}}}},
+    "chassis": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": -30, "y1": 760, "x2": 30, "y2": 820}}}},
+    "wheel_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 300, "x2": 50, "y2": 400}, "diagram": {"x1": -30, "y1": 370, "x2": 30, "y2": 430}}}},
+    "wheel_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 300, "x2": 1050, "y2": 400}, "diagram": {"x1": 1370, "y1": 370, "x2": 1430, "y2": 430}}}},
+    "wheel_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}, "diagram": {"x1": -30, "y1": 970, "x2": 30, "y2": 1030}}}},
+    "wheel_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 800, "x2": 1050, "y2": 900}, "diagram": {"x1": 1370, "y1": 970, "x2": 1430, "y2": 1030}}}},
+    "spin_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -30, "y1": 520, "x2": 30, "y2": 580}}}},
+    "spin_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 200, "x2": 1050, "y2": 300}, "diagram": {"x1": 1370, "y1": 520, "x2": 1430, "y2": 580}}}},
+    "spin_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}, "diagram": {"x1": -30, "y1": 1120, "x2": 30, "y2": 1180}}}},
+    "spin_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 700, "x2": 1050, "y2": 800}, "diagram": {"x1": 1370, "y1": 1120, "x2": 1430, "y2": 1180}}}},
+    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}, "diagram": {"x1": -30, "y1": 440, "x2": 30, "y2": 500}}}},
+    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 1050, "y1": 100, "x2": 950, "y2": 200}, "diagram": {"x1": 1430, "y1": 440, "x2": 1370, "y2": 500}}}},
+    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 600, "x2": 50, "y2": 700}, "diagram": {"x1": -30, "y1": 1040, "x2": 30, "y2": 1100}}}},
+    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 1050, "y1": 600, "x2": 950, "y2": 700}, "diagram": {"x1": 1430, "y1": 1040, "x2": 1370, "y2": 1100}}}},
+    "world": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 810, "x2": 1250, "y2": 910}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 810, "x2": 500, "y2": 910}}}},
+    "front": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 660, "x2": 750, "y2": 760, "rot": 270}}}},
+    "rear": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 90}}}},
+    "arm_fl": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 480, "x2": 450, "y2": 580}}}},
+    "arm_fr": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 480, "x2": 950, "y2": 580}}}},
+    "arm_rl": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 1080, "x2": 450, "y2": 1180}}}},
+    "arm_rr": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 1080, "x2": 950, "y2": 1180}}}},
+    "kingpin_fl": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 480, "x2": 300, "y2": 580}}}},
+    "kingpin_fr": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 480, "x2": 1100, "y2": 580}}}},
+    "column": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 100, "x2": 500, "y2": 200}}}},
+    "linkage": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 250, "x2": 750, "y2": 350}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 250, "x2": 330, "y2": 350}}}},
+    "loads": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 810, "x2": 850, "y2": 910}}}},
+    "fl": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 500, "x2": 200, "y2": 600}}}},
+    "fr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 500, "x2": 1200, "y2": 600}}}},
+    "rl": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 1100, "x2": 200, "y2": 1200}}}},
+    "rr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 1100, "x2": 1200, "y2": 1200}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [{"x": 700, "y": 790}], "E": 5}, {"S": -1, "M": [], "E": 6}], "junctions": [{"x": 700, "y": 860}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 530}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 1130}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 240, "y": 400}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 240, "y": 530}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1160, "y": 400}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 1160, "y": 530}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 240, "y": 1000}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 240, "y": 1130}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1160, "y": 1000}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 1160, "y": 1130}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 150}], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 720, "y": 150}], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 300}], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1050, "y": 300}], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 225}], "E": -1}, {"S": -1, "M": [{"x": 680, "y": 225}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 280, "y": 225}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 630}, {"x": 230, "y": 630}, {"x": 230, "y": 570}], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 825, "y": 630}, {"x": 1170, "y": 630}, {"x": 1170, "y": 570}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 1220}, {"x": 230, "y": 1220}, {"x": 230, "y": 1170}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 825, "y": 1220}, {"x": 1170, "y": 1220}, {"x": 1170, "y": 1170}], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 470}], "E": 2}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1250, "y": 470}], "E": 2}]}},
+    "w25": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 1070}], "E": 2}]}},
+    "w26": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1250, "y": 1070}], "E": 2}]}},
+    "w27": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

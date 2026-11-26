@@ -1,0 +1,229 @@
+"""
+The road-wheel rig: a planar `Wheel` whose center moves at a prescribed constant velocity,
+heading along the world x axis, under a constant normal load, with a constant brake request.
+`wheel` runs on the default road of grip 1; `icy` is a second wheel on `uniform_low_mu.crg`, grip
+0.3 everywhere, with its own sources and the same settings. Both wheels have the tire of the
+course's planar front wheel: mu_A = 1, mu_S = 0.8, sAdhesion = 0.12, sSlide = 0.36, radius
+0.31 m, J = 1 kg m².
+
+Each center moves at `vx` = 20 m/s forward and `vy` to the left, under 4000 N. Each wheel starts
+rolling at (20 + 0.01)/0.31 rad/s, just above the road speed, and nothing drives its shaft, so
+an unbraked wheel settles at zero longitudinal slip within milliseconds, and the slip speed is
+the lateral speed alone. At 20 m/s the adhesion and sliding slip speeds are 0.12 · 20 = 2.4 m/s
+and 0.36 · 20 = 7.2 m/s; below the adhesion speed the triple-S law is mu_A c(x), with
+c(x) = -x³/2 + 3x/2 and x the slip speed over 2.4 m/s. The tire pushes the wheel against its
+slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
+
+- `straight`: vy = 0, no slip, F_x = F_y = 0 on both wheels.
+- `half_peak`: vy = 1.2 m/s, x = 0.5, c = 0.6875: F_y = -0.6875 · 4000 = -2750 N, and on ice
+  -0.3 · 2750 = -825 N. Both carry F_z = 4000 N.
+- `peak`: vy = 2.4 m/s reaches the adhesion peak mu_A: F_y = -4000 N, and -1200 N on ice.
+- `sliding`: vy = 7.2 m/s reaches the sliding plateau mu_S: F_y = -0.8 · 4000 = -3200 N, and
+  -960 N on ice.
+- `braking`: 1000 N m on the brake, which the tire holds once the brake's 0.03 s lag is done
+  and the wheel no longer decelerates: F_x = -1000/0.31 = -3225.81 N. The icy tire can pass
+  at most 0.3 · 4000 = 1200 N, a torque of 372 N m, so its wheel locks and slides at the
+  plateau: F_x = -0.3 · 0.8 · 4000 = -960 N.
+- `lifted`: a -1000 N load with vy = 1.2 m/s lifts both tires: F_z = 0 and F_y = 0.
+"""
+test component Wheel
+  "Sideways speed of the wheel centers"
+  parameter vy::Velocity = 0.0
+  "Requested brake torque"
+  parameter tau::Torque = 0.0
+  forward = BlockComponents.Sources.Constant(k = 20.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  sideways = BlockComponents.Sources.Constant(k = vy) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+  }
+  load = TranslationalComponents.Sources.ConstantForce(f_constant = 4000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 500, "y2": 600}}}
+  }
+  ground = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 750, "y2": 850}}}
+  }
+  brake = BlockComponents.Sources.Constant(k = tau) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  }
+  wheel = VehicleComponents.Body.Planar.Wheel(J = 1.0, tau_max = 10000.0, inertia(w = initial 20.01 / 0.31)) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 500, "y2": 600}}}
+  }
+  icy_forward = BlockComponents.Sources.Constant(k = 20.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 750, "y2": 850}}}
+  }
+  icy_sideways = BlockComponents.Sources.Constant(k = vy) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 1000, "y2": 1100}}}
+  }
+  icy_motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 850, "y2": 950}}}
+  }
+  icy_load = TranslationalComponents.Sources.ConstantForce(f_constant = 4000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 1100, "y2": 1200}}}
+  }
+  icy_ground = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 1350, "y2": 1450}}}
+  }
+  icy_brake = BlockComponents.Sources.Constant(k = tau) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 1100, "y2": 1200}}}
+  }
+  icy = VehicleComponents.Body.Planar.Wheel(grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_low_mu.crg"), J = 1.0, tau_max = 10000.0, inertia(w = initial 20.01 / 0.31)) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 1100, "y2": 1200}}}
+  }
+relations
+  connect(forward.y, motion.v_x) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 330}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.v_y) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 370}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, wheel.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 350}, {"x": 850, "y": 530}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(load.flange, wheel.load) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 550}, {"x": 850, "y": 570}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(load.support, ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(brake.y, wheel.tau_cmd) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 650, "y": 600}, {"x": 650, "y": 450}, {"x": 750, "y": 450}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(icy_forward.y, icy_motion.v_x) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 400, "y": 800}, {"x": 400, "y": 880.0000000000001}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(icy_sideways.y, icy_motion.v_y) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 400, "y": 1050}, {"x": 400, "y": 919.9999999999999}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(icy_motion.frame_b, icy.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 900}, {"x": 850, "y": 1130}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(icy_load.flange, icy.load) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 1150}, {"x": 850, "y": 1170}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(icy_load.support, icy_ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(icy_brake.y, icy.tau_cmd) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 650, "y": 1150}, {"x": 650, "y": 1050}, {"x": 750, "y": 1050}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "straight": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"wheel.F_x": 0.1, "wheel.F_y": 0.1, "icy.F_x": 0.1, "icy.F_y": 0.1},
+        "expect": {"final": {"wheel.F_x": 0.0, "wheel.F_y": 0.0, "icy.F_x": 0.0, "icy.F_y": 0.0}}
+      },
+      "half_peak": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"vy": 1.2},
+        "atol": {"wheel.F_y": 0.1, "wheel.F_z": 1e-6, "icy.F_y": 0.1, "icy.F_z": 1e-6},
+        "expect": {
+          "final": {
+            "wheel.F_y": -2750.0,
+            "wheel.F_z": 4000.0,
+            "icy.F_y": -825.0,
+            "icy.F_z": 4000.0
+          }
+        }
+      },
+      "peak": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"vy": 2.4},
+        "atol": {"wheel.F_y": 0.1, "icy.F_y": 0.1},
+        "expect": {"final": {"wheel.F_y": -4000.0, "icy.F_y": -1200.0}}
+      },
+      "sliding": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"vy": 7.2},
+        "atol": {"wheel.F_y": 0.1, "icy.F_y": 0.1},
+        "expect": {"final": {"wheel.F_y": -3200.0, "icy.F_y": -960.0}}
+      },
+      "braking": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"tau": 1000.0},
+        "atol": {"wheel.F_x": 0.1, "icy.F_x": 0.1},
+        "expect": {"final": {"wheel.F_x": -3225.81, "icy.F_x": -960.0}}
+      },
+      "lifted": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"vy": 1.2, "load.f_constant": -1000.0, "icy_load.f_constant": -1000.0},
+        "atol": {"wheel.F_y": 1e-6, "wheel.F_z": 1e-6, "icy.F_y": 1e-6, "icy.F_z": 1e-6},
+        "expect": {"final": {"wheel.F_y": 0.0, "wheel.F_z": 0.0, "icy.F_y": 0.0, "icy.F_z": 0.0}}
+      }
+    }
+  }
+}
+end

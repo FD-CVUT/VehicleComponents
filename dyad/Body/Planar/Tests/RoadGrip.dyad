@@ -1,0 +1,58 @@
+"""
+`RoadGrip` on a frame moved along the center line (y = 0) of the ice-patch road at a prescribed
+55 m/s, from x = 420 m at t = 0 to x = 475 m at t = 1 s.
+
+`assets/data/roads/generate.jl` writes `ice_patch_mu.crg` with grip
+1 - 0.7 smooth((x - 455)/4) smooth((495 - x)/4) on nodes every 0.5 m from x = 420 m, where
+smooth clamps its argument to [0, 1]. Both ends are nodes, which the spline interpolates: at
+x = 420 m the first factor is 0 and the grip is 1; at x = 475 m both factors are 1 and the grip
+is 1 - 0.7 = 0.3.
+"""
+test component RoadGrip
+  forward = BlockComponents.Sources.Constant(k = 55.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  sideways = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 450, "y2": 550}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(r_start = [420.0, 0.0]) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  sensor = VehicleComponents.Body.Planar.RoadGrip(road = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/ice_patch_mu.crg")) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(forward.y, motion.v_x) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 400, "y": 250}, {"x": 400, "y": 229.99999999999997}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.v_y) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 270}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, sensor.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "center_line": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"sensor.grip": 1e-6},
+        "expect": {"initial": {"sensor.grip": 1.0}, "final": {"sensor.grip": 0.3}}
+      }
+    }
+  }
+}
+end

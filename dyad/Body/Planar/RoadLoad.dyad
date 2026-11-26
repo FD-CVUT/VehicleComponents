@@ -1,0 +1,115 @@
+"""
+Road load on a planar chassis: the longitudinal `Body.Longitudinal.RoadLoad` law, aerodynamic
+drag, rolling resistance and the along-slope weight, applied along the chassis heading.
+
+The chassis' forward speed `v_x`, resolved in the chassis frame, drives a speed source that moves
+the law's flange, so the law sees the speed it would see on the longitudinal car. A force sensor
+reads the force the law takes, and a planar force applies it to the chassis along its x axis,
+against the motion. The road load is therefore the same law, with the same parameters, on both
+cars.
+
+Ports: `chassis` the chassis frame, where the force acts; `grade` the road gradient tan(alpha)
+along the heading, 0 on a flat road (or from a `RoadGrade`); `f_r` the rolling resistance
+coefficient (0.012 is a car tire on asphalt).
+
+Assumptions: the force acts at the chassis frame along its x axis, so it adds no yaw moment and
+no lateral force, and the sideslip speed does not enter it. Those of `Body.Longitudinal.RoadLoad`
+otherwise.
+"""
+component RoadLoad
+  "Chassis frame; the road load acts here along the chassis x axis"
+  chassis = Frame2D() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  "Road gradient along the heading, tan(alpha)"
+  grade = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+  "Rolling resistance coefficient"
+  f_r = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}}
+  "Vehicle mass; the road load uses it for the normal load and the along-slope weight"
+  parameter m::Dyad.Mass = 1500.0
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
+  "Air density at sea level"
+  parameter rho::Density = 1.2
+  "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force"
+  parameter v_nominal::Velocity = 30.0
+  "Gravitational acceleration, standard gravity"
+  parameter g::Acceleration = 9.80665
+  speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 450, "y2": 550}}}
+  }
+  follower = TranslationalComponents.Sources.VelocitySource(ref_type = TranslationalComponents.Sources.ReferenceType.Exact()) {
+    "Dyad": {"placement": {"diagram": {"x1": 650, "x2": 550, "y1": 450, "y2": 550}}}
+  }
+  ground = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 650, "y2": 750}}}
+  }
+  sensor = TranslationalComponents.Sensors.ForceSensor() {
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}
+  }
+  law = VehicleComponents.Body.Longitudinal.RoadLoad(m = m, CdA = CdA, rho = rho, v_nominal = v_nominal, g = g) {
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}
+  }
+  zero = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 850, "y2": 950}}}
+  }
+  force = MultibodyComponents.PlanarMechanics.WorldForceTorque(resolve_in_frame = MultibodyComponents.ResolveInFrame.FrameB(), render = false) {
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 800, "y2": 900}}}
+  }
+relations
+  connect(chassis, speed.frame_a, force.frame_b) {
+    "Dyad": {
+      "edges": [
+        {"S": 1, "M": [], "E": -1},
+        {"S": -1, "M": [], "E": 2},
+        {"S": -1, "M": [{"x": 950, "y": 850}], "E": 3}
+      ],
+      "junctions": [{"x": 950, "y": 500}]
+    }
+  }
+  connect(speed.v_x, follower.v_ref) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 700, "y": 469.00000000000006}, {"x": 700, "y": 500}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(follower.support, ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(follower.flange, sensor.flange_b) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(sensor.flange_a, law.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(sensor.f, force.force_x) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 400, "y": 800}, {"x": 700, "y": 800}, {"x": 700, "y": 815}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(zero.y, force.force_y, force.torque) {
+    "Dyad": {
+      "edges": [
+        {"S": 1, "M": [], "E": -1},
+        {"S": -1, "M": [{"x": 700, "y": 850}], "E": 2},
+        {"S": -1, "M": [{"x": 700, "y": 883}], "E": 3}
+      ],
+      "junctions": [{"x": 700, "y": 900}]
+    }
+  }
+  connect(grade, law.grade) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(f_r, law.f_r) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 100, "y": 250}, {"x": 100, "y": 475}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/RoadLoad.svg"}}
+}
+end

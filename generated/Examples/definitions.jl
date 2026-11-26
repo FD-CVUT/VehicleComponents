@@ -19,6 +19,7 @@ import BlockComponents
 import DyadData
 import DyadInterface
 import HydraulicComponents
+import MultibodyComponents
 import RotationalComponents
 import TranslationalComponents
 @doc Markdown.doc"""
@@ -200,3 +201,4 @@ end
 
 
 include("HardStop_definition.jl")
+include("PlanarCoast_definition.jl")

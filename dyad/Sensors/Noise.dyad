@@ -1,0 +1,52 @@
+"""
+Additive measurement noise: a deterministic sum of six sines added to a signal.
+
+    y = u + amplitude (sin(2 pi f1 t + p1) + ... + sin(2 pi f6 t + p6))
+
+Ports: `u` the true signal; `y` the measured signal.
+
+The noise is a fixed sum of sinusoids, never a random-number generator, so every run gives the
+same output and a controller's robustness test is reproducible. Every sine has the same
+amplitude and the default frequencies span 0.5 to 16 Hz, five octaves, so a derivative filter
+shows its gain rising with frequency. The phases are fixed and distinct so the sines do not all
+peak together. Time comes from a `ContinuousClock`.
+
+Assumptions: the noise is bounded by 6 `amplitude` and is the same for every instance with the
+same parameters; with the default frequencies it repeats every 2 s with zero mean. Defaults are the
+course's speed measurement noise in km/h (assumed).
+"""
+component Noise
+  extends BlockComponents.Interfaces.SISO
+  "Amplitude of each sine"
+  parameter amplitude::Real = 0.2
+  "Frequency of the first sine"
+  parameter f1::Frequency = 0.5
+  "Frequency of the second sine"
+  parameter f2::Frequency = 1.0
+  "Frequency of the third sine"
+  parameter f3::Frequency = 2.0
+  "Frequency of the fourth sine"
+  parameter f4::Frequency = 4.0
+  "Frequency of the fifth sine"
+  parameter f5::Frequency = 8.0
+  "Frequency of the sixth sine"
+  parameter f6::Frequency = 16.0
+  "Phase of the first sine"
+  parameter p1::Angle = 0.0
+  "Phase of the second sine"
+  parameter p2::Angle = 0.7
+  "Phase of the third sine"
+  parameter p3::Angle = 1.5
+  "Phase of the fourth sine"
+  parameter p4::Angle = 2.2
+  "Phase of the fifth sine"
+  parameter p5::Angle = 3.0
+  "Phase of the sixth sine"
+  parameter p6::Angle = 3.9
+  clock = BlockComponents.Sources.ContinuousClock() {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 100, "y2": 200}}}
+  }
+relations
+  y = u + amplitude * (sin(2 * pi * f1 * clock.y + p1) + sin(2 * pi * f2 * clock.y + p2) + sin(2 * pi * f3 * clock.y + p3) + sin(2 * pi * f4 * clock.y + p4) + sin(2 * pi * f5 * clock.y + p5) + sin(2 * pi * f6 * clock.y + p6))
+metadata {"Dyad": {"icons": {"default": "dyad://VehicleComponents/Sensors/Noise.svg"}}}
+end

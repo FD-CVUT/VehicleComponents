@@ -1,0 +1,89 @@
+"""
+Straight-line coast of the planar car on the planar platform: the steering wheel held straight
+by `column`, no brake request from `release`, no drive, on the 2 % ramp road. The car starts at
+`x0` on the road's center line, heading along x, at 25 m/s, with every wheel rolling at
+25/0.31 rad/s. It has no ports.
+
+`ramp_z.crg` is level at height 0 for x below -2 m and climbs at exactly 2 % on 0 to 500 m
+(`Body.Planar.Tests.RoadGrade` derives both).
+
+- `flat` starts at x0 = -300 m and stays below -50 m, on the level road.
+- `climb` starts at x0 = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
+  cos(alpha) = 1/sqrt(1.0004) = 0.99980006 and sin(alpha) = 0.01999600.
+
+The wheels turn with the chassis, so the four wheel inertias add J/r² each to the mass the road
+load decelerates: m_eff = 1500 + 4 · 1/0.31² = 1541.6233 kg. The tires slip only the few mm/s
+that spin the wheels down, so the car follows m_eff dv/dt = -(c v² + A) with
+c = rho CdA/2 = 0.378 kg/m and A the speed-independent part of the road load:
+
+- flat: A = f_r m g = 0.012 · 1500 · 9.80665 = 176.5197 N;
+- climb: A = m g (f_r cos(alpha) + sin(alpha)) = 14709.975 · (0.0119976 + 0.0199960) =
+  470.6251 N.
+
+With s = sqrt(A/c), k = sqrt(A c)/m_eff and theta0 = atan(25/s), the speed is
+v(t) = s tan(theta0 - k t) and the distance (m_eff/c) ln(cos(theta0 - k t)/cos(theta0)). At
+10 s:
+
+- flat: s = 21.609797 m/s, k = 0.0052986 1/s, theta0 = 0.858006, v = 22.474921 m/s after
+  237.129915 m, so x = -62.870085 m;
+- climb: s = 35.285123 m/s, k = 0.0086518 1/s, theta0 = 0.616417, v = 20.669387 m/s after
+  227.943473 m, so x = 237.943473 m.
+
+Straight ahead on a level-across road with equal loads left and right, nothing turns the car: it
+keeps y = 0 and no yaw rate. The straight run is neutrally stable sideways, so rounding drifts y
+by up to about 1e-5 m over the run, which its tolerance allows.
+"""
+test component PlanarCoast
+  extends VehicleComponents.Examples.Platforms.Planar(road(road = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")), car(body(r = initial [x0, 0.0], v = initial [25.0, 0.0]), fl(inertia(w = initial 25.0 / 0.31)), fr(inertia(w = initial 25.0 / 0.31)), rl(inertia(w = initial 25.0 / 0.31)), rr(inertia(w = initial 25.0 / 0.31))))
+  "Start position along the road"
+  parameter x0::Length = -300.0
+  "Holds the steering wheel straight"
+  column = RotationalComponents.Components.Fixed() {^column}
+  "No brake request"
+  release = BlockComponents.Sources.Constant(k = 0.0) {^release}
+relations
+  connect(column.spline, car.steering) {^w4}
+  connect(release.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr) {^w5}
+metadata {
+  "Dyad": {
+    "tests": {
+      "flat": {
+        "stop": 10, "solver": "Auto", "abstol": 1e-7, "reltol": 1e-7,
+        "atol": {"car.bus.vx": 0.001, "car.bus.x": 0.01, "car.bus.y": 0.001, "car.bus.r": 1e-6},
+        "expect": {
+          "initial": {"car.bus.vx": 25.0, "car.bus.x": -300.0},
+          "final": {"car.bus.vx": 22.474921, "car.bus.x": -62.870085, "car.bus.y": 0.0, "car.bus.r": 0.0},
+          "signals": ["car.bus.vx"]
+        }
+      },
+      "climb": {
+        "stop": 10, "solver": "Auto", "abstol": 1e-7, "reltol": 1e-7,
+        "params": {"x0": 10.0},
+        "atol": {"car.bus.vx": 0.001, "car.bus.x": 0.01, "car.bus.y": 0.001, "car.bus.r": 1e-6, "road.grade": 1e-9},
+        "expect": {
+          "initial": {"car.bus.vx": 25.0, "car.bus.x": 10.0},
+          "final": {"car.bus.vx": 20.669387, "car.bus.x": 237.943473, "car.bus.y": 0.0, "car.bus.r": 0.0, "road.grade": 0.02},
+          "signals": ["car.bus.vx"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "column": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 20, "y2": 120}}}},
+    "release": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 150, "y2": 250}}}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 0}, {"x": 600, "y": 0}], "E": 2}]}},
+    "w5": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 450, "y": 180}], "E": 2},
+          {"S": -1, "M": [{"x": 450, "y": 280}], "E": 3},
+          {"S": -1, "M": [{"x": 450, "y": 130}, {"x": 750, "y": 130}, {"x": 750, "y": 180}], "E": 4},
+          {"S": -1, "M": [{"x": 450, "y": 130}, {"x": 750, "y": 130}, {"x": 750, "y": 280}], "E": 5}
+        ],
+        "junctions": [{"x": 450, "y": 200}]
+      }
+    }
+  }
+}
+end

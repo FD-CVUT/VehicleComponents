@@ -1,0 +1,38 @@
+"""
+Planar platform: the planar car on a road, with its road load reading the grade under the
+chassis. It has no ports, no driver and no drive; a child steers the car, sets its brake requests
+and drives its wheels.
+
+`car` is a `Body.Planar.Car` on the road grip `car.grip`, `roadload` its drag, rolling resistance
+and along-slope weight, and `road` the grade under the chassis from the road slope `road.road`.
+Both roads default to level with grip 1; a child changes them in its `extends` clause,
+`extends Planar(road(road = VehicleComponents.Road.slope(file)))`. `m` sets the car's mass and
+the mass the road load uses, so the two agree.
+
+Assumptions: those of `Body.Planar.Car` and `Body.Planar.RoadLoad`, with rolling resistance
+f_r = 0.012, a car tire on asphalt. The car starts at rest at the world origin.
+"""
+partial component Planar
+  "Vehicle mass, for the car and its road load"
+  parameter m::Dyad.Mass = 1500.0
+  car = VehicleComponents.Body.Planar.Car(m = m) {^car}
+  roadload = VehicleComponents.Body.Planar.RoadLoad(m = m) {^roadload}
+  road = VehicleComponents.Body.Planar.RoadGrade() {^road}
+  "Car tire on asphalt"
+  tire = BlockComponents.Sources.Constant(k = 0.012) {^tire}
+relations
+  connect(car.chassis, roadload.chassis, road.frame_a) {^w1}
+  connect(road.grade, roadload.grade) {^w2}
+  connect(tire.y, roadload.f_r) {^w3}
+metadata {
+  "_links": {
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 700, "y1": 150, "y2": 350}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 500, "y2": 600}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 500, "y2": 600}}}},
+    "tire": {"Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 380, "y2": 480}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 600, "y": 650}, {"x": 120, "y": 650}, {"x": 120, "y": 550}], "E": 3}], "junctions": [{"x": 600, "y": 550}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 430}, {"x": 350, "y": 525}], "E": 2}]}}
+  }
+}
+end
