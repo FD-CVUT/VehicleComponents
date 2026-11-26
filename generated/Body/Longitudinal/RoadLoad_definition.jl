@@ -135,15 +135,10 @@ the normal load and the along-slope weight. Source tags: (textbook) standard phy
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(flange, drag.flange))
-  push!(__eqs, connect(flange, rolling.flange))
-  push!(__eqs, connect(drag.support, ground.flange))
-  push!(__eqs, connect(rolling.support, ground.flange))
+  push!(__eqs, connect(flange, drag.flange, gradeforce.flange, rolling.flange))
+  push!(__eqs, connect(ground.flange, drag.support, gradeforce.support, rolling.support))
+  push!(__eqs, connect(grade, gradeforce.grade, rolling.inclination))
   push!(__eqs, connect(f_r, rolling.cr))
-  push!(__eqs, connect(flange, gradeforce.flange))
-  push!(__eqs, connect(gradeforce.support, ground.flange))
-  push!(__eqs, connect(grade, rolling.inclination))
-  push!(__eqs, connect(grade, gradeforce.grade))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

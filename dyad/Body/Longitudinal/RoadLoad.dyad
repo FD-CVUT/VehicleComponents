@@ -43,15 +43,10 @@ component RoadLoad
   "Gravitational acceleration, standard gravity (textbook)"
   parameter g::Acceleration = 9.80665
 relations
-  connect(flange, drag.flange) {^id8}
-  connect(flange, rolling.flange) {^id9}
-  connect(drag.support, ground.flange) {^id11}
-  connect(rolling.support, ground.flange) {^id12}
+  connect(flange, drag.flange, gradeforce.flange, rolling.flange) {^id8}
+  connect(ground.flange, drag.support, gradeforce.support, rolling.support) {^id11}
+  connect(grade, gradeforce.grade, rolling.inclination) {^id15}
   connect(f_r, rolling.cr) {^id14}
-  connect(flange, gradeforce.flange) {^id10}
-  connect(gradeforce.support, ground.flange) {^id13}
-  connect(grade, rolling.inclination) {^id15}
-  connect(grade, gradeforce.grade) {^id16}
 metadata {
   "Dyad": {
     "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/RoadLoad.svg"}
@@ -60,19 +55,45 @@ metadata {
     "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
     "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "f_r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}},
-    "drag": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 450, "y2": 550}}}},
-    "rolling": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 150, "y2": 250}}}},
-    "gradeforce": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 650, "y2": 750}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 400, "y2": 500, "rot": 90}}}},
-    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 500}, {"x": 950, "y": 200}], "E": 2}], "path": {}}},
-    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 500}, {"x": 950, "y": 700}], "E": 2}], "path": {}}},
-    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 600}, {"x": 700, "y": 600}, {"x": 700, "y": 450}], "E": 2}], "path": {}}},
-    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 350}, {"x": 650, "y": 350}, {"x": 650, "y": 450}], "E": 2}], "path": {}}},
-    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 800}, {"x": 650, "y": 800}, {"x": 650, "y": 450}], "E": 2}], "path": {}}},
-    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 250}, {"x": 350, "y": 170}], "E": 2}], "path": {}}},
-    "id15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 500}, {"x": 450, "y": 225}], "E": 2}], "path": {}}},
-    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 700}], "E": 2}], "path": {}}}
+    "rolling": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 230, "y2": 330}}}},
+    "gradeforce": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 450, "y2": 550}}}},
+    "drag": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 650, "y2": 750}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 900, "y2": 1000}}}},
+    "id8": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 900, "y": 700}], "E": 2},
+          {"S": -1, "M": [], "E": -2},
+          {"S": -2, "M": [], "E": 3},
+          {"S": -2, "M": [{"x": 850, "y": 280}], "E": 4}
+        ],
+        "junctions": [{"x": 900, "y": 500}, {"x": 850, "y": 500}]
+      }
+    },
+    "id11": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [], "E": 2},
+          {"S": -1, "M": [], "E": -2},
+          {"S": -2, "M": [], "E": 3},
+          {"S": -2, "M": [{"x": 350, "y": 850}], "E": 4}
+        ],
+        "junctions": [{"x": 750, "y": 850}, {"x": 550, "y": 850}]
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [], "E": 2},
+          {"S": -1, "M": [{"x": 200, "y": 305}], "E": 3}
+        ],
+        "junctions": [{"x": 200, "y": 500}]
+      }
+    },
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

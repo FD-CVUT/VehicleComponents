@@ -134,15 +134,10 @@ serves a planar car whose mass lives in its multibody body.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(flange, drag.flange))
-  push!(__eqs, connect(flange, rolling.flange))
-  push!(__eqs, connect(drag.support, ground.flange))
-  push!(__eqs, connect(rolling.support, ground.flange))
+  push!(__eqs, connect(flange, drag.flange, gradeforce.flange, rolling.flange))
+  push!(__eqs, connect(ground.flange, drag.support, gradeforce.support, rolling.support))
+  push!(__eqs, connect(grade, gradeforce.grade, rolling.inclination))
   push!(__eqs, connect(f_r, rolling.cr))
-  push!(__eqs, connect(flange, gradeforce.flange))
-  push!(__eqs, connect(gradeforce.support, ground.flange))
-  push!(__eqs, connect(grade, rolling.inclination))
-  push!(__eqs, connect(grade, gradeforce.grade))
   push!(__eqs, connect(flange, mass.flange_a))
 
   # Return completely constructed System

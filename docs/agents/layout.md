@@ -26,6 +26,9 @@ Every other diagram, every test model's outside `Examples` included, comes from 
 - Ports on the icon on the side they appear in the diagram.
 - A node shared by three or more ends is one multi-end `connect` whose `edges` and `junctions` are
   set by hand or in the Studio, as `TranslationalComponents.Sensors.Tests.RelativeSensors` does.
+  A child cannot add ends to an inherited `connect`, so its extra ends on that node form their own
+  `connect`, branching off inside the shared port's box, as `Body.Longitudinal.Vehicle` and
+  `Examples.HardStop` do.
 
 `dyad layout` misroutes a multi-end `connect`, so a strict model is laid out by hand only.
 
