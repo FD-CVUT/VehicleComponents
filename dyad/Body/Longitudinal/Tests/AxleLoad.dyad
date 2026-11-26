@@ -150,7 +150,7 @@ metadata {
         "params": {"downforce.f_constant": -20000.0},
         "atol": {"axle.F_z": 0.01, "road_left.flange.f": 0.01, "road_right.flange.f": 0.01},
         "expect": {
-          "initial": {"axle.F_z": 0.0},
+          "initial": {"axle.F_z": 0.0, "road_left.flange.f": 0.0, "road_right.flange.f": 0.0},
           "final": {"axle.F_z": 0.0, "road_left.flange.f": 0.0, "road_right.flange.f": 0.0}
         }
       },

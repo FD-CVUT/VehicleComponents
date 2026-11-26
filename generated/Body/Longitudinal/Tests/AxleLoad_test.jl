@@ -88,7 +88,11 @@ __dyad_run_test_case!(
   solver=ODEAlg.Auto(),
   params=Dict{String, Any}("downforce.f_constant" => -20000.0),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[(m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5)],
+  expected_initial=Tuple[
+    (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
+    (m -> m.road_left.flange.f, "road_left.flange.f", 0, 0.01, 1e-5),
+    (m -> m.road_right.flange.f, "road_right.flange.f", 0, 0.01, 1e-5),
+  ],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
     (m -> m.road_left.flange.f, "road_left.flange.f", 0, 0.01, 1e-5),
