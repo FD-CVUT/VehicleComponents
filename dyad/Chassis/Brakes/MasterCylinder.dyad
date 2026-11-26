@@ -1,0 +1,89 @@
+"""
+Quasi-static tandem master cylinder: the pushrod force sets one pressure in both brake circuits,
+and the fluid the circuits take sets the pushrod's travel.
+
+Ports: `pushrod` from the booster; `support` the housing, which takes the pushrod's reaction;
+`front`, `rear` the two circuits' brake-fluid connections; `p_mc` the master-cylinder pressure,
+gauge; `x_rod` the pushrod travel.
+
+The pistons pass the pushrod force F_rod less the spring preload `F_cs0` and the seal friction
+`F_cf` to the bore area `A_mc`, and never pull a vacuum:
+
+    p_mc = max(0, F_rod - F_cs0 - F_cf)/A_mc
+
+Both circuits carry p_mc. Fluid leaving through either port adds to the displaced volume V_disp,
+and the pushrod travels the dead stroke `s_dead` before the pistons close the reservoir ports,
+x_rod = s_dead + V_disp/A_mc.
+
+Pressures are gauge: the ports carry absolute pressure, `p_amb` + p_mc, as `Caliper` reads it.
+
+Assumptions: the pistons have no mass and the seal friction always opposes the apply, so the
+release follows the same law; both circuits share one pressure, as a tandem cylinder's floating
+piston gives. The cylinder starts with nothing displaced. `p_amb` defaults to 100325 Pa, the
+reference pressure of `VehicleComponents.DOT4`. Defaults: a 25 mm bore, `F_cs0` and `F_cf` from
+PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
+"""
+component MasterCylinder
+  "Pushrod from the booster"
+  pushrod = Flange() {^pushrod}
+  "Master-cylinder housing, which takes the pushrod's reaction"
+  support = Flange() {^support}
+  "Front brake-circuit fluid connection"
+  front = HydraulicComponents.Interfaces.Port() {^front}
+  "Rear brake-circuit fluid connection"
+  rear = HydraulicComponents.Interfaces.Port() {^rear}
+  "Master-cylinder pressure, gauge"
+  p_mc = RealOutput() {^p_mc}
+  "Pushrod travel"
+  x_rod = RealOutput() {^x_rod}
+  "Piston area, a 25 mm bore"
+  parameter A_mc::Area = π * 0.025 ^ 2 / 4
+  "Return-spring preload"
+  parameter F_cs0::Force = 138.0
+  "Seal friction"
+  parameter F_cf::Force = 80.0
+  "Dead stroke before the pistons displace fluid"
+  parameter s_dead::Length = 2.5e-3
+  "Ambient pressure, which a released cylinder sits at"
+  parameter p_amb::Pressure = 100325.0
+  "Brake-fluid volume displaced into the circuits"
+  variable V_disp::Volume = initial 0.0
+  "Pushrod-force magnitude"
+  variable F_rod::Force
+  "Fluid density at the master-cylinder pressure"
+  variable rho::Density
+relations
+  continuity(front.medium, rear.medium)
+  F_rod = -pushrod.f
+  pushrod.f + support.f = 0.0
+  pushrod.s - support.s = x_rod
+  p_mc = max(0.0, F_rod - F_cs0 - F_cf) / A_mc
+  front.p = p_amb + p_mc
+  rear.p = p_amb + p_mc
+  rho = HydraulicComponents.density(front.medium, front.p)
+  der(V_disp) = -(front.m_flow + rear.m_flow) / rho
+  x_rod = s_dead + V_disp / A_mc
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/MasterCylinder.svg"}},
+  "_links": {
+    "pushrod": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
+    },
+    "front": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}
+    },
+    "rear": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}
+    },
+    "p_mc": {
+      "Dyad": {"placement": {"icon": {"x1": 200, "x2": 300, "y1": -50, "y2": 50, "rot": 270}}}
+    },
+    "x_rod": {
+      "Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": -50, "y2": 50, "rot": 270}}}
+    }
+  }
+}
+end

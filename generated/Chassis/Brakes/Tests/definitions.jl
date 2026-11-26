@@ -199,5 +199,9 @@ component.
 end
 
 
+include("ABSValve_definition.jl")
 include("Caliper_definition.jl")
+include("ForceChain_definition.jl")
+include("HydraulicStop_definition.jl")
 include("Line_definition.jl")
+include("Split_definition.jl")

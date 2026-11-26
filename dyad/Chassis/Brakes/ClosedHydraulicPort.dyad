@@ -1,0 +1,21 @@
+"""
+Plug on a brake-fluid connection: no fluid passes, whatever the pressure.
+
+Port: `port` the plugged connection.
+
+Assumptions: rigid and leak-free; it takes no fluid volume.
+"""
+component ClosedHydraulicPort
+  "Plugged brake-fluid connection"
+  port = HydraulicComponents.Interfaces.Port() {^port}
+relations
+  port.m_flow = 0.0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/ClosedHydraulicPort.svg"}},
+  "_links": {
+    "port": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

@@ -1,0 +1,210 @@
+"""
+A straight-line stop through the whole hydraulic chain: a pedal step at 0.5 s, of command 0.6 to
+the default `Pedal`, `StaticBooster` and `MasterCylinder`, feeds the default
+`Chassis.Wheel.HydraulicBraked` wheel's front caliper through a default `Line` (1.5 m) and its rear
+caliper through a 4 m one. The wheel (r = 0.31 m, F_z = 13729.31 N) rolls at
+25/0.31 = 80.645161 rad/s and retards a 1400 kg mass on a dry road.
+
+The pushrod force is 3.5 · 500 · 0.6 = 1050 N. Run-out, 1050 + 3544.7225 = 4594.7225 N, is below
+the boosted branch 500 + 5 · 1010 = 5550 N, so the booster passes 4594.7225 N and the master
+cylinder holds p_mc = (4594.7225 - 218)/4.908738521e-4 = 8916185.86 Pa (the `ForceChain` rig has
+each step). Once the calipers have filled, no fluid flows and both sit at p_mc:
+
+- front caliper: p - p0 = 8866185.86 = 1e12 u + 4.8e23 u³, bisection on [0, 1e-4] gives
+  u = 2.381656e-6 m³, so V = 2.881656e-6 m³;
+- rear caliper: 8866185.86 = 2.5e12 u + 7.5e24 u³ gives u = 0.952663e-6 m³, so
+  V = 1.252663e-6 m³.
+
+Both apply 68.9e-5 (8916185.86 - 0.5e5) = 6108.80 N m, above the tire's ceiling
+r mu_A F_z = 4256.09 N m, so the wheel locks and the tire slides: the mass decelerates at
+-0.7 · 13729.31/1400 = -6.864655 m/s². It decelerates at most at mu_A g from 0.5 s, so at 2.5 s it
+still moves at 25 - 2 · 9.81 = 5.4 m/s or more.
+
+The cylinder displaced the two calipers' fluid, 4.134319e-6 m³, so x_rod =
+2.5e-3 + 4.134319e-6/4.908738521e-4 = 0.0109224 m. The cylinder counts the fluid at its own
+pressure and the calipers at theirs, never higher, so V_disp falls short of their sum by at most
+4.134319e-6 · 8.92e6/1.4e9 = 2.6e-8 m³, 5.4e-5 m of travel.
+"""
+test component HydraulicStop
+  "Pedal step to 0.6 at 0.5 s"
+  command = BlockComponents.Sources.Step(height = 0.6, offset = 0.0, start_time = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 300, "y2": 400}}}
+  }
+  pedal = VehicleComponents.Chassis.Brakes.Pedal() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+  }
+  booster = VehicleComponents.Chassis.Brakes.StaticBooster() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
+  }
+  master = VehicleComponents.Chassis.Brakes.MasterCylinder() {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 600, "y2": 700}}}
+  }
+  "Pedal pivot"
+  pivot = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  }
+  "Booster housing"
+  booster_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 450, "y2": 550}}}
+  }
+  "Master-cylinder housing"
+  master_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 850, "y2": 950}}}
+  }
+  line_f = VehicleComponents.Chassis.Brakes.Line() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 700, "y2": 800, "rot": 180}}
+    }
+  }
+  line_r = VehicleComponents.Chassis.Brakes.Line(L = 4.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 950, "y2": 1050, "rot": 180}}
+    }
+  }
+  "Dry road"
+  road = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 900, "y2": 1000}}}
+  }
+  wheel = VehicleComponents.Chassis.Wheel.HydraulicBraked(inertia(w = initial 80.645161)) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 800, "y2": 900, "rot": 90}}
+    }
+  }
+  hub = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 1150, "y2": 1250}}}
+  }
+  body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 25.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 550, "x2": 650, "y1": 1200, "y2": 1300, "rot": 90}}
+    }
+  }
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
+relations
+  connect(command.y, pedal.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(pedal.rod, booster.input) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 350}, {"x": 650, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(booster.rod_out, master.pushrod) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1100, "y": 250}, {"x": 1100, "y": 650}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(pedal.support, pivot.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(booster.support, booster_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(master.support, master_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(master.front, line_f.port_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 900, "y": 625},
+            {"x": 900, "y": 650},
+            {"x": 850, "y": 650},
+            {"x": 850, "y": 750}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(line_f.port_b, wheel.front) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 600, "y": 750}, {"x": 600, "y": 819.9999999999999}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(master.rear, line_r.port_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 675}, {"x": 900, "y": 1000}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(line_r.port_b, wheel.rear) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 600, "y": 1000}, {"x": 600, "y": 840}], "E": 2}],
+      "path": {}
+    }
+  }
+  continuity(medium, master.front.medium)
+  connect(road.y, wheel.mu_scale) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 400, "y": 950}, {"x": 400, "y": 869.9999999999999}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(wheel.support, hub.spline) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 400, "y": 830.0000000000001},
+            {"x": 400, "y": 850},
+            {"x": 150, "y": 850},
+            {"x": 150, "y": 1100},
+            {"x": 350, "y": 1100}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(wheel.flange, body.flange_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 500, "y": 1150}, {"x": 600, "y": 1150}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "lock_up": {
+        "stop": 2.5,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {
+          "master.p_mc": 1.0,
+          "wheel.caliper_f.p": 1.0,
+          "wheel.caliper_r.p": 1.0,
+          "wheel.caliper_f.V": 1e-11,
+          "wheel.caliper_r.V": 1e-11,
+          "master.x_rod": 6e-5,
+          "body.a": 1e-5
+        },
+        "expect": {
+          "final": {
+            "master.p_mc": 8916185.86,
+            "wheel.caliper_f.p": 8916185.86,
+            "wheel.caliper_r.p": 8916185.86,
+            "wheel.caliper_f.V": 2.881656e-6,
+            "wheel.caliper_r.V": 1.252663e-6,
+            "master.x_rod": 0.0109224,
+            "body.a": -6.864655
+          }
+        }
+      }
+    }
+  }
+}
+end

@@ -199,5 +199,11 @@ component.
 end
 
 
+include("ABSValve_definition.jl")
 include("Caliper_definition.jl")
+include("ClosedHydraulicPort_definition.jl")
 include("Line_definition.jl")
+include("MasterCylinder_definition.jl")
+include("Pedal_definition.jl")
+include("Split_definition.jl")
+include("StaticBooster_definition.jl")

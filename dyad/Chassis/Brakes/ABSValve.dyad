@@ -1,0 +1,79 @@
+"""
+Ideal per-circuit ABS modulator: the ECU commands the wheel-side pressure it allows, and the valve
+makes the caliper follow it after the solenoid lag `T_v`, never above the master-cylinder
+pressure.
+
+Ports: `port_a` the master-cylinder side; `port_b` the brake-line and caliper side; `p_cmd` the
+allowed wheel-circuit pressure, gauge.
+
+With p_a and p_b the two sides' gauge pressures:
+
+- a command at or above p_a leaves the inlet open: p_b = p_a, and the fluid passes straight
+  through;
+- below p_a the valve holds or dumps: the held pressure p_hold relaxes to the command, clamped to
+  [0, p_a], with the time constant `T_v`, and p_b = min(p_a, max(p_hold, 0)). While the inlet is
+  open, p_hold follows p_a with the time constant `T_open`, so a closing valve starts from the
+  pressure it held.
+
+`return_dump` decides where fluid dumped from the caliper goes. At 0 it leaves the model, so the
+master cylinder makes up every dumped volume and the pedal creeps forward without pulsing. At 1 it
+re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it straight back to
+the master cylinder: the pedal is pushed back with every dump, the pulsation a driver feels.
+`m_dump` is the fluid that leaves the model.
+
+Pressures are gauge: the ports carry absolute pressure, `p_amb` + p, as `Caliper` and
+`MasterCylinder` read it.
+
+Assumptions: the valve has no flow restriction and no volume of its own; the held pressure starts
+at 0. `p_amb` defaults to 100325 Pa, the reference pressure of `VehicleComponents.DOT4`. `T_v`
+lumps the electronics' and the solenoid's reaction (assumed).
+"""
+component ABSValve
+  "Master-cylinder side"
+  port_a = HydraulicComponents.Interfaces.Port() {^port_a}
+  "Brake-line and caliper side"
+  port_b = HydraulicComponents.Interfaces.Port() {^port_b}
+  "Allowed wheel-circuit pressure, gauge; at or above the master-cylinder side the inlet is open"
+  p_cmd = RealInput() {^p_cmd}
+  "Electronics and solenoid reaction time"
+  parameter T_v::Time(min = eps(Float64)) = 0.03
+  "Time constant with which the held pressure follows the master cylinder while the inlet is open"
+  parameter T_open::Time(min = eps(Float64)) = 1e-3
+  "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"
+  parameter return_dump::Real = 0.0
+  "Ambient pressure, which a released circuit sits at"
+  parameter p_amb::Pressure = 100325.0
+  "Master-cylinder side pressure, gauge"
+  variable p_a::Pressure
+  "Wheel side pressure, gauge"
+  variable p_b::Pressure
+  "Pressure the closed valve holds the wheel side at, gauge"
+  variable p_hold::Pressure = initial 0.0
+  "Command clamped to the master-cylinder side"
+  variable p_target::Pressure
+  "Mass flow of dumped fluid leaving the model"
+  variable m_dump::MassFlowRate
+relations
+  continuity(port_a.medium, port_b.medium)
+  port_a.p = p_amb + p_a
+  port_b.p = p_amb + p_b
+  p_target = min(max(p_cmd, 0.0), max(p_a, 0.0))
+  der(p_hold) = ifelse(p_cmd >= p_a, (p_a - p_hold) / T_open, (p_target - p_hold) / T_v)
+  p_b = ifelse(p_cmd >= p_a, p_a, min(p_a, max(p_hold, 0.0)))
+  port_a.m_flow = ifelse(p_cmd >= p_a, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0))
+  m_dump = port_a.m_flow + port_b.m_flow
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/ABSValve.svg"}},
+  "_links": {
+    "port_a": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "port_b": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    },
+    "p_cmd": {
+      "Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 270}}}
+    }
+  }
+}
+end

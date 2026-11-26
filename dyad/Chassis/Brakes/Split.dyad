@@ -1,0 +1,48 @@
+"""
+Brake split: distributes a requested total brake torque to the four wheels as per-wheel torque
+magnitudes.
+
+Ports: `u` the brake request; `tau_fl`, `tau_fr`, `tau_rl`, `tau_rr` the front-left, front-right,
+rear-left and rear-right brake-torque magnitudes.
+
+The total wheel torque is max(u, 0) `gain`, so a negative request brakes nothing. The front axle
+takes `front_fraction` of it and the rear axle the rest, each split equally between left and
+right.
+
+Assumptions: a fixed front-to-rear proportioning, with no load-dependent or slip-dependent
+correction.
+"""
+component Split
+  "Brake request, scaled by gain to the total wheel torque"
+  u = RealInput() {^u}
+  "Front-left brake-torque magnitude"
+  tau_fl = RealOutput() {^tau_fl}
+  "Front-right brake-torque magnitude"
+  tau_fr = RealOutput() {^tau_fr}
+  "Rear-left brake-torque magnitude"
+  tau_rl = RealOutput() {^tau_rl}
+  "Rear-right brake-torque magnitude"
+  tau_rr = RealOutput() {^tau_rr}
+  "Request-to-total-wheel-torque gain"
+  parameter gain::Real = 1.0
+  "Share of the total brake torque on the front axle"
+  parameter front_fraction::Real(min = 0.0, max = 1.0) = 1.0
+  "Total brake-torque magnitude over the four wheels"
+  variable tau_total::Torque
+relations
+  tau_total = max(u, 0.0) * gain
+  tau_fl = tau_total * front_fraction / 2.0
+  tau_fr = tau_fl
+  tau_rl = tau_total * (1.0 - front_fraction) / 2.0
+  tau_rr = tau_rl
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/Split.svg"}},
+  "_links": {
+    "u": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 150, "y2": 250}}}},
+    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 350, "y2": 450}}}},
+    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 550, "y2": 650}}}},
+    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 750, "y2": 850}}}}
+  }
+}
+end

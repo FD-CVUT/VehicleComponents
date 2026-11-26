@@ -1,0 +1,65 @@
+"""
+One `Split` with `front_fraction` 0.7 and `gain` 2, fed a constant request set per case.
+
+- `braking`, u = 1000: the total is max(1000, 0) · 2 = 2000 N m; the front axle takes
+  0.7 · 2000 = 1400 N m, 700 N m per wheel, and the rear 600 N m, 300 N m per wheel.
+- `negative`, u = -500: max(-500, 0) = 0, so no wheel brakes.
+"""
+test component Split
+  "Brake request, overridden per case"
+  request = BlockComponents.Sources.Constant(k = 1000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  split = VehicleComponents.Chassis.Brakes.Split(gain = 2.0, front_fraction = 0.7) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(request.y, split.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "braking": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-10,
+        "atol": {
+          "split.tau_fl": 1e-9,
+          "split.tau_fr": 1e-9,
+          "split.tau_rl": 1e-9,
+          "split.tau_rr": 1e-9
+        },
+        "expect": {
+          "final": {
+            "split.tau_fl": 700.0,
+            "split.tau_fr": 700.0,
+            "split.tau_rl": 300.0,
+            "split.tau_rr": 300.0
+          }
+        }
+      },
+      "negative": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-10,
+        "params": {"request.k": -500.0},
+        "atol": {
+          "split.tau_fl": 1e-9,
+          "split.tau_fr": 1e-9,
+          "split.tau_rl": 1e-9,
+          "split.tau_rr": 1e-9
+        },
+        "expect": {
+          "final": {
+            "split.tau_fl": 0.0,
+            "split.tau_fr": 0.0,
+            "split.tau_rl": 0.0,
+            "split.tau_rr": 0.0
+          }
+        }
+      }
+    }
+  }
+}
+end
