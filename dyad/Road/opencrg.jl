@@ -1,7 +1,7 @@
 # OpenCRG road surfaces as the callables behind `Road.Grip` and `Road.Slope`.
 
 import DyadData, ForwardDiff, OpenCRG
-using LinearAlgebra: lu
+using LinearAlgebra: Tridiagonal, lu
 using ModelingToolkit: Symbolics
 
 "Resolve a `dyad://` or `file://` road asset to its file, or pass a filesystem path through."
@@ -64,20 +64,24 @@ end
 """
     spline_dimension(axis) -> (breaks, collocation)
 
-Breaks of the quadratic B-spline that interpolates at the nodes `axis`, and its collocation
-matrix: row `k` holds the [`quadratic_basis`](@ref) weights at `axis[k]`, so fitting and
-evaluation share one basis.
+Breaks of the quadratic B-spline that interpolates at the nodes `axis`, and the LU factors of
+its collocation matrix: row `k` holds the [`quadratic_basis`](@ref) weights at `axis[k]`, so
+fitting and evaluation share one basis.
 """
 function spline_dimension(axis)
     n = length(axis)
     n >= 3 || error("a road grid needs at least three nodes per axis")
     breaks = Float64[first(axis); [(axis[j] + axis[j+1]) / 2 for j in 2:n-2]; last(axis)]
-    collocation = zeros(n, n)
+    # Each node lies in the break interval centered on it, so its row is tridiagonal; a weight
+    # off the band would make `setindex!` throw.
+    collocation = Tridiagonal(zeros(n - 1), zeros(n), zeros(n - 1))
     for (k, t) in enumerate(axis)
         i, b0, b1, b2, _ = quadratic_basis(breaks, t)
-        collocation[k, i:i+2] .= (b0, b1, b2)
+        for (column, weight) in zip(i:i+2, (b0, b1, b2))
+            collocation[k, column] = weight
+        end
     end
-    return breaks, collocation
+    return breaks, lu(collocation)
 end
 
 """
@@ -205,13 +209,12 @@ function surface(file::AbstractString; fill_missing = nothing, elevation = false
         xaxis = c .* (cx .- cx[1]) .+ s .* (cy .- cy[1])
         center = -s .* (cx .- cx[1]) .+ c .* (cy .- cy[1])
         all(>(0), diff(xaxis)) || error("reference line turns back in its start frame")
-        v_breaks, av = spline_dimension(v)
+        v_breaks, across = spline_dimension(v)
         # A straight road keeps its file's arc-length axis, so the spline matches the file's
         # nodes exactly.
         straight = maximum(abs, center) <= 1e-12 * max(1.0, last(xaxis))
-        u_breaks, au = spline_dimension(straight ? u : xaxis)
-        along = lu(au)
-        coefficients = (along \ z) / transpose(av)
+        u_breaks, along = spline_dimension(straight ? u : xaxis)
+        coefficients = permutedims(across \ permutedims(along \ z))
         if straight
             u0, center_coefficients, heading_coefficients = first(u), Float64[], Float64[]
         else
