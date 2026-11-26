@@ -108,9 +108,7 @@ metadata {
       "Dyad": {"placement": {"diagram": {"x1": 80, "x2": 180, "y1": 790, "y2": 890}}}
     },
     "inertia_left": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 370, "x2": 270, "y1": 500, "y2": 600, "rot": 180}}
-      }
+      "Dyad": {"placement": {"diagram": {"x1": 270, "x2": 370, "y1": 500, "y2": 600}}}
     },
     "wheel_left": {
       "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 500, "y2": 600}}}
@@ -122,9 +120,7 @@ metadata {
       "Dyad": {"placement": {"diagram": {"x1": 1010, "x2": 910, "y1": 500, "y2": 600}}}
     },
     "inertia_right": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 1090, "x2": 1190, "y1": 500, "y2": 600, "rot": 180}}
-      }
+      "Dyad": {"placement": {"diagram": {"x1": 1190, "x2": 1090, "y1": 500, "y2": 600}}}
     },
     "drive_right": {
       "Dyad": {"placement": {"diagram": {"x1": 1380, "x2": 1280, "y1": 500, "y2": 600}}}
