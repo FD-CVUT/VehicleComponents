@@ -21,3 +21,20 @@ __dyad_run_test_case!(
   expected_final=Tuple[(m -> m.cycle.y, "cycle.y", 0.95, 1e-9, 1e-5)],
   signals=Tuple[(m -> m.cycle.y, "cycle.y", 1e-9, 1e-5)],
 )
+__dyad_run_test_case!(
+  VehicleComponents.Driver.Tests.DriveCycle,
+  "epa_kmh for VehicleComponents.Driver.Tests.DriveCycle";
+  case_name="epa_kmh",
+  component_stem="DriveCycle",
+  module_path=String["Driver", "Tests"],
+  start=0e+0,
+  stop=2.1e+1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}(),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.ftp75.y, "ftp75.y", 0, 1e-9, 1e-5)],
+  expected_final=Tuple[(m -> m.ftp75.y, "ftp75.y", 4.828032, 1e-9, 1e-5)],
+  signals=Tuple[],
+)

@@ -11,7 +11,8 @@ header. A Dyad model reaches a file here as `dyad://VehicleComponents/data/drive
 | `hwfet.csv` | US EPA Highway Fuel Economy Test | `t_s,v_mph` | 766 (0…765 s) | US EPA, `hwycol.txt` | public domain |
 | `us06.csv` | US EPA US06 supplemental FTP | `t_s,v_mph` | 601 (0…600 s) | US EPA, `us06col.txt` | public domain |
 
-The EPA files keep EPA's own unit, mph, so each value is the published one unchanged. The NEDC
+The EPA files keep EPA's own unit, mph, so each value is the published one unchanged.
+`Driver.DriveCycle` plays one with `column = "v_mph"`, which converts it to km/h. The NEDC
 has no file: it is a short piecewise-linear definition, generated in
 the course repo's Lecture 2 notebook from UNECE Regulation No 83, Annex 4a, Tables 1 and 2.
 

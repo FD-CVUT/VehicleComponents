@@ -8,7 +8,14 @@
    Scripted(; name, __overrides)
 
 The two presets read their tables: `CoastDown` holds full throttle until 9 s and then coasts;
-`HardStop` coasts the same way and brakes fully from 19 s. Neither steers.
+`HardStop` coasts the same way and brakes fully from 19 s. Neither steers, so steering stays 0 rad.
+
+`between_ticks` plays `tests/steer_step.csv`, whose row at 0.105 s, between 10 ms ticks, steps
+throttle to 0.25 and steering to 0.1 rad, so at 0.107 s throttle is 0.25, brake 0 and steering
+0.1 rad.
+
+`between_ticks` needs its own instance: `table` is a String, and the compiler rejects a String
+override in a case's `params` with `urn:mtkir:unrenderable-param-value`.
 """
 @component function Scripted(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -60,6 +67,9 @@ The two presets read their tables: `CoastDown` holds full throttle until 9 s and
   # Subcomponent stop of type VehicleComponents.Driver.HardStop
   stop_overrides = __pop_subcomponent_overrides!(__overrides, "stop")
   push!(__systems, @named stop = VehicleComponents.Driver.HardStop(; __overrides = stop_overrides))
+  # Subcomponent step of type VehicleComponents.Driver.Scripted
+  step_overrides = __pop_subcomponent_overrides!(__overrides, "step")
+  push!(__systems, @named step = VehicleComponents.Driver.Scripted(; table="dyad://VehicleComponents/data/drivers/tests/steer_step.csv", __overrides = step_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

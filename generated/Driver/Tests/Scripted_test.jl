@@ -45,13 +45,40 @@ __dyad_run_test_case!(
   expected_initial=Tuple[
     (m -> m.stop.throttle_signal, "stop.throttle_signal", 1, 1e-9, 1e-5),
     (m -> m.stop.brake_signal, "stop.brake_signal", 0, 1e-9, 1e-5),
+    (m -> m.stop.steer_signal, "stop.steer_signal", 0, 1e-9, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.stop.throttle_signal, "stop.throttle_signal", 0, 1e-9, 1e-5),
     (m -> m.stop.brake_signal, "stop.brake_signal", 1, 1e-9, 1e-5),
+    (m -> m.stop.steer_signal, "stop.steer_signal", 0, 1e-9, 1e-5),
   ],
   signals=Tuple[
     (m -> m.stop.throttle_signal, "stop.throttle_signal", 1e-9, 1e-5),
     (m -> m.stop.brake_signal, "stop.brake_signal", 1e-9, 1e-5),
   ],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Driver.Tests.Scripted,
+  "between_ticks for VehicleComponents.Driver.Tests.Scripted";
+  case_name="between_ticks",
+  component_stem="Scripted",
+  module_path=String["Driver", "Tests"],
+  start=0e+0,
+  stop=1.07e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}(),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[
+    (m -> m.step.throttle_signal, "step.throttle_signal", 0, 1e-9, 1e-5),
+    (m -> m.step.brake_signal, "step.brake_signal", 0, 1e-9, 1e-5),
+    (m -> m.step.steer_signal, "step.steer_signal", 0, 1e-9, 1e-5),
+  ],
+  expected_final=Tuple[
+    (m -> m.step.throttle_signal, "step.throttle_signal", 0.25, 1e-9, 1e-5),
+    (m -> m.step.brake_signal, "step.brake_signal", 0, 1e-9, 1e-5),
+    (m -> m.step.steer_signal, "step.steer_signal", 0.1, 1e-9, 1e-5),
+  ],
+  signals=Tuple[],
 )
