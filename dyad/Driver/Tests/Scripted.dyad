@@ -7,6 +7,9 @@ throttle 0.25 and steering 0.1 rad. That breakpoint lies between the 10 ms ticks
 0.11 s. Unclocked playback takes the row at its own time, so at 0.107 s, before the next tick,
 throttle is 0.25 and steering 0.1 rad; a driver sampled every 10 ms would still hold the 0.10 s
 values, 0 and 0. Brake stays 0 throughout.
+
+`between_ticks` needs its own instance: `table` is a String, and the compiler rejects a String
+override in a case's `params` with `urn:mtkir:unrenderable-param-value`.
 """
 test component Scripted
   coast = VehicleComponents.Driver.CoastDown() {

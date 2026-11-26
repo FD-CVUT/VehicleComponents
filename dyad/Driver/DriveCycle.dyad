@@ -3,7 +3,9 @@ Target vehicle speed from a drive cycle: a time-series CSV of time and speed in 
 
 Port: `y`, the target vehicle speed in km/h. The default is the packaged WLTC class 3b trace
 (Regulation (EU) 2017/1151). Linear interpolation follows the prescribed straight ramps between
-its 1 Hz points, and constant extrapolation keeps the endpoint defined.
+its 1 Hz points, and constant extrapolation keeps the endpoint defined. A wired continuous clock
+drives the lookup and holds 0 before t = 0, so table time is read from t = 0 and rows before 0
+are never played.
 """
 component DriveCycle
   "Target vehicle speed [km/h]"
@@ -15,21 +17,11 @@ component DriveCycle
     "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}
   }
   interpolation = BlockComponents.Tables.Interpolation(dataset = dataset, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {
-    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 500, "y1": 450, "y2": 600}}}
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}
   }
 relations
-  connect(clock.y, interpolation.u) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 300, "y": 500}, {"x": 300, "y": 525}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(interpolation.y, y) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 550, "y": 525}, {"x": 550, "y": 500}], "E": 2}],
-      "path": {}
-    }
-  }
+  connect(clock.y, interpolation.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(interpolation.y, y) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Driver/DriveCycle.svg"}}
 }

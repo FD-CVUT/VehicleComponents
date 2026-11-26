@@ -4,6 +4,9 @@ interpolation gives 0.95 km/h at 12.5 s.
 
 The EPA FTP-75 trace publishes 3 mph at 21 s; its file holds that in km/h, 3 x 1.609344 =
 4.828032 km/h, which `epa_kmh` reads at 21 s.
+
+The FTP-75 case needs its own instance: `file` is a String, and the compiler rejects a String
+override in a case's `params` with `urn:mtkir:unrenderable-param-value`.
 """
 test component DriveCycle
   cycle = VehicleComponents.Driver.DriveCycle() {

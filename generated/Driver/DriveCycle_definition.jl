@@ -11,7 +11,9 @@ Target vehicle speed from a drive cycle: a time-series CSV of time and speed in 
 
 Port: `y`, the target vehicle speed in km/h. The default is the packaged WLTC class 3b trace
 (Regulation (EU) 2017/1151). Linear interpolation follows the prescribed straight ramps between
-its 1 Hz points, and constant extrapolation keeps the endpoint defined.
+its 1 Hz points, and constant extrapolation keeps the endpoint defined. A wired continuous clock
+drives the lookup and holds 0 before t = 0, so table time is read from t = 0 and rows before 0
+are never played.
 
 ## Parameters:
 
