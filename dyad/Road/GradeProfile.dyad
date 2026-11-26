@@ -1,0 +1,28 @@
+"""
+Road gradient over time for a scenario on a road that is level, climbs, and may level out
+again.
+
+Port: `y`, the road gradient tan(alpha), positive uphill, the convention of
+`Body.Longitudinal.GradeForce`'s `grade` input. The output is 0 until `start_time`, `gradient`
+after it, and 0 again from `start_time + duration` on. The default infinite `duration` keeps
+the climb to the end of the run. The steps are ideal: the gradient changes the instant the
+time passes them, with no ramp in between.
+"""
+component GradeProfile
+  "Road gradient, tan(alpha)"
+  y = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  "Gradient of the climb, tan(alpha)"
+  parameter gradient::Real = 0.10
+  "Time at which the climb begins"
+  parameter start_time::Time = 30.0
+  "Duration of the climb; Inf keeps it to the end of the run"
+  parameter duration::Time = Inf
+  pulse = BlockComponents.Sources.Pulse(amplitude = gradient, offset = 0.0, start_time = start_time, duty_cycle = 1.0, period = duration) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
+relations
+  connect(pulse.y, y) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Road/GradeProfile.svg"}}
+}
+end

@@ -1,0 +1,43 @@
+"""
+A patch of grip 0.2 from t = 0.5 s to t = 1 s, so the grip is 1 at the start of every case.
+
+At t = 0.75 s the patch is under the tire and the grip is 0.2; at t = 2 s it has passed and the
+grip is back to 1. With `low = 0.5` the grip on the patch at t = 0.75 s is 0.5.
+"""
+test component FrictionProfile
+  profile = VehicleComponents.Road.FrictionProfile(low = 0.2, start_time = 0.5, duration = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+relations
+metadata {
+  "Dyad": {
+    "tests": {
+      "on_patch": {
+        "stop": 0.75,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"profile.y": 1e-9},
+        "expect": {"initial": {"profile.y": 1.0}, "final": {"profile.y": 0.2}}
+      },
+      "past_patch": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"profile.y": 1e-9},
+        "expect": {"initial": {"profile.y": 1.0}, "final": {"profile.y": 1.0}}
+      },
+      "slush": {
+        "stop": 0.75,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"profile.low": 0.5},
+        "atol": {"profile.y": 1e-9},
+        "expect": {"initial": {"profile.y": 1.0}, "final": {"profile.y": 0.5}}
+      }
+    }
+  }
+}
+end

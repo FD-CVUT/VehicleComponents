@@ -1,0 +1,8 @@
+"""
+Road slope as a function of world position and heading: x and y in meters and heading in
+radians to tan of the road angle along that heading, positive uphill.
+
+`VehicleComponents.Road.slope(file)` builds one from an OpenCRG height file; a component that
+needs the grade takes it as a `structural parameter` of this type and calls it on its own pose.
+"""
+type Slope = func(::Real, ::Real, ::Real)::Real

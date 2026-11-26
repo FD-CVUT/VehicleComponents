@@ -7,9 +7,11 @@ authors = ["Dmitrij Rozdestvensky <dmitrij.rozdestvensky@juliahub.com>"]
 BlockComponents = "1ef5d832-be8e-447f-9f2c-8b5d17d15fd3"
 DyadData = "cab12561-e36c-4498-ae70-c9a5e79fef2a"
 DyadInterface = "99806f68-afab-45ca-9d8c-ceff6bc61f54"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+OpenCRG = "40a2bf50-15af-408a-8ff9-1cb7955b13ad"
 OrdinaryDiffEqDefault = "50262376-6c5a-4cf5-baba-aaf4f84d72d7"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
@@ -19,8 +21,10 @@ TranslationalComponents = "42acc370-819b-4877-bdd6-eb3294461f5d"
 [compat]
 BlockComponents = "5.0.0"
 DyadData = "2.3.0"
+ForwardDiff = "1.4.6"
 JSON = "0.21, 1"
 Markdown = "1"
+OpenCRG = "0.1.0"
 TOML = "1"
 TranslationalComponents = "3.0.0"
 
@@ -30,9 +34,11 @@ kernel = "3.5.0"
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataInterpolationsND = "4f1ef021-621a-47a5-ac8a-95402a2d1ea8"
 DyadEcosystemDependencies = "7bc808db-8006-421e-b546-062440d520b7"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DyadEcosystemDependencies", "CSV", "DataFrames", "Plots", "Test"]
+test = ["DyadEcosystemDependencies", "CSV", "DataFrames", "DataInterpolationsND", "Plots", "Random", "Test"]
