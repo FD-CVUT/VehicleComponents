@@ -19,13 +19,13 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 7551.1205, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 3775.5603, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 3775.5603, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", -3775.5603, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", -3775.5603, 0.01, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 7852.0099, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 3926.0049, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 3926.0049, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", -3926.0049, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", -3926.0049, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )
@@ -44,13 +44,13 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 8101.1205, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 4050.5603, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 4050.5603, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", -4050.5603, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", -4050.5603, 0.01, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 8402.0099, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 4201.0049, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 4201.0049, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", -4201.0049, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", -4201.0049, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )
@@ -70,8 +70,8 @@ __dyad_run_test_case!(
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 8027.1205, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 4013.5603, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 4013.5603, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", -4013.5603, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", -4013.5603, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )
@@ -90,13 +90,13 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 0, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 0, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", 0, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", 0, 0.01, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 0, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 0, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", 0, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", 0, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )
@@ -115,13 +115,13 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 401.1205, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 200.5603, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 200.5603, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", -200.5603, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", -200.5603, 0.01, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
-    (m -> m.road_left.flange.f, "road_left.flange.f", 0, 0.01, 1e-5),
-    (m -> m.road_right.flange.f, "road_right.flange.f", 0, 0.01, 1e-5),
+    (m -> m.axle.load_left.f, "axle.load_left.f", 0, 0.01, 1e-5),
+    (m -> m.axle.load_right.f, "axle.load_right.f", 0, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )
