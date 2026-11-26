@@ -27,10 +27,8 @@ m dv/dt = F - c v² in closed form, with t counted from the phase's start and v0
   gives v(21) = 127.8280 tan(0.116191 - 0.064425) = 6.6231 m/s.
 
 At 21 s the net force is -(6176.5197 + 0.378 * 6.6231²) = -6193.1007 N, so the acceleration is
--6193.1007 / 1500 = -4.1287 m/s². Two small terms separate the hand value from the run. The
-closed forms skip the rolling-resistance ramp of the first few milliseconds, which raises the
-model's end speed by about 7e-5 m/s. At the pinned 1e-6 tolerances the solver steps over the pedal
-steps at 9 s and 19 s, which lowers it by about 2e-4 m/s. Both stay inside the 1e-3 tolerance.
+-6193.1007 / 1500 = -4.1287 m/s². The closed forms skip the rolling-resistance ramp of the first
+few milliseconds, which raises the model's end speed by about 7e-5 m/s, inside the 1e-3 tolerance.
 
 Assumptions: the platform's brake is an ideal force, so the run ends at 21 s, while the car still
 moves.
