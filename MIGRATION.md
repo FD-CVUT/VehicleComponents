@@ -29,6 +29,11 @@ not listed has not moved yet.
 | `Vehicle.Brake.TandemMasterCylinder` | `Chassis.Brakes.MasterCylinder` | The output `p_mc` is gauge and the ports carry `p_amb` + `p_mc`, with the new parameter `p_amb` (100325 Pa), as `Chassis.Brakes.Caliper` reads them. The fluid density is taken at the port's absolute pressure. It starts with nothing displaced by default, so drop an old `initial` statement for `V_disp`. |
 | `Vehicle.Brake.ABSValve` | `Chassis.Brakes.ABSValve` | `p_cmd` is gauge and the ports carry absolute pressure, gauge plus the new parameter `p_amb` (100325 Pa); add nothing to a command that was meant as gauge. `p_delayed` is now `p_hold`, with a default start of 0. The time constant with which the held pressure follows an open inlet, 1 ms, is the new parameter `T_open`. |
 | `Vehicle.Brake.ClosedHydraulicPort` | `Chassis.Brakes.ClosedHydraulicPort` | |
+| `Vehicle.Brake.VacuumBooster` | `Chassis.Brakes.VacuumBooster` | `p_init` is gone: both chambers start at 33 kPa on their variables, so give another start at the declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial 101325.0)`. |
+| `Vehicle.Brake.ElectricVacuumPump` | `Chassis.Brakes.ElectricVacuumPump` | `p_init` is gone: the hose starts at 101325 Pa and the pump running, on the variables `p_h` and `y`. A start below `p_on` sets both at the declaration, `ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`, where the course derived the latch's start from `p_init`. |
+| `Vehicle.Brake.VacuumSourceSelector` | `Chassis.Brakes.VacuumSourceSelector` | |
+| `Vehicle.GasPort` | `Interfaces.GasPort` | |
+| `Vehicle.GasPressureSource` | `Interfaces.GasPressureSource` | |
 | `Vehicle.BrakeSplit` | `Chassis.Brakes.Split` | The `input` mode and the `BrakeInput` enum are gone, and with them the conditional `brake` and `ratio` inputs: `u` is always a magnitude, max(u, 0) `gain`. For `SignedDriver` and `FixedEngine`, feed `u` through a `BlockComponents.Math.Gain(k = -1.0)`. For `FixedElectric`, feed `u` the product of brake and ratio from a `BlockComponents.Math.Product` and set `gain = 2.0`. |
 | `Driver` | `Driver.Interface` | |
 | `ClockedDriver` | not yet in the library | Needs `DiscreteComponents`; FD-CVUT/VehicleComponents#29. |

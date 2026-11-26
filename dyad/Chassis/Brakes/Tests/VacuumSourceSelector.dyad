@@ -1,0 +1,107 @@
+"""
+A `VacuumSourceSelector` joining a default `VacuumBooster` at rest to a manifold held at 30 kPa
+and a pump held at 20 kPa, both absolute `Interfaces.GasPressureSource`s. The booster's output rod
+is held at its rest position, so its chamber volumes do not change; the chambers start at 33 kPa.
+`use_pump` is set per case.
+
+At rest the booster's chambers settle where the leak in balances the check valve's flow out (see
+the `Interfaces.GasPressureSource` rig): p_f = (C_vm p_s + C_leak p_atm)/(C_vm + C_leak) with p_s
+the chosen source's pressure, and the chosen source takes C_vm (p_f - p_s). The other source sees
+no flow. Both chosen pressures lie below the chambers' 33 kPa start, so the check valve opens at
+once, and with a time constant near 0.26 s the chambers settle by 5 s.
+
+- `manifold`, use_pump = 0, p_s = 30000 Pa: p_f = 30079.162 Pa, and the manifold takes
+  1.26e-7 · 79.162 = 9.97442e-6 kg/s.
+- `pump`, use_pump = 1, p_s = 20000 Pa: p_f = (1.26e-7 · 20000 + 1.4e-10 · 101325)/(1.26e-7 +
+  1.4e-10) = 20090.261 Pa, and the pump takes 1.26e-7 · 90.261 = 1.137286e-5 kg/s.
+"""
+test component VacuumSourceSelector
+  "Manifold pressure, absolute"
+  manifold_pressure = BlockComponents.Sources.Constant(k = 30e3) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  manifold = VehicleComponents.Interfaces.GasPressureSource() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  "Pump pressure, absolute"
+  pump_pressure = BlockComponents.Sources.Constant(k = 20e3) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  pump = VehicleComponents.Interfaces.GasPressureSource() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
+  "Vacuum source, overridden per case"
+  selector = VehicleComponents.Chassis.Brakes.VacuumSourceSelector(use_pump = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 800, "x2": 700, "y1": 400, "y2": 500}}}
+  }
+  booster = VehicleComponents.Chassis.Brakes.VacuumBooster() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 650, "y2": 750}}}
+  }
+  "Output rod held at its rest position"
+  rod = TranslationalComponents.Components.Fixed(s0 = 2.5e-3) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 650, "y2": 750, "rot": 270}}
+    }
+  }
+  housing = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 900, "y2": 1000}}}
+  }
+relations
+  connect(manifold_pressure.y, manifold.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(pump_pressure.y, pump.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(manifold.port, selector.manifold) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 250}, {"x": 850, "y": 450}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(pump.port, selector.pump) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 500}, {"x": 650, "y": 450}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(selector.booster, booster.vacuum) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 750, "y": 600}, {"x": 725, "y": 600}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(booster.rod_out, rod.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(booster.support, housing.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "manifold": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-10,
+        "atol": {"booster.p_f": 0.01, "manifold.port.mdot": 1e-10, "pump.port.mdot": 1e-12},
+        "expect": {
+          "final": {
+            "booster.p_f": 30079.162,
+            "manifold.port.mdot": 9.97442e-6,
+            "pump.port.mdot": 0.0
+          }
+        }
+      },
+      "pump": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-10,
+        "params": {"selector.use_pump": 1.0},
+        "atol": {"booster.p_f": 0.01, "manifold.port.mdot": 1e-12, "pump.port.mdot": 1e-10},
+        "expect": {
+          "final": {
+            "booster.p_f": 20090.261,
+            "manifold.port.mdot": 0.0,
+            "pump.port.mdot": 1.137286e-5
+          }
+        }
+      }
+    }
+  }
+}
+end

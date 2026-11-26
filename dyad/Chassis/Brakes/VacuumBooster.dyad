@@ -1,0 +1,162 @@
+"""
+Dynamic vacuum booster: two air chambers on either side of the diaphragm, a static poppet valve,
+and a check valve to the vacuum source, behind the same mechanical ports as `StaticBooster`.
+
+Ports: `input` the input rod from the pedal; `rod_out` the output rod to the master cylinder;
+`support` the housing, which takes the assist force; `vacuum` the hose from the check valve to the
+vacuum source, the intake manifold or a vacuum pump; `p_vac` the front-chamber pressure, what a
+booster vacuum sensor reads.
+
+The front (vacuum) chamber p_f drains through the check valve into the `vacuum` hose. The valve
+compares the input force F_in with the reaction-disc force F_r: above the apply threshold it lets
+atmosphere into the rear chamber p_r, below the release threshold it joins the rear chamber to the
+front one, and in between it holds. Below cut-in the plunger spring holds the plunger on its stop,
+which keeps the rear chamber joined to the front one. Both chambers' volumes trade with the piston
+travel x_p, the output rod's travel beyond its rest position `s_rest`.
+
+    F_out = max(0, F_in + A_d (p_r - p_f) - F_rs0 - K_rs x_p)
+    e     = F_in - F_cut - max(0, F_out - F_jump)/SR
+    dp_r/dt = n/V_r (R T (mdot_aa - mdot_av) - p_r A_d dx_p/dt)
+    dp_f/dt = n/V_f (R T (mdot_av - mdot_out + mdot_leak) + p_f A_d dx_p/dt)
+    mdot_out = C_vm max(0, p_f - vacuum.p),  vacuum.mdot = -mdot_out
+
+The valve openings ramp linearly over `F_w` beyond each threshold. All pressures are absolute.
+
+Assumptions: the chamber air is an ideal gas at the fixed temperature `T`, isothermal at the
+default `n` = 1; the rods are one rigid piece; the valves have no dynamics of their own. Both
+chambers start at 33 kPa, a booster at idle manifold vacuum; give another start at the
+declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial 101325.0)`.
+
+PATH (UCB-ITS-PRR-97-21, Table 2.1) tabulates the flow coefficients in m s, which read as
+kg/(s Pa) give a rear-chamber time constant near 0.2 ms, a thousand times faster than PATH's own
+traces. Read per kPa they give 0.1 to 0.2 s, which matches, so the defaults are PATH's numbers
+divided by 1000 Pa/kPa. `A_d`, `F_rs0`, `K_rs`, `V_f0`, `V_r0` are PATH's; `T` MathWorks'; `F_app`
+and `F_rel` are assumed at 10 N where PATH gives 50 N, which would put the apply branch 250 N
+under `StaticBooster`'s; `SR`, `F_cut`, `F_jump`, `F_w` and `s_rest` are assumed.
+"""
+component VacuumBooster
+  "Input rod from the pedal"
+  input = Flange() {^input}
+  "Output rod to the master cylinder"
+  rod_out = Flange() {^rod_out}
+  "Booster housing, which takes the assist force"
+  support = Flange() {^support}
+  "Hose from the check valve to the vacuum source"
+  vacuum = VehicleComponents.Interfaces.GasPort() {^vacuum}
+  "Front-chamber absolute pressure, what a booster vacuum sensor reads"
+  p_vac = RealOutput() {^p_vac}
+  "Servo ratio above the jump-in"
+  parameter SR::Real = 5.0
+  "Input force at cut-in"
+  parameter F_cut::Force = 40.0
+  "Output force at cut-in, the jump-in"
+  parameter F_jump::Force = 500.0
+  "Effective diaphragm area"
+  parameter A_d::Area = 0.0533
+  "Return-spring preload"
+  parameter F_rs0::Force = 97.0
+  "Return-spring rate [N/m]"
+  parameter K_rs::Real = 2411.0
+  "Front-chamber volume at rest"
+  parameter V_f0::Volume = 2.4e-3
+  "Rear-chamber volume at rest"
+  parameter V_r0::Volume = 0.43e-3
+  "Valve apply threshold"
+  parameter F_app::Force = 10.0
+  "Valve release threshold"
+  parameter F_rel::Force = 10.0
+  "Valve opening width beyond each threshold"
+  parameter F_w::Force = 20.0
+  "Atmospheric-valve flow coefficient [kg/(s Pa)]"
+  parameter C_aa::Real = 5.8e-8
+  "Vacuum-valve flow coefficient [kg/(s Pa)]"
+  parameter C_av::Real = 2.2e-7
+  "Check-valve flow coefficient [kg/(s Pa)]"
+  parameter C_vm::Real = 1.26e-7
+  "Front-chamber leak coefficient from atmosphere [kg/(s Pa)]"
+  parameter C_leak::Real = 1.4e-10
+  "Polytropic exponent of the chamber air, 1 for isothermal"
+  parameter n::Real = 1.0
+  "Output-rod position at rest, the master cylinder's dead stroke"
+  parameter s_rest::Length = 2.5e-3
+  "Chamber air temperature"
+  parameter T::Temperature = 298.15
+  "Gas constant of air [J/(kg K)]"
+  parameter R::Real = 287.05
+  "Atmospheric absolute pressure"
+  parameter p_atm::Pressure = 101325.0
+  "Front (vacuum) chamber absolute pressure"
+  variable p_f::Pressure = initial 33e3
+  "Rear (working) chamber absolute pressure"
+  variable p_r::Pressure = initial 33e3
+  "Piston travel from rest"
+  variable x_p::Length
+  "Front-chamber volume"
+  variable V_f::Volume
+  "Rear-chamber volume"
+  variable V_r::Volume
+  "Input-force magnitude"
+  variable F_in::Force
+  "Output-force magnitude"
+  variable F_out::Force
+  "Reaction-disc force on the input plunger"
+  variable F_r::Force
+  "Valve force error"
+  variable e::Force
+  "Atmospheric-valve opening, 0 to 1"
+  variable u_atm::Real
+  "Vacuum-valve opening, 0 to 1"
+  variable u_vac::Real
+  "Air flow from atmosphere into the rear chamber"
+  variable mdot_aa::MassFlowRate
+  "Air flow from the rear chamber into the front chamber"
+  variable mdot_av::MassFlowRate
+  "Air leaking from atmosphere into the front chamber"
+  variable mdot_leak::MassFlowRate
+  "Air flow out of the front chamber through the check valve"
+  variable mdot_out::MassFlowRate
+  "Assist available with the rear chamber at atmosphere, at the present front pressure"
+  variable F_assist_max::Force
+relations
+  input.s = rod_out.s
+  F_in = -input.f
+  F_out = rod_out.f
+  input.f + rod_out.f + support.f = 0.0
+  x_p = rod_out.s - support.s - s_rest
+  V_f = V_f0 - A_d * x_p
+  V_r = V_r0 + A_d * x_p
+  F_out = max(0.0, F_in + A_d * (p_r - p_f) - F_rs0 - K_rs * x_p)
+  F_r = max(0.0, F_out - F_jump) / SR
+  e = F_in - F_cut - F_r
+  u_atm = min(max((e - F_app) / F_w, 0.0), 1.0)
+  u_vac = min(max(max(-e - F_rel, F_cut - F_in) / F_w, 0.0), 1.0)
+  mdot_aa = C_aa * u_atm * (p_atm - p_r)
+  mdot_av = C_av * u_vac * (p_r - p_f)
+  mdot_leak = C_leak * (p_atm - p_f)
+  mdot_out = C_vm * max(0.0, p_f - vacuum.p)
+  vacuum.mdot = -mdot_out
+  der(p_r) = n / V_r * (R * T * (mdot_aa - mdot_av) - p_r * A_d * der(x_p))
+  der(p_f) = n / V_f * (R * T * (mdot_av - mdot_out + mdot_leak) + p_f * A_d * der(x_p))
+  p_vac = p_f
+  F_assist_max = A_d * (p_atm - p_f) - F_rs0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/VacuumBooster.svg"}},
+  "_links": {
+    "input": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "rod_out": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
+    },
+    "vacuum": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 200, "x2": 300, "y1": -50, "y2": 50}}}
+    },
+    "p_vac": {
+      "Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": -50, "y2": 50, "rot": 270}}}
+    }
+  }
+}
+end

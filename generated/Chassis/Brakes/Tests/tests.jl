@@ -18,8 +18,11 @@ end
 @testset "`VehicleComponents.Chassis.Brakes.Tests`" begin
 include("ABSValve_test.jl")
 include("Caliper_test.jl")
+include("ElectricVacuumPump_test.jl")
 include("ForceChain_test.jl")
 include("HydraulicStop_test.jl")
 include("Line_test.jl")
 include("Split_test.jl")
+include("VacuumBooster_test.jl")
+include("VacuumSourceSelector_test.jl")
 end

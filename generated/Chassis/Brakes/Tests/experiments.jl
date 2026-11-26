@@ -11,7 +11,10 @@ end
 
 include("ABSValve_experiment.jl")
 include("Caliper_experiment.jl")
+include("ElectricVacuumPump_experiment.jl")
 include("ForceChain_experiment.jl")
 include("HydraulicStop_experiment.jl")
 include("Line_experiment.jl")
 include("Split_experiment.jl")
+include("VacuumBooster_experiment.jl")
+include("VacuumSourceSelector_experiment.jl")

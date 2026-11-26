@@ -1,0 +1,62 @@
+"""
+One default `ElectricVacuumPump` (Q = 0.4e-3 m³/s, p_min = 14 kPa, on above 40 kPa, off below
+17 kPa, V_h = 0.05e-3 m³) with its hose capped, so no air enters it, and a constant sensor
+pressure set per case.
+
+Running with nothing flowing in, the hose follows dp_h/dt = -(Q/V_h)(p_h - p_min), down to
+p_min with the time constant V_h/Q = 0.05e-3/0.4e-3 = 0.125 s; by 3 s that is within e^-24 of
+14 kPa. Stopped, the hose holds its pressure.
+
+- `stays_on`, the default start (hose at 101325 Pa, pump running), sensor at 30 kPa, between
+  the switch points: the latch holds the pump on, so the hose reaches 14 kPa and `running` is 1.
+- `switches_on`, starting at 30 kPa with the pump stopped, sensor at 50 kPa, above p_on: the
+  pump starts and the hose reaches 14 kPa, `running` 1.
+- `stays_off`, starting at 30 kPa with the pump stopped, sensor at 30 kPa: the latch holds the
+  pump off, so the hose stays at 30 kPa and `running` at 0.
+"""
+test component ElectricVacuumPump
+  "Booster vacuum-sensor pressure, absolute, overridden per case"
+  sensor = BlockComponents.Sources.Constant(k = 30e3) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  pump = VehicleComponents.Chassis.Brakes.ElectricVacuumPump() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300, "rot": 270}}
+    }
+  }
+relations
+  connect(sensor.y, pump.p_sense) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "stays_on": {
+        "stop": 3,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-10,
+        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
+        "expect": {"final": {"pump.p_h": 14e3, "pump.running": 1.0}}
+      },
+      "switches_on": {
+        "stop": 3,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-10,
+        "params": {"sensor.k": 50e3},
+        "initial": {"pump.p_h": 30e3, "pump.y": 0.0},
+        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
+        "expect": {"final": {"pump.p_h": 14e3, "pump.running": 1.0}}
+      },
+      "stays_off": {
+        "stop": 3,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-10,
+        "initial": {"pump.p_h": 30e3, "pump.y": 0.0},
+        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
+        "expect": {"final": {"pump.p_h": 30e3, "pump.running": 0.0}}
+      }
+    }
+  }
+}
+end

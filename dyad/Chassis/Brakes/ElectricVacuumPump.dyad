@@ -1,0 +1,80 @@
+"""
+Electric vane vacuum pump with its suction hose, for a booster with no manifold vacuum: a diesel,
+an unthrottled petrol engine, a hybrid or an EV.
+
+Ports: `vacuum` the hose from the booster's check valve; `p_sense` the booster's vacuum-sensor
+pressure, absolute, which switches the pump; `running` the pump's on/off state, 0 to 1.
+
+The booster's check valve feeds air into the hose, and the hose pressure p_h is what the check
+valve sees. The booster's sensor runs the pump through a continuous latch: on above `p_on`, off
+below `p_off`, holding its state in between. The switch reads the booster, not the hose, because
+the hose follows the pump within milliseconds and would rebound past `p_off` as the pump slows,
+so the latch would chatter. Running, the pump moves a constant volume flow `Q` down to its
+ultimate pressure `p_min`:
+
+    mdot_pump = Q/(R T) max(p_h - p_min, 0) y
+    V_h/(R T) dp_h/dt = vacuum.mdot - mdot_pump
+
+with the latch state y relaxing to its target over `T_latch`. All pressures are absolute.
+
+Assumptions: the hose air is an ideal gas at the fixed temperature `T`; the latch's transition
+time stands in for the switch and the motor spin-up. The hose starts at ambient and the pump
+running, as a pump switched on with the booster at ambient would; give another start at the
+declaration, `ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`. `Q` and `p_min` are
+derived from Hella's UP28, which evacuates 3.2 L to 500 mbar in 5.5 to 6 s and reaches at least
+86 % vacuum; the switch points are the aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch`
+are assumed.
+"""
+component ElectricVacuumPump
+  "Hose from the booster's check valve"
+  vacuum = VehicleComponents.Interfaces.GasPort() {^vacuum}
+  "Booster vacuum-sensor pressure, absolute"
+  p_sense = RealInput() {^p_sense}
+  "Pump on/off state, 0 to 1"
+  running = RealOutput() {^running}
+  "Displaced volume flow [m³/s]"
+  parameter Q::Real = 0.40e-3
+  "Ultimate pressure"
+  parameter p_min::Pressure = 14e3
+  "Switch-on pressure, 18 inHg of vacuum"
+  parameter p_on::Pressure = 40e3
+  "Switch-off pressure, 25 inHg of vacuum"
+  parameter p_off::Pressure = 17e3
+  "Suction hose volume between check valve and pump"
+  parameter V_h::Volume = 0.05e-3
+  "Latch transition time"
+  parameter T_latch::Time(min = 1e-3) = 0.01
+  "Air temperature"
+  parameter T::Temperature = 298.15
+  "Gas constant of air [J/(kg K)]"
+  parameter R::Real = 287.05
+  "Hose absolute pressure"
+  variable p_h::Pressure = initial 101325.0
+  "Latch state: relaxes to 1 while running, 0 while stopped"
+  variable y::Real = initial 1.0
+  "Latch target"
+  variable request::Real
+  "Air mass flow the pump removes"
+  variable mdot_pump::MassFlowRate
+relations
+  request = ifelse(y < 0.5, ifelse(p_sense > p_on, 1.0, 0.0), ifelse(p_sense < p_off, 0.0, 1.0))
+  der(y) = (request - y) / T_latch
+  mdot_pump = Q / (R * T) * max(p_h - p_min, 0.0) * y
+  V_h / (R * T) * der(p_h) = vacuum.mdot - mdot_pump
+  vacuum.p = p_h
+  running = y
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/ElectricVacuumPump.svg"}},
+  "_links": {
+    "vacuum": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "p_sense": {
+      "Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 90}}}
+    },
+    "running": {
+      "Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end
