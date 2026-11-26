@@ -23,104 +23,87 @@ on the part, `Braked(tire(F_z = 6864.655))`.
 """
 component Braked
   "Inboard shaft"
-  spline = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  spline = Spline() {
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+        "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
+      }
+    }
+  }
   "Brake reaction support; must be connected, to the hub carrier or a Fixed"
   support = Spline() {
     "Dyad": {
-      "placement": {"icon": {"iconName": "support", "x1": 250, "x2": 350, "y1": 950, "y2": 1050}}
+      "placement": {
+        "icon": {"iconName": "support", "x1": 250, "x2": 350, "y1": 950, "y2": 1050},
+        "diagram": {"iconName": "support", "x1": 450, "x2": 550, "y1": 950, "y2": 1050}
+      }
     }
   }
   "Longitudinal connection to the vehicle body"
-  flange = Flange() {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  flange = Flange() {
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+        "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+      }
+    }
+  }
   "Requested brake torque"
   tau_cmd = RealInput() {
-    "Dyad": {"placement": {"icon": {"x1": 250, "x2": 350, "y1": -50, "y2": 50, "rot": 90}}}
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": 250, "x2": 350, "y1": -50, "y2": 50, "rot": 90},
+        "diagram": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 90}
+      }
+    }
   }
   "Road-friction multiplier"
   mu_scale = RealInput() {
     "Dyad": {
-      "placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 270}}
+      "placement": {
+        "icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 270},
+        "diagram": {"x1": 750, "x2": 850, "y1": 950, "y2": 1050, "rot": 270}
+      }
     }
   }
   "Tire slip ratio, negative while braking"
   kappa = RealOutput() {
-    "Dyad": {"placement": {"icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270}}}
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270},
+        "diagram": {"x1": 800, "x2": 900, "y1": -50, "y2": 50, "rot": 270}
+      }
+    }
   }
   "Rotating inertia; four road wheels"
   inertia = RotationalComponents.Components.Inertia(J = 4.0, phi = initial 0.0, w = initial 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}
   }
   "Commanded brake; all four brakes together"
   brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 6000.0, w0 = 0.2) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
   }
   "Tire; the normal load is the full weight of a 1400 kg car"
   tire = VehicleComponents.Chassis.Wheel.Slip(F_z = 13729.31) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 450, "y2": 550}}}
   }
 relations
-  connect(spline, inertia.spline_a) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 350, "y": 500}, {"x": 350, "y": 350}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(inertia.spline_b, brake.spline_a) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [
-            {"x": 700, "y": 350},
-            {"x": 700, "y": 450},
-            {"x": 400, "y": 450},
-            {"x": 400, "y": 600}
-          ],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
+  connect(spline, inertia.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(inertia.spline_b, brake.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(brake.spline_b, tire.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(brake.support, support) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 500, "y": 950}, {"x": 300, "y": 950}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(tire.flange, flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 950, "y": 600}, {"x": 950, "y": 500}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(tau_cmd, brake.tau_cmd) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [
-            {"x": 300, "y": 200},
-            {"x": 750, "y": 200},
-            {"x": 750, "y": 500},
-            {"x": 500, "y": 500}
-          ],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
+  connect(brake.support, support) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(tire.flange, flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(tau_cmd, brake.tau_cmd) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(mu_scale, tire.mu_scale) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 700, "y": 700}, {"x": 725, "y": 700}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 800, "y": 600}, {"x": 775, "y": 600}], "E": 2}],
       "path": {}
     }
   }
   connect(tire.kappa, kappa) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 775, "y": 500}, {"x": 800, "y": 500}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 825, "y": 400}, {"x": 850, "y": 400}], "E": 2}],
       "path": {}
     }
   }

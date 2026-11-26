@@ -39,6 +39,12 @@ matters); its diagram comes from `dyad layout`. Write a signal that feeds severa
 two-port `connect` per input: on a `connect` with three or more ends, `dyad layout` attaches
 waypoints to the wrong branch and the Studio draws diagonals.
 
+A component's own port can carry a `placement.diagram` next to its `placement.icon`: the icon box
+places it on the icon, the diagram box inside the component's diagram, where the part it wires to
+sits. `dyad layout` pins a port at its diagram box. Keep each port on the same side in both: the
+strict rule "ports on the icon on the side they appear in the diagram" still holds, and only the
+position along that side may differ.
+
 1. After adding or rewiring a part, run
    `node "$DYAD_CLI" layout VehicleComponents.<Module>.<Component> --dir .`. Done when the model
    has no part left unplaced and a second run changes nothing. `dyad layout` writes a
