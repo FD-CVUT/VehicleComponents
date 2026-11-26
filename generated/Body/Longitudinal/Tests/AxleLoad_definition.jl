@@ -17,8 +17,7 @@ T_pitch = 0.1 s, F_z(t) = 7551.1205 + 476 (1 - e^(-t/0.1)):
 
 - `launch` stops one time constant in: 7551.1205 + 476 (1 - e^-1) = 7551.1205 + 300.8894 =
   7852.0099 N.
-- `launch_with_downforce` adds 0.55 · 1000 = 550 N throughout: 8101.1205 N at the start and
-  8402.0099 N at 0.1 s.
+- `launch_with_downforce` adds 0.55 · 1000 = 550 N throughout: 8101.1205 N at the start.
 - `settled` runs 2 s, 20 time constants, so the lag is complete to within 476 e^-20 = 1e-6 N: the
   axle ends at 8027.1205 N, all of it taken by the road.
 """

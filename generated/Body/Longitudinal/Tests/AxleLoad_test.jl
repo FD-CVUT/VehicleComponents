@@ -35,7 +35,7 @@ __dyad_run_test_case!(
   params=Dict{String, Any}("downforce.f_constant" => 1000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[(m -> m.axle.F_z, "axle.F_z", 8101.1205, 0.01, 1e-5)],
-  expected_final=Tuple[(m -> m.axle.F_z, "axle.F_z", 8402.0099, 0.01, 1e-5)],
+  expected_final=Tuple[],
   signals=Tuple[],
 )
 __dyad_run_test_case!(

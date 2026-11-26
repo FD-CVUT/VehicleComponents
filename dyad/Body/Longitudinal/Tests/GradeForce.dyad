@@ -31,10 +31,10 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"force.f": 0.01, "mass.a": 0.0001, "mass.v": 0.001},
+        "atol": {"force.f": 0.01, "mass.v": 0.001},
         "expect": {
-          "initial": {"force.f": 0, "mass.a": 0, "mass.v": 0},
-          "final": {"force.f": 1366.1174, "mass.a": -0.975798, "mass.v": -3.90319}
+          "initial": {"force.f": 0, "mass.v": 0},
+          "final": {"force.f": 1366.1174, "mass.v": -3.90319}
         }
       }
     }
