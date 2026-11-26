@@ -9,6 +9,9 @@
 
 The packaged WLTC class 3b trace is 0.2 km/h at 12 s and 1.7 km/h at 13 s, so linear
 interpolation gives 0.95 km/h at 12.5 s.
+
+The EPA FTP-75 trace publishes 3 mph at 21 s; its file holds that in km/h, 3 x 1.609344 =
+4.828032 km/h, which `epa_kmh` reads at 21 s.
 """
 @component function DriveCycle(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -57,6 +60,9 @@ interpolation gives 0.95 km/h at 12.5 s.
   # Subcomponent cycle of type VehicleComponents.Driver.DriveCycle
   cycle_overrides = __pop_subcomponent_overrides!(__overrides, "cycle")
   push!(__systems, @named cycle = VehicleComponents.Driver.DriveCycle(; __overrides = cycle_overrides))
+  # Subcomponent ftp75 of type VehicleComponents.Driver.DriveCycle
+  ftp75_overrides = __pop_subcomponent_overrides!(__overrides, "ftp75")
+  push!(__systems, @named ftp75 = VehicleComponents.Driver.DriveCycle(; file="dyad://VehicleComponents/data/drive_cycles/ftp75.csv", __overrides = ftp75_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

@@ -82,6 +82,9 @@ Full throttle until 9 s, then coast. Ports are those of `Driver.Interface`.
   __constants = Any[]
 
   ### Components
+  # Subcomponent clock of type BlockComponents.Sources.ContinuousClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = BlockComponents.Sources.ContinuousClock(; __overrides = clock_overrides))
   # Subcomponent throttle_table of type BlockComponents.Tables.Interpolation
   throttle_table_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_table")
   push!(__systems, @named throttle_table = BlockComponents.Tables.Interpolation(; dataset=throttle_data, interpolation_type=BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), __overrides = throttle_table_overrides))
@@ -103,9 +106,7 @@ Full throttle until 9 s, then coast. Ports are those of `Driver.Interface`.
   __assertions = []
 
   ### Equations
-  push!(__eqs, throttle_table.u ~ t)
-  push!(__eqs, brake_table.u ~ t)
-  push!(__eqs, steer_table.u ~ t)
+  push!(__eqs, connect(clock.y, throttle_table.u, brake_table.u, steer_table.u))
   push!(__eqs, connect(throttle_table.y, throttle_signal))
   push!(__eqs, connect(brake_table.y, brake_signal))
   push!(__eqs, connect(steer_table.y, steer_signal))

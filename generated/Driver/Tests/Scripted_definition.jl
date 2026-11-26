@@ -8,7 +8,13 @@
    Scripted(; name, __overrides)
 
 The two presets read their tables: `CoastDown` holds full throttle until 9 s and then coasts;
-`HardStop` coasts the same way and brakes fully from 19 s. Neither steers.
+`HardStop` coasts the same way and brakes fully from 19 s. Neither steers, so steering stays 0 rad.
+
+`between_ticks` plays `tests/steer_step.csv`, which is all zero until a row at 0.105 s sets
+throttle 0.25 and steering 0.1 rad. That breakpoint lies between the 10 ms ticks at 0.10 s and
+0.11 s. Unclocked playback takes the row at its own time, so at 0.107 s, before the next tick,
+throttle is 0.25 and steering 0.1 rad; a driver sampled every 10 ms would still hold the 0.10 s
+values, 0 and 0. Brake stays 0 throughout.
 """
 @component function Scripted(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -60,6 +66,9 @@ The two presets read their tables: `CoastDown` holds full throttle until 9 s and
   # Subcomponent stop of type VehicleComponents.Driver.HardStop
   stop_overrides = __pop_subcomponent_overrides!(__overrides, "stop")
   push!(__systems, @named stop = VehicleComponents.Driver.HardStop(; __overrides = stop_overrides))
+  # Subcomponent step of type VehicleComponents.Driver.Scripted
+  step_overrides = __pop_subcomponent_overrides!(__overrides, "step")
+  push!(__systems, @named step = VehicleComponents.Driver.Scripted(; table="dyad://VehicleComponents/data/drivers/tests/steer_step.csv", __overrides = step_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

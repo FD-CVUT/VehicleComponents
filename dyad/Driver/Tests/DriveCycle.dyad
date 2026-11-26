@@ -1,10 +1,16 @@
 """
 The packaged WLTC class 3b trace is 0.2 km/h at 12 s and 1.7 km/h at 13 s, so linear
 interpolation gives 0.95 km/h at 12.5 s.
+
+The EPA FTP-75 trace publishes 3 mph at 21 s; its file holds that in km/h, 3 x 1.609344 =
+4.828032 km/h, which `epa_kmh` reads at 21 s.
 """
 test component DriveCycle
   cycle = VehicleComponents.Driver.DriveCycle() {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  ftp75 = VehicleComponents.Driver.DriveCycle(file = "dyad://VehicleComponents/data/drive_cycles/ftp75.csv") {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
   }
 relations
 metadata {
@@ -21,6 +27,14 @@ metadata {
           "final": {"cycle.y": 0.95},
           "signals": ["cycle.y"]
         }
+      },
+      "epa_kmh": {
+        "stop": 21,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"ftp75.y": 1e-9},
+        "expect": {"initial": {"ftp75.y": 0.0}, "final": {"ftp75.y": 4.828032}}
       }
     }
   }

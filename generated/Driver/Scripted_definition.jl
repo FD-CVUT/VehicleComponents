@@ -9,9 +9,15 @@
 
 Driver that plays back a time table of throttle, brake and steering commands.
 
-The table is a CSV with `time`, `throttle`, `brake` and `steer` columns, read with constant
-interpolation: each row holds until the next breakpoint, and values outside the table use
-constant extrapolation. Ports are those of `Driver.Interface`.
+The table is a CSV with four columns: `time` in seconds, `throttle` and `brake` as pedal
+fractions in [0, 1], and `steer` as the steering-wheel angle in radians. A wired continuous clock
+drives the lookup, with constant interpolation: each row holds from its own time until the next
+breakpoint, not snapped to any sampling tick, and values outside the table use constant
+extrapolation.
+Playback neither clamps nor converts: a value outside [0, 1] or in other units reaches the ports
+as written.
+
+Ports are those of `Driver.Interface`.
 
 ## Parameters:
 
@@ -86,6 +92,9 @@ constant extrapolation. Ports are those of `Driver.Interface`.
   __constants = Any[]
 
   ### Components
+  # Subcomponent clock of type BlockComponents.Sources.ContinuousClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = BlockComponents.Sources.ContinuousClock(; __overrides = clock_overrides))
   # Subcomponent throttle_table of type BlockComponents.Tables.Interpolation
   throttle_table_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_table")
   push!(__systems, @named throttle_table = BlockComponents.Tables.Interpolation(; dataset=throttle_data, interpolation_type=BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), __overrides = throttle_table_overrides))
@@ -107,9 +116,7 @@ constant extrapolation. Ports are those of `Driver.Interface`.
   __assertions = []
 
   ### Equations
-  push!(__eqs, throttle_table.u ~ t)
-  push!(__eqs, brake_table.u ~ t)
-  push!(__eqs, steer_table.u ~ t)
+  push!(__eqs, connect(clock.y, throttle_table.u, brake_table.u, steer_table.u))
   push!(__eqs, connect(throttle_table.y, throttle_signal))
   push!(__eqs, connect(brake_table.y, brake_signal))
   push!(__eqs, connect(steer_table.y, steer_signal))

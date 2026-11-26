@@ -76,6 +76,9 @@ its 1 Hz points, and constant extrapolation keeps the endpoint defined.
   __constants = Any[]
 
   ### Components
+  # Subcomponent clock of type BlockComponents.Sources.ContinuousClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = BlockComponents.Sources.ContinuousClock(; __overrides = clock_overrides))
   # Subcomponent interpolation of type BlockComponents.Tables.Interpolation
   interpolation_overrides = __pop_subcomponent_overrides!(__overrides, "interpolation")
   push!(__systems, @named interpolation = BlockComponents.Tables.Interpolation(; dataset=dataset, interpolation_type=BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), __overrides = interpolation_overrides))
@@ -91,7 +94,7 @@ its 1 Hz points, and constant extrapolation keeps the endpoint defined.
   __assertions = []
 
   ### Equations
-  push!(__eqs, interpolation.u ~ t)
+  push!(__eqs, connect(clock.y, interpolation.u))
   push!(__eqs, connect(interpolation.y, y))
 
   # Return completely constructed System
