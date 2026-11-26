@@ -7,3 +7,8 @@
 /agent_resources/
 /.migration-backups/
 /test/comparisons/
+# Agent-resource skills `dyad install skills` points to but this library does not use
+/.claude/skills/fmu-analysis/
+/.agents/skills/fmu-analysis/
+/.claude/skills/surrogate-modelling/
+/.agents/skills/surrogate-modelling/
