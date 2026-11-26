@@ -1,0 +1,52 @@
+"""
+One default line (D = 3 mm, L = 1.5 m) of `VehicleComponents.DOT4` fluid (mu = 0.01045 Pa s,
+1045 kg/m³ at its reference pressure 100325 Pa, bulk modulus 1.4e9 Pa) between two fixed
+pressures, 2e5 Pa at `port_a` and 1e5 Pa at `port_b`.
+
+At `port_a` the density is 1045 (1 + (2e5 - 100325)/1.4e9) = 1045.07440 kg/m³, so the
+Hagen-Poiseuille resistance is 128 mu L/(pi D⁴ rho) = 128 · 0.01045 · 1.5/(pi · 8.1e-11 ·
+1045.07440) = 7.544586e6 Pa s/kg, and `forward` passes m_flow = 1e5/7.544586e6 = 0.01325454 kg/s
+from `port_a` to `port_b`. The law is linear and odd in the flow, so one direction pins it.
+"""
+test component Line
+  "Upstream pressure"
+  upstream = BlockComponents.Sources.Constant(k = 2.0e5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  downstream = BlockComponents.Sources.Constant(k = 1.0e5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  supply = HydraulicComponents.Sources.BoundaryPressure() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  line = VehicleComponents.Chassis.Brakes.Line() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 350, "y2": 450, "rot": 90}}
+    }
+  }
+  drain = HydraulicComponents.Sources.BoundaryPressure() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
+relations
+  connect(upstream.y, supply.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(supply.port, line.port_a) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 250}], "E": 2}], "path": {}}}
+  connect(line.port_b, drain.port) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 500}], "E": 2}], "path": {}}}
+  connect(downstream.y, drain.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  continuity(medium, supply.port.medium)
+metadata {
+  "Dyad": {
+    "tests": {
+      "forward": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-10,
+        "atol": {"line.m_flow": 1e-8},
+        "expect": {"final": {"line.m_flow": 0.01325454}}
+      }
+    }
+  }
+}
+end

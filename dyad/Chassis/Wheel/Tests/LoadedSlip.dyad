@@ -1,0 +1,147 @@
+"""
+The `Slip` launch with the normal load from a `Body.Longitudinal.AxleLoad` (m = 1400 kg,
+share = 0.55, h/L = 0.17) wired straight to the tire's `load` flange: 600 N m drives a
+J = 1 kg m² wheel inertia, and the tire pushes a 1400 kg mass that the axle load also follows.
+The road multiplier is set per case, and so is the force `lift` pushes on the axle's
+`downforce` flange: none but in `lifted`.
+
+Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
+
+- `wheelspin`, mu_scale = 0.2: the tire slides, F_x = 0.2 · 0.7 F_z = 0.14 F_z, so
+  F_z = 0.55 · 1400 · 9.80665 + 0.14 · 0.17 F_z, F_z = 7551.1205/0.9762 = 7735.2187 N. Then
+  F_x = 1082.9306 N, a = 0.773522 m/s², and the wheel accelerates at
+  600 - 0.31 · 1082.9306 = 264.29151 rad/s². The grip ceiling, 0.31 · 0.2 · 7735.2 = 479.6 N m,
+  stays below 600 N m, so the slide holds. The lag settles at a rate of (1 - 0.0238)/0.1 = 9.76
+  1/s, so by 2 s it is complete to within e^-19.5.
+- `grip`, mu_scale = 1: as in the `Slip` rig, steady slip gives
+  F_x = (tau r/J)/(r²/J + (1 + kappa)/m), now with mu(kappa) = F_x/F_z and
+  F_z = 0.55 m g + F_x h/L. Iterating from kappa = 0 settles at kappa = 0.0065620,
+  F_x = 1921.111 N and F_z = 7877.709 N, so a = 1.372222 m/s². The slip settles within
+  milliseconds, as in the `Slip` rig; the weight transfer of 1400 · 1.372 · 0.17 = 326.6 N
+  follows the 0.1 s lag, so by 2 s it is within 326.6 e^-20 = 7e-7 N.
+- `lifted`, 20000 N of lift on a dry road: the axle's static share alone is
+  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the tire is off the road and passes no force.
+  The mass stays at rest, a = 0, so no weight transfers and F_z stays -3448.8795 N, while the
+  whole 600 N m spins up the wheel at 600 rad/s². A tire that passed mu F_n with the negative load
+  would instead pull the mass backward, at more than 0.7 · 3448.9/1400 = 1.7 m/s² once the
+  backward acceleration moves still more load off the axle.
+"""
+test component LoadedSlip
+  drive = RotationalComponents.Sources.ConstantTorque(tau_constant = 600.0) {^drive}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  inertia = RotationalComponents.Components.Inertia(J = 1.0, phi = initial 0.0, w = initial 0.0) {^inertia}
+  wheel = VehicleComponents.Chassis.Wheel.LoadedSlip() {^wheel}
+  body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {^body}
+  axle = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0, share = 0.55, h_over_L = 0.17) {^axle}
+  "Downforce, negative for lift; overridden per case"
+  lift = TranslationalComponents.Sources.ConstantForce(f_constant = 0.0) {^lift}
+  ground = TranslationalComponents.Components.Fixed() {^ground}
+  "Road-friction multiplier, overridden per case"
+  road = BlockComponents.Sources.Constant(k = 1.0) {^road}
+relations
+  connect(drive.spline, inertia.spline_a) {^id10}
+  connect(drive.support, housing.spline) {^id11}
+  connect(inertia.spline_b, wheel.spline) {^id12}
+  connect(wheel.flange, body.flange_a) {^id13}
+  connect(body.flange_b, axle.flange) {^id14}
+  connect(axle.load, wheel.load) {^id15}
+  connect(lift.flange, axle.downforce) {^id16}
+  connect(lift.support, ground.flange) {^id17}
+  connect(road.y, wheel.mu_scale) {^id18}
+metadata {
+  "Dyad": {
+    "tests": {
+      "wheelspin": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"road.k": 0.2},
+        "atol": {"axle.F_z": 0.001, "wheel.F_n": 0.001, "body.a": 1e-6, "inertia.a": 0.0001},
+        "expect": {
+          "initial": {"wheel.F_n": 7551.1205},
+          "final": {
+            "axle.F_z": 7735.2187,
+            "wheel.F_n": 7735.2187,
+            "body.a": 0.773522,
+            "inertia.a": 264.29151
+          }
+        }
+      },
+      "grip": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"wheel.kappa": 1e-6, "wheel.F_n": 0.001, "body.a": 1e-5},
+        "expect": {"final": {"wheel.kappa": 0.006562, "wheel.F_n": 7877.709, "body.a": 1.372222}}
+      },
+      "lifted": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"lift.f_constant": -20000.0},
+        "atol": {"axle.F_z": 0.001, "wheel.F_x": 1e-6, "body.a": 1e-6, "inertia.a": 1e-4},
+        "expect": {
+          "final": {"axle.F_z": -3448.8795, "wheel.F_x": 0.0, "body.a": 0.0, "inertia.a": 600.0}
+        }
+      }
+    }
+  },
+  "_links": {
+    "drive": {
+      "Dyad": {"placement": {"diagram": {"x1": 80, "x2": 180, "y1": 500, "y2": 600}}}
+    },
+    "housing": {
+      "Dyad": {"placement": {"diagram": {"x1": 80, "x2": 180, "y1": 790, "y2": 890}}}
+    },
+    "inertia": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 370, "x2": 270, "y1": 500, "y2": 600, "rot": 180}}
+      }
+    },
+    "wheel": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 500, "y2": 600}}}
+    },
+    "body": {
+      "Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 500, "y2": 600}}}
+    },
+    "axle": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 270, "y2": 370}}}
+    },
+    "lift": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 540, "x2": 440, "y1": 40, "y2": 140, "rot": 270}}
+      }
+    },
+    "ground": {
+      "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 130, "y2": 230}}}
+    },
+    "road": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 430, "x2": 530, "y1": 780, "y2": 880, "rot": 270}}
+      }
+    },
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 990, "y": 550}, {"x": 990, "y": 320}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 140}], "E": 2}], "path": {}}},
+    "id17": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 650, "y": 89.99999999999999}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 600}], "E": 2}], "path": {}}}
+  }
+}
+end

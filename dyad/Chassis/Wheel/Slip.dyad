@@ -1,0 +1,21 @@
+"""
+Tire contact of a wheel rolling in a straight line, with longitudinal slip-dependent friction,
+under the constant normal load `F_z`.
+
+Everything but the normal load is `PartialSlip`'s: slip definition, friction law, sign
+conventions and the `spline`, `flange`, `mu_scale` and `kappa` ports. `LoadedSlip` takes the
+normal load from a flange instead.
+
+Assumptions: those of `PartialSlip`. The default `F_z` is half the weight of a 1400 kg car, one
+driven axle's share (assumed).
+"""
+component Slip
+  extends VehicleComponents.Chassis.Wheel.PartialSlip
+  "Normal load"
+  parameter F_z::Force = 6864.655
+relations
+  F_n = F_z
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Wheel/Slip.svg"}}
+}
+end

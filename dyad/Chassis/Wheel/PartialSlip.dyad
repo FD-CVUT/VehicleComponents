@@ -1,0 +1,69 @@
+"""
+Tire contact of a wheel rolling in a straight line, with longitudinal slip-dependent friction,
+for any source of the normal load `F_n`, which an extending component binds.
+
+The slip ratio is kappa = (omega r - v) / max(|v|, v_eps), positive when the wheel spins faster
+than the road passes under it. The tire force on the body is F_x = mu_scale mu(kappa)
+max(F_n, 0), where mu is the tire friction law it extends, `TireFriction`.
+
+Ports:
+- `spline` the wheel shaft; positive rotation drives positive travel. It takes the tire's
+  reaction torque, -r F_x.
+- `flange` attaches to the vehicle body and pushes it forward with F_x.
+- `mu_scale` multiplies the curve for the road: 1 for the road the curve describes, about 0.2 on
+  ice.
+- `kappa` the slip ratio, negative while braking.
+
+Assumptions: the force follows the slip instantly (no relaxation length), and the tire has no
+rolling resistance; the body's road load carries it. A negative normal load is a tire lifted off
+the road: it passes no force, rather than a force that would push the car the way it slides.
+Below `v_eps` the slip is measured against `v_eps`, which keeps it finite at standstill.
+Defaults are a car tire on dry asphalt (assumed).
+"""
+partial component PartialSlip
+  extends VehicleComponents.Chassis.Wheel.TireFriction
+  "Wheel shaft"
+  spline = Spline() {^spline}
+  "Longitudinal connection to the vehicle body"
+  flange = Flange() {^flange}
+  "Road-friction multiplier"
+  mu_scale = RealInput() {^mu_scale}
+  "Longitudinal slip ratio, negative while braking"
+  kappa = RealOutput() {^kappa}
+  "Rolling radius"
+  parameter radius::Length = 0.31
+  "Speed below which the slip is measured against v_eps"
+  parameter v_eps::Velocity = 0.5
+  "Wheel angular speed"
+  variable omega::AngularVelocity
+  "Vehicle speed"
+  variable v::Velocity
+  "Friction coefficient after road scaling"
+  variable mu::Real
+  "Normal load pressing the tire onto the road; negative when the tire lifts"
+  variable F_n::Force
+  "Longitudinal tire force on the body"
+  variable F_x::Force
+relations
+  omega = der(spline.phi)
+  v = der(flange.s)
+  kappa = (omega * radius - v) / max(abs(v), v_eps)
+  s = kappa
+  mu = mu_scale * mu_ref
+  F_x = mu * max(F_n, 0.0)
+  # Flow is positive into the tire, so pushing the body forward is a negative flange force.
+  flange.f = -F_x
+  0 = spline.tau + radius * flange.f
+metadata {
+  "_links": {
+    "spline": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "mu_scale": {
+      "Dyad": {"placement": {"icon": {"x1": 200, "x2": 300, "y1": 950, "y2": 1050, "rot": 270}}}
+    },
+    "kappa": {
+      "Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": -50, "y2": 50, "rot": 270}}}
+    }
+  }
+}
+end

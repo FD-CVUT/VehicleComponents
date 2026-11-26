@@ -1,0 +1,84 @@
+"""
+The default curve (sAdhesion = 0.04, sSlide = 0.12, mu_A = 1, mu_S = 0.7) at a constant slip
+per case. With c(x) = -x³/2 + 3x/2:
+
+- `free_rolling`, u = 0: sign(0) = 0, so y = 0.
+- `braking_adhesion`, u = -0.02: x = 0.02/0.04 = 0.5 on the rising cubic, c(0.5) = -0.0625 +
+  0.75 = 0.6875, so y = -0.6875.
+- `braking_peak`, u = -0.04: x = 1, c(1) = 1, so y = -mu_A = -1.
+- `braking_transition`, u = -0.08: the middle of the falling cubic, x = 0, so
+  y = -(mu_A + mu_S)/2 = -0.85.
+- `driving_falloff`, u = 0.10: x = (0.10 - 0.08) · 2/0.08 = 0.5 and c(0.5) = 0.6875, so
+  y = 0.85 + (0.7 - 1)/2 · 0.6875 = 0.85 - 0.103125 = 0.746875.
+- `locked`, u = -1: past sSlide, so y = -mu_S = -0.7.
+"""
+test component TireFrictionCurve
+  "Slip ratio, overridden per case"
+  slip = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  curve = VehicleComponents.Chassis.Wheel.Helpers.TireFrictionCurve() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(slip.y, curve.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "free_rolling": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "atol": {"curve.y": 1e-9},
+        "expect": {"final": {"curve.y": 0.0}}
+      },
+      "braking_adhesion": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"slip.k": -0.02},
+        "atol": {"curve.y": 1e-9},
+        "expect": {"final": {"curve.y": -0.6875}}
+      },
+      "braking_peak": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"slip.k": -0.04},
+        "atol": {"curve.y": 1e-9},
+        "expect": {"final": {"curve.y": -1.0}}
+      },
+      "braking_transition": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"slip.k": -0.08},
+        "atol": {"curve.y": 1e-9},
+        "expect": {"final": {"curve.y": -0.85}}
+      },
+      "driving_falloff": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"slip.k": 0.1},
+        "atol": {"curve.y": 1e-9},
+        "expect": {"final": {"curve.y": 0.746875}}
+      },
+      "locked": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-9,
+        "reltol": 1e-9,
+        "params": {"slip.k": -1.0},
+        "atol": {"curve.y": 1e-9},
+        "expect": {"final": {"curve.y": -0.7}}
+      }
+    }
+  }
+}
+end

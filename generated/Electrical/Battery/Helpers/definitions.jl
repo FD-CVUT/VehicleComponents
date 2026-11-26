@@ -18,6 +18,8 @@ end
 import BlockComponents
 import DyadData
 import DyadInterface
+import HydraulicComponents
+import RotationalComponents
 import TranslationalComponents
 @doc Markdown.doc"""
 This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively.

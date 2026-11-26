@@ -21,6 +21,7 @@ include("test_internals.jl")
 end
 include("Blocks/tests.jl")
 include("Body/tests.jl")
+include("Chassis/tests.jl")
 include("Driver/tests.jl")
 include("Electrical/tests.jl")
 include("Examples/tests.jl")

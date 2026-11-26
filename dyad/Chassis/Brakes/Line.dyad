@@ -1,0 +1,42 @@
+"""
+Brake line: laminar flow of brake fluid through a round pipe.
+
+Ports: `port_a`, `port_b` the two fluid connections. Mass flow from `port_a` to `port_b` drops the
+pressure by the Hagen-Poiseuille law,
+
+    port_a.p - port_b.p = 128 mu L m_flow / (pi D⁴ rho)
+
+with the dynamic viscosity mu and the density rho of the circuit's medium at `port_a`, as in
+`HydraulicComponents.Pipes.TubeBase`.
+
+Assumptions: the flow stays laminar and the fluid in the line has no inertia and no compliance;
+the volume it fills belongs to the caliper or master cylinder at its ends. Default dimensions are
+a passenger car's line to the front axle (assumed).
+"""
+component Line
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Internal diameter"
+  parameter D::Length = 3e-3
+  "Line length"
+  parameter L::Length = 1.5
+  "Fluid density at port_a"
+  variable rho::Density
+  "Fluid dynamic viscosity"
+  variable mu::DynamicViscosity
+relations
+  rho = HydraulicComponents.density(port_a.medium, port_a.p)
+  mu = HydraulicComponents.viscosity(port_a.medium)
+  m_flow = port_a.m_flow
+  Δp = 128 * mu * L * m_flow / (π * D ^ 4 * rho)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/Line.svg"}},
+  "_links": {
+    "port_a": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "port_b": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

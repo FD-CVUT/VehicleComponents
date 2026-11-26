@@ -1,0 +1,46 @@
+"""
+Tire friction law: the friction coefficient `mu_ref` against the longitudinal slip ratio `s`.
+
+Triple-S shape, point-symmetric about zero slip. |mu_ref| rises from 0 to the adhesion peak `mu_A`
+at |s| = `sAdhesion`, falls to the sliding level `mu_S` at |s| = `sSlide`, and stays at `mu_S` up
+to the locked wheel (|s| = 1) and beyond. Each segment uses the cubic c(x) = -x³/2 + 3x/2, which
+maps [-1, 1] onto [-1, 1] with zero slope at both ends: the rise is mu_A c(x_A) with
+x_A = |s|/sAdhesion, the fall (mu_A + mu_S)/2 + (mu_S - mu_A)/2 c(x_S) with
+x_S = (2|s| - sAdhesion - sSlide)/(sSlide - sAdhesion).
+
+An extending component binds `s` and reads `mu_ref`, the coefficient for the reference road, with
+the sign of the slip.
+
+Assumptions: the law is continuously differentiable, but its second derivative jumps at
+`sAdhesion` and `sSlide`. It depends on slip only, not on sliding speed, so the peak sits at the
+same slip at every vehicle speed. `sSlide` must exceed `sAdhesion`. Defaults are a car tire on
+dry asphalt (assumed).
+"""
+partial component TireFriction
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+  "Slip ratio the law is evaluated at"
+  variable s::Real
+  "Friction coefficient for the reference road, with the sign of the slip"
+  variable mu_ref::Real
+  "Slip magnitude"
+  variable s_abs::Real
+  "Friction magnitude"
+  variable mu_abs::Real
+  "Slip magnitude on the rising segment's scale, 1 at the adhesion peak"
+  variable x_A::Real
+  "Slip magnitude on the falling segment's scale, -1 at the peak and 1 at the sliding plateau"
+  variable x_S::Real
+relations
+  s_abs = abs(s)
+  x_A = s_abs / sAdhesion
+  x_S = (2 * s_abs - sAdhesion - sSlide) / (sSlide - sAdhesion)
+  mu_abs = ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * x_A ^ 3 + 1.5 * x_A), ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * x_S ^ 3 + 1.5 * x_S)))
+  mu_ref = sign(s) * mu_abs
+end

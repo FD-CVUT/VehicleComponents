@@ -2,7 +2,7 @@
 
 julia_version = "1.13.2"
 manifest_format = "2.1"
-project_hash = "dcc8a2d70d98f026a9bd7eae19af935b396b4ddb"
+project_hash = "75f188300c5320235614cfadabf08e4676a8c836"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -742,6 +742,11 @@ version = "1.15.0"
     [deps.Graphs.weakdeps]
     Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
     SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
+[[deps.HydraulicComponents]]
+deps = ["BlockComponents", "DyadInterface", "Markdown", "ModelingToolkit", "ModelingToolkitBase", "Moshi", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "SimpleUnPack", "SymbolicUtils", "Symbolics", "Test", "TranslationalComponents"]
+uuid = "b6ec4bdb-baef-4449-8ab3-f7a9cc7f1342"
+version = "3.0.0"
 
 [[deps.ImplicitDiscreteSolve]]
 deps = ["CommonSolve", "ConcreteStructs", "DiffEqBase", "NonlinearSolveBase", "NonlinearSolveFirstOrder", "OrdinaryDiffEqCore", "Reexport", "SciMLBase", "SymbolicIndexingInterface"]
@@ -1709,6 +1714,10 @@ deps = ["InteractiveUtils", "MacroTools"]
 uuid = "699a6c99-e7fa-54fc-8d76-47d257e15c1d"
 version = "0.9.6"
 
+[[deps.SimpleUnPack]]
+uuid = "ce78b400-467f-4804-87d8-8f486da07d0a"
+version = "1.1.0"
+
 [[deps.Sobol]]
 deps = ["DelimitedFiles", "Random"]
 uuid = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
@@ -2007,7 +2016,7 @@ version = "0.3.2"
     LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
 
 [[deps.VehicleComponents]]
-deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "JSON", "LinearAlgebra", "Markdown", "ModelingToolkit", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
+deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "HydraulicComponents", "JSON", "LinearAlgebra", "Markdown", "ModelingToolkit", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RotationalComponents", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
 path = "."
 uuid = "8c616c4b-ea35-4d9d-a47e-f6124bcac953"
 version = "0.1.0"

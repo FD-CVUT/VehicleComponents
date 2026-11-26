@@ -1,0 +1,29 @@
+"""
+In-line wheel brake: Coulomb friction of a commanded magnitude, with a first-order actuator lag.
+
+The friction, its sine ramp below `w0` and the ports are `Chassis.Brakes.PartialFrictionBrake`'s;
+`support` must be connected. `tau_cmd` is the requested brake torque. The request is clamped to
+[0, `tau_max`] and lags through the actuator time constant `T` to the applied magnitude `tau`.
+
+Assumptions: those of `PartialFrictionBrake`; the brake starts released, tau = 0. Defaults are one
+wheel's hydraulic disc brake (assumed).
+"""
+component BrakeActuator
+  extends VehicleComponents.Chassis.Brakes.PartialFrictionBrake(w0 = 1.0, tau = initial 0.0)
+  "Requested brake torque"
+  tau_cmd = RealInput() {^tau_cmd}
+  "Actuator time constant"
+  parameter T::Time = 0.03
+  "Maximum brake torque"
+  parameter tau_max::Torque = 2000.0
+relations
+  T * der(tau) = min(max(tau_cmd, 0.0), tau_max) - tau
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Brake.svg"}},
+  "_links": {
+    "tau_cmd": {
+      "Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 90}}}
+    }
+  }
+}
+end

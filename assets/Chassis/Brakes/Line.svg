@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path fill="#fff" d="M4 4h992v992H4z"/>
+  <path fill="#007fff" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#000" stroke-width="16" d="M50 430 H950 M50 570 H950"/>
+    <path stroke="#007fff" stroke-width="40" d="M60 500 H940"/>
+    <path stroke="#5757db" stroke-width="12" d="M300 500 H700 M640 460 L700 500 L640 540"/>
+  </g>
+  <text x="500" y="320" fill="#939598" font-family="sans-serif" font-size="100" text-anchor="middle">BRAKE LINE</text>
+</svg>

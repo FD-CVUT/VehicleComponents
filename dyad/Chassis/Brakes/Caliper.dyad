@@ -1,0 +1,62 @@
+"""
+One axle's hydraulic disc brakes: the caliper's fluid compliance and the friction torque its
+pressure clamps onto the disc.
+
+The friction, its sine ramp below `w0` and the shaft ports are
+`Chassis.Brakes.PartialFrictionBrake`'s; `support` must be connected. `port` is the brake-fluid
+connection.
+
+Pressures are gauge: the caliper's pressure p is `port.p` less the ambient pressure `p_amb`, since
+HydraulicComponents ports carry absolute pressure. A released circuit at ambient pressure leaves
+the caliper empty and applies no torque. The admitted fluid volume V sets p. Up to the clearance
+take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no torque;
+beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with
+u = V - V0, and the friction torque magnitude is K (p - p0).
+
+Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. `p_amb` defaults
+to 100325 Pa, the reference pressure of `HydraulicComponents.IsothermalCompressible` and of
+`VehicleComponents.DOT4`; set it to the reference of any other medium. The other defaults are a
+front axle's, gauge (textbook).
+"""
+component Caliper
+  extends VehicleComponents.Chassis.Brakes.PartialFrictionBrake(w0 = 0.2)
+  "Brake-fluid connection"
+  port = HydraulicComponents.Interfaces.Port() {^port}
+  "Torque gain [N m/Pa]"
+  parameter K::Real = 49.0e-5
+  "Pad-contact pressure, gauge"
+  parameter p0::Pressure = 0.5e5
+  "Clearance take-up volume"
+  parameter V0::Volume = 0.5e-6
+  "Linear pressure-volume coefficient [Pa/m³]"
+  parameter K1::Real = 1e12
+  "Cubic pressure-volume coefficient [Pa/m⁹]"
+  parameter K3::Real = 4.8e23
+  "Ambient pressure, which a released caliper sits at"
+  parameter p_amb::Pressure = 100325.0
+  "Fluid volume admitted to the caliper"
+  variable V::Volume = initial 0.0
+  "Caliper pressure, gauge: above p_amb"
+  variable p::Pressure
+  "Fluid density at the caliper pressure"
+  variable rho::Density
+  "Volume beyond the clearance take-up"
+  variable u::Volume
+relations
+  port.p = p_amb + p
+  rho = HydraulicComponents.density(port.medium, port.p)
+  der(V) = port.m_flow / rho
+  u = V - V0
+  p = ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3)
+  tau = ifelse(V < V0, 0.0, K * (p - p0))
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/Caliper.svg"}},
+  "_links": {
+    "port": {
+      "Dyad": {
+        "placement": {"icon": {"iconName": "hydraulic_port_a", "x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,85 @@
+"""
+A launch from rest: 600 N m drives a J = 1 kg m² wheel inertia, whose default `Slip` tire
+(r = 0.31 m, F_z = 6864.655 N) pushes a 1400 kg mass. The road multiplier is set per case.
+
+`wheelspin`, mu_scale = 0.2: the tire can pass at most r mu_A mu_scale F_z = 0.31 · 0.2 ·
+6864.655 = 425.6 N m, less than the 600 N m applied, so the wheel spins up past sSlide and the
+tire slides at F_x = 0.2 · 0.7 · 6864.655 = 961.0517 N. The mass then accelerates at
+961.0517/1400 = 0.686466 m/s² and the wheel at (600 - 0.31 · 961.0517)/1 = 302.07397 rad/s².
+
+`grip`, mu_scale = 1: the tire can pass 2128 N m, so it grips at a steady slip kappa. Steady slip
+means r dw/dt = (1 + kappa) dv/dt; with m dv/dt = F_x and J dw/dt = tau - r F_x this gives
+
+    F_x = (tau r/J) / (r²/J + (1 + kappa)/m)
+
+and F_x = mu(kappa) F_z on the rising cubic, mu(kappa) = mu_A c(kappa/sAdhesion). Iterating the
+two from kappa = 0 settles at kappa = 0.0075525, F_x = 1921.097 N (mu = 0.279853), so the mass
+accelerates at 1921.097/1400 = 1.372212 m/s². The slip relaxes to that point at a rate of
+(r²/J + 1/m) F_z mu'(kappa)/max(v, v_eps) = 0.096814 · 6864.655 · 36.16/max(v, 0.5) =
+24000/max(v, 0.5) 1/s, at least 17000 1/s while v stays below 1.4 m/s, so by 1 s it is there.
+"""
+test component Slip
+  drive = RotationalComponents.Sources.ConstantTorque(tau_constant = 600.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 200, "y2": 300}}}
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+  }
+  inertia = RotationalComponents.Components.Inertia(J = 1.0, phi = initial 0.0, w = initial 0.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300, "rot": 180}}
+    }
+  }
+  wheel = VehicleComponents.Chassis.Wheel.Slip() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400, "rot": 90}}
+    }
+  }
+  body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 450, "y2": 550}}}
+  }
+  "Road-friction multiplier, overridden per case"
+  road = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 300, "y2": 400}}}
+  }
+relations
+  connect(drive.spline, inertia.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(drive.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(inertia.spline_b, wheel.spline) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 250}], "E": 2}], "path": {}}}
+  connect(wheel.flange, body.flange_a) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 500}], "E": 2}], "path": {}}}
+  connect(road.y, wheel.mu_scale) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 350}, {"x": 400, "y": 325}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "wheelspin": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"road.k": 0.2},
+        "atol": {"wheel.F_x": 0.001, "body.a": 1e-6, "inertia.a": 0.0001},
+        "expect": {
+          "initial": {"wheel.kappa": 0.0},
+          "final": {"wheel.F_x": 961.0517, "body.a": 0.686466, "inertia.a": 302.07397}
+        }
+      },
+      "grip": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"wheel.kappa": 1e-6, "body.a": 1e-5},
+        "expect": {
+          "initial": {"wheel.kappa": 0.0},
+          "final": {"wheel.kappa": 0.0075525, "body.a": 1.372212}
+        }
+      }
+    }
+  }
+}
+end

@@ -1,0 +1,114 @@
+"""
+One default caliper (K = 49e-5 N m/Pa, p0 = 0.5e5 Pa, V0 = 0.5e-6 m³, K1 = 1e12 Pa/m³,
+K3 = 4.8e23 Pa/m⁹, all gauge, p_amb = 100325 Pa) filled from a constant absolute pressure through
+a default `Line` (3 mm bore, 1.5 m). It brakes a J = 100 kg m² shaft spinning at 100 rad/s, its
+housing fixed. The source pressure is set per case: ambient plus the gauge pressure the case
+applies.
+
+Once the caliper has filled, no fluid flows and it sits at the line pressure: its gauge pressure p
+is the source's less 100325 Pa. The line's resistance, 128 mu L/(pi D⁴ rho) (see the `Line` rig),
+and the caliper's compliance rho dV/dp fill it with a time constant of 128 mu L V0/(pi D⁴ p0) =
+128 · 0.01045 · 1.5 · 0.5e-6/(pi · 8.1e-11 · 0.5e5) = 0.0788 s below p0, and faster above it.
+The caliper decelerates the shaft by at most 4875.5/100 = 48.8 rad/s², so in 2 s it keeps turning
+above 100 - 97.5 = 2.5 rad/s, well above w0, and the full torque acts.
+
+- `ambient`, 100325 Pa, a released circuit: p = 0 from the start, so no fluid flows, V stays 0
+  and the caliper applies no torque.
+- `clearance`, 125325 Pa, 0.25 bar above ambient and below p0: the pads have not reached the
+  disc. V = V0 p/p0 = 0.5e-6 · 0.5 = 0.25e-6 m³ and the torque is 0. The fill stays below p0, so
+  it is the one exponential of 0.0788 s: by 1 s it is within e^-12.69 = 3.1e-6 of its end,
+  0.077 Pa and 7.7e-13 m³.
+- `applied`, 10100325 Pa, 100 bar above ambient: the pads press the disc,
+  p - p0 = K1 u + K3 u³ = 9.95e6 Pa. Bisection on [0, 1e-4] gives u = 2.49499e-6 m³
+  (K1 u = 2.49499e6 Pa, K3 u³ = 7.45501e6 Pa), so V = 2.99499e-6 m³. The friction torque is
+  K (p - p0) = 49e-5 · 9.95e6 = 4875.5 N m with the sign of w, positive. By 2 s the fill is
+  complete to within e^-25.
+"""
+test component Caliper
+  "Absolute line pressure, overridden per case"
+  pressure = BlockComponents.Sources.Constant(k = 10100325.0) {^pressure}
+  supply = HydraulicComponents.Sources.BoundaryPressure() {^supply}
+  line = VehicleComponents.Chassis.Brakes.Line() {^line}
+  caliper = VehicleComponents.Chassis.Brakes.Caliper() {^caliper}
+  disc = RotationalComponents.Components.Inertia(J = 100.0, phi = initial 0.0, w = initial 100.0) {^disc}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
+relations
+  connect(pressure.y, supply.p) {^id7}
+  connect(supply.port, line.port_a) {^id8}
+  connect(line.port_b, caliper.port) {^id9}
+  continuity(medium, supply.port.medium)
+  connect(disc.spline_b, caliper.spline_a) {^id10}
+  connect(caliper.support, housing.spline) {^id11}
+metadata {
+  "Dyad": {
+    "tests": {
+      "ambient": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"pressure.k": 100325.0},
+        "atol": {"caliper.V": 1e-12, "caliper.tau": 1e-6, "caliper.tau_friction": 1e-6},
+        "expect": {"final": {"caliper.V": 0.0, "caliper.tau": 0.0, "caliper.tau_friction": 0.0}}
+      },
+      "clearance": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"pressure.k": 125325.0},
+        "atol": {"caliper.p": 0.1, "caliper.V": 1e-12, "caliper.tau": 1e-6},
+        "expect": {
+          "initial": {"caliper.V": 0.0},
+          "final": {"caliper.p": 2.5e4, "caliper.V": 0.25e-6, "caliper.tau": 0.0}
+        }
+      },
+      "applied": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "atol": {"caliper.p": 1.0, "caliper.V": 1e-11, "caliper.tau_friction": 0.001},
+        "expect": {
+          "final": {"caliper.p": 1.0e7, "caliper.V": 2.99499e-6, "caliper.tau_friction": 4875.5}
+        }
+      }
+    }
+  },
+  "_links": {
+    "pressure": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 560, "x2": 660, "y1": 0, "y2": 100, "rot": 90}}
+      }
+    },
+    "supply": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 560, "x2": 660, "y1": 150, "y2": 250, "rot": 90}}
+      }
+    },
+    "line": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 560, "x2": 660, "y1": 270, "y2": 370, "rot": 90}}
+      }
+    },
+    "caliper": {
+      "Dyad": {"placement": {"diagram": {"x1": 660, "x2": 560, "y1": 450, "y2": 550}}}
+    },
+    "disc": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 840, "x2": 940, "y1": 450, "y2": 550, "rot": 180}}
+      }
+    },
+    "housing": {
+      "Dyad": {"placement": {"diagram": {"x1": 560, "x2": 660, "y1": 710, "y2": 810}}}
+    },
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end

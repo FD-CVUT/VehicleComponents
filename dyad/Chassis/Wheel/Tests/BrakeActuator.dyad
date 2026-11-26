@@ -1,0 +1,71 @@
+"""
+One brake (T = 0.03 s, tau_max = 400 N m, w0 = 1 rad/s) on a J = 10 kg m² inertia spinning at
+20 rad/s, its housing fixed and its downstream shaft end open; the command is set per case.
+
+While the shaft turns faster than w0, J dw/dt = -tau. A command at or above tau_max applies
+tau(t) = 400 (1 - e^(-t/0.03)), so
+
+    w(t) = 20 - 40 (t - 0.03 (1 - e^(-t/0.03)))
+
+- `decelerating`, 500 N m clamped to 400 N m, stops at 0.3 s = 10 T: tau =
+  400 (1 - e^-10) = 399.98184 N m and w = 20 - 40 (0.3 - 0.0299986) = 9.19995 rad/s.
+- `stopped`, the same command over 1.5 s: w reaches w0 near 0.5 s, then the sine ramp gives
+  dw/dt = -40 sin(pi/2 w), a decay at 40 pi/2 = 62.8 1/s that leaves w within 1e-20 rad/s of 0
+  by 1.5 s. The clamp holds tau at 400 N m.
+- `released`, -100 N m: the clamp's lower bound keeps tau at 0, so w stays 20 rad/s.
+"""
+test component BrakeActuator
+  "Brake torque request, overridden per case"
+  command = BlockComponents.Sources.Constant(k = 500.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  brake = VehicleComponents.Chassis.Wheel.BrakeActuator(T = 0.03, tau_max = 400.0, w0 = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 300, "y2": 400}}}
+  }
+  wheel = RotationalComponents.Components.Inertia(J = 10.0, phi = initial 0.0, w = initial 20.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 300, "y2": 400, "rot": 180}}
+    }
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  }
+relations
+  connect(command.y, brake.tau_cmd) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 250}], "E": 2}], "path": {}}}
+  connect(wheel.spline_b, brake.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(brake.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "decelerating": {
+        "stop": 0.3,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"brake.tau": 0.001, "wheel.w": 0.0001},
+        "expect": {
+          "initial": {"brake.tau": 0.0, "wheel.w": 20.0},
+          "final": {"brake.tau": 399.98184, "wheel.w": 9.19995}
+        }
+      },
+      "stopped": {
+        "stop": 1.5,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"brake.tau": 0.001, "wheel.w": 0.0001},
+        "expect": {"final": {"brake.tau": 400.0, "wheel.w": 0.0}}
+      },
+      "released": {
+        "stop": 0.3,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"command.k": -100.0},
+        "atol": {"brake.tau": 0.001, "wheel.w": 0.0001},
+        "expect": {"final": {"brake.tau": 0.0, "wheel.w": 20.0}}
+      }
+    }
+  }
+}
+end
