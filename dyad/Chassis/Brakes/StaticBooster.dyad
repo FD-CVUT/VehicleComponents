@@ -1,0 +1,29 @@
+"""
+Static vacuum booster: the pushrod force the booster passes to the master cylinder, as a static
+function of the force on its input rod.
+
+The rods, the housing, the flange signs and the shared parameters are
+`Chassis.Brakes.PartialBooster`'s. The output force F_out follows the booster's characteristic of
+the input force F_in:
+
+    F_out = 0                                                    for F_in < F_cut
+    F_out = min(F_jump + SR (F_in - F_cut), F_in + F_assist_max)  otherwise
+
+no output below the cut-in `F_cut`, the jump-in `F_jump` at cut-in, the servo ratio `SR` above it,
+and run-out once the diaphragm's whole pressure difference is used: F_assist_max =
+A_d (p_atm - p_f) - F_rs0. With little vacuum F_assist_max turns negative, the return spring
+holds back part of the input, and F_out stops at 0 rather than pull on the master cylinder.
+
+Assumptions: the front (vacuum) chamber holds `p_f` whatever the assist draws; the valve and the
+chambers have no dynamics (see `VacuumBooster` for both). `p_f` defaults to PATH's idle 33 kPa.
+"""
+component StaticBooster
+  extends VehicleComponents.Chassis.Brakes.PartialBooster
+  "Front (vacuum) chamber absolute pressure"
+  parameter p_f::Pressure = 33e3
+  "Largest assist, with the full pressure difference across the diaphragm, less the spring preload"
+  final parameter F_assist_max::Force = A_d * (p_atm - p_f) - F_rs0
+relations
+  F_out = max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max)))
+metadata {"Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/StaticBooster.svg"}}}
+end

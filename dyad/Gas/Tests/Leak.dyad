@@ -1,0 +1,26 @@
+"""
+Test fixture for the `Gas` rigs: a leak from the atmosphere into a hose, with a mass flow linear in
+the pressure difference, C_leak (p_atm - port.p), out through `port`.
+
+Port: `port` the hose the leak feeds.
+
+It is not a library part: it stands in for whatever draws on a hose until `Gas` has a restriction
+of its own.
+"""
+component Leak
+  "Hose the leak feeds"
+  port = VehicleComponents.Gas.Port() {^port}
+  "Leak coefficient [kg/(s Pa)]"
+  parameter C_leak::Real = 1e-9
+  "Atmospheric absolute pressure"
+  parameter p_atm::Pressure = 101325.0
+relations
+  port.mdot = -C_leak * (p_atm - port.p)
+metadata {
+  "_links": {
+    "port": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

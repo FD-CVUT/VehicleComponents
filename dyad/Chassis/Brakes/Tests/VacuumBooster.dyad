@@ -1,0 +1,283 @@
+"""
+The vacuum booster at a constant vacuum source: a trapezoid of pushrod force through a default
+`VacuumBooster` into a default `MasterCylinder`, which feeds a front-axle `Caliper` through a
+default `Line` and a rear-axle one through a 4 m line, with both discs held still. The source holds
+33 kPa absolute, PATH's idle manifold pressure, and the chambers start there.
+
+The pedal lever ratio is 1, so its `F_max`, set per case, is the peak pushrod force. The command
+rises from 0 to 1 over 0.5 to 1.5 s and falls back to 0 over 1 s from 2.5 s, the sum of two ramps.
+
+In every steady state the front chamber settles where the leak in balances the check valve's flow
+out, p_f = (1.26e-7 · 33000 + 1.4e-10 · 101325)/(1.26e-7 + 1.4e-10) = 33075.832 Pa (the
+`VacuumSourceSelector` rig has the balance).
+
+- `run_out`, 1200 N held: the fall is moved past the end of the run. With the atmospheric valve
+  open the rear chamber fills to p_atm = 101325 Pa. The output force is then
+  F_out = 1200 + 0.0533 (101325 - 33075.832) - 97 - 2411 x_p, the master cylinder holds
+  p_mc = (F_out - 218)/4.908738521e-4 and both calipers fill to it, and the piston travel x_p is
+  their displaced volume over the bore area. Fixed-point iteration on x_p, with each caliper's
+  volume by bisection on its pressure-volume law (the `HydraulicStop` rig), settles at
+  x_p = 8.501e-3 m, F_out = 4720.1846 N, p_mc = 9171775.1 Pa, front caliper V = 2.9092485e-6 m³
+  and rear V = 1.2636994e-6 m³. The valve stays open: e = 1200 - 40 - (4720.18 - 500)/5 = 316 N,
+  above the 10 N apply threshold. The cylinder and the calipers count fluid alike, as volume at
+  p_amb, so x_p is exactly their volume over the bore area. The chambers settle with time
+  constants near 0.2 s,
+  so by 5 s, 3.5 s after the ramp, they are within e^-15.
+- `servo`, 300 N held, in the boosted range: the valve closes once the reaction-disc force
+  balances the input, so it holds the output wherever the force error e = F_in - F_cut - F_r
+  comes to rest inside its dead band, -F_rel <= e <= F_app, with F_r = (F_out - F_jump)/SR. While
+  the force rises, the atmospheric valve opens only above e = F_app = 10 N, so the output reaches
+  F_jump + SR (F_in - F_cut - F_app) = 500 + 5 (300 - 40 - 10) = 1750 N. Once the force holds,
+  the front chamber, compressed by the piston's travel, drains back to the leak balance, which
+  raises the pressure difference across the diaphragm and with it F_out, until either the drain
+  ends or e reaches -F_rel and the vacuum valve opens, at 500 + 5 (300 - 40 + 10) = 1850 N. So
+  F_out ends in [1750, 1850] N and e in [-10, 10] N; a wrong SR, F_jump, F_cut, F_app or sign of
+  F_r moves the band. Where in it F_out stops depends on how fast the force rose, so the case
+  checks the band and nothing finer.
+- `released`, 1200 N applied and let go: by 3.5 s the force is back to 0, below cut-in, so the
+  vacuum valve joins the chambers and both drain to p_f = 33075.832 Pa. With no pushrod force
+  F_out = 0, the master cylinder's pressure is 0 and the calipers empty back to V = 0, the
+  slower (rear) with a time constant of 128 · 0.01045 · 4 · 0.3e-6/(pi · 8.1e-11 · 0.5e5) =
+  0.126 s, so by 8 s, 4.5 s later, they are within e^-35.
+"""
+test component VacuumBooster
+  "Command rise, 0 to 1 over 0.5 to 1.5 s"
+  rise = BlockComponents.Sources.Ramp(height = 1.0, duration = 1.0, offset = 0.0, start_time = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  "Command fall, 1 to 0 over 1 s from a start set per case"
+  fall = BlockComponents.Sources.Ramp(height = -1.0, duration = 1.0, offset = 0.0, start_time = 2.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  command = BlockComponents.Math.Add() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 250, "y2": 350}}}
+  }
+  "Lever ratio 1: F_max is the peak pushrod force"
+  pedal = VehicleComponents.Chassis.Brakes.Pedal(i_p = 1.0, F_max = 1200.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 250, "y2": 350}}}
+  }
+  booster = VehicleComponents.Chassis.Brakes.VacuumBooster() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 350, "y2": 450}}}
+  }
+  master = VehicleComponents.Chassis.Brakes.MasterCylinder() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 350, "y2": 450}}}
+  }
+  "Pedal pivot"
+  pivot = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 500, "y2": 600}}}
+  }
+  "Booster housing"
+  booster_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 600, "y2": 700}}}
+  }
+  "Master-cylinder housing"
+  master_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 600, "y2": 700}}}
+  }
+  "Idle manifold pressure, absolute"
+  vacuum_pressure = BlockComponents.Sources.Constant(k = 33e3) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
+  }
+  source = VehicleComponents.Gas.PressureSource() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 700, "y2": 800}}}
+  }
+  line_f = VehicleComponents.Chassis.Brakes.Line() {
+    "Dyad": {"placement": {"diagram": {"x1": 1450, "x2": 1550, "y1": 250, "y2": 350}}}
+  }
+  line_r = VehicleComponents.Chassis.Brakes.Line(L = 4.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1450, "x2": 1550, "y1": 500, "y2": 600}}}
+  }
+  caliper_f = VehicleComponents.Chassis.Brakes.Caliper() {
+    "Dyad": {"placement": {"diagram": {"x1": 1800, "x2": 1700, "y1": 250, "y2": 350}}}
+  }
+  caliper_r = VehicleComponents.Chassis.Brakes.Caliper(K = 19.9e-5, V0 = 0.3e-6, K1 = 2.5e12, K3 = 7.5e24) {
+    "Dyad": {"placement": {"diagram": {"x1": 1800, "x2": 1700, "y1": 500, "y2": 600}}}
+  }
+  "Discs held still"
+  disc = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1950, "x2": 2050, "y1": 350, "y2": 450, "rot": 270}}
+    }
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 1700, "x2": 1800, "y1": 750, "y2": 850}}}
+  }
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
+relations
+  connect(rise.y, command.u1) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 270}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(fall.y, command.u2) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 330}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(command.y, pedal.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(pedal.rod, booster.input) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 300}, {"x": 900, "y": 400}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(booster.rod_out, master.pushrod) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(pedal.support, pivot.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(booster.support, booster_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(master.support, master_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(vacuum_pressure.y, source.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(source.port, booster.vacuum) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 600, "y": 750},
+            {"x": 600, "y": 600},
+            {"x": 100, "y": 600},
+            {"x": 100, "y": 100},
+            {"x": 950, "y": 100},
+            {"x": 950, "y": 300},
+            {"x": 975, "y": 300}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(master.front, line_f.port_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1350, "y": 375}, {"x": 1350, "y": 300}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(line_f.port_b, caliper_f.port) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 1650, "y": 300}, {"x": 1650, "y": 200}, {"x": 1750, "y": 200}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(master.rear, line_r.port_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1350, "y": 425}, {"x": 1350, "y": 550}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(line_r.port_b, caliper_r.port) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 1650, "y": 550}, {"x": 1650, "y": 450}, {"x": 1750, "y": 450}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  continuity(medium, master.front.medium)
+  connect(caliper_f.spline_a, disc.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1900, "y": 300}, {"x": 1900, "y": 400}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(caliper_r.spline_a, disc.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1900, "y": 550}, {"x": 1900, "y": 400}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(caliper_f.support, housing.spline) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 1750, "y": 400},
+            {"x": 1850, "y": 400},
+            {"x": 1850, "y": 700},
+            {"x": 1750, "y": 700}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(caliper_r.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "run_out": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"fall.start_time": 100.0},
+        "atol": {
+          "booster.p_r": 1.0,
+          "booster.p_vac": 1.0,
+          "booster.F_out": 0.01,
+          "master.p_mc": 20.0,
+          "caliper_f.V": 5e-12,
+          "caliper_r.V": 5e-12
+        },
+        "expect": {
+          "final": {
+            "booster.p_r": 101325.0,
+            "booster.p_vac": 33075.832,
+            "booster.F_out": 4720.1846,
+            "master.p_mc": 9171775.1,
+            "caliper_f.V": 2.9092485e-6,
+            "caliper_r.V": 1.2636994e-6
+          }
+        }
+      },
+      "servo": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"pedal.F_max": 300.0, "fall.start_time": 100.0},
+        "atol": {"booster.F_out": 50.0, "booster.e": 10.0},
+        "expect": {"final": {"booster.F_out": 1800.0, "booster.e": 0.0}}
+      },
+      "released": {
+        "stop": 8,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "atol": {
+          "booster.p_r": 1.0,
+          "booster.p_vac": 1.0,
+          "booster.F_out": 1e-6,
+          "master.p_mc": 1e-3,
+          "caliper_f.V": 1e-11,
+          "caliper_r.V": 1e-11
+        },
+        "expect": {
+          "final": {
+            "booster.p_r": 33075.832,
+            "booster.p_vac": 33075.832,
+            "booster.F_out": 0.0,
+            "master.p_mc": 0.0,
+            "caliper_f.V": 0.0,
+            "caliper_r.V": 0.0
+          }
+        }
+      }
+    }
+  }
+}
+end

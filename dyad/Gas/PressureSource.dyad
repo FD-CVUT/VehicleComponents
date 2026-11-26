@@ -1,0 +1,26 @@
+"""
+Ideal pressure reservoir on an air hose: holds the hose at `p` whatever air flows in or out.
+
+Ports: `p` the pressure to hold, absolute (`Gas.Port` has the air side's conventions); `port` the
+hose connection, which passes whatever air the circuit sends.
+
+Assumptions: the reservoir is too large to be drawn down, such as an engine's intake manifold at a
+fixed operating point or the atmosphere.
+"""
+component PressureSource
+  "Absolute pressure the source holds"
+  p = RealInput() {^p}
+  "Hose connection"
+  port = VehicleComponents.Gas.Port() {^port}
+relations
+  port.p = p
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Gas/PressureSource.svg"}},
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

@@ -1,0 +1,134 @@
+"""
+The brake force chain from pedal to master-cylinder pressure, the reference check of the brake
+system: a pedal command pushes the default `Pedal` (i_p = 3.5, F_max = 500 N) into the default
+`StaticBooster` and on into the default `MasterCylinder`. Both circuits are plugged with a
+`ClosedHydraulicPort`, so no fluid moves and the pressure is the force balance alone. Pivot and
+housings are fixed. The chain has no state, so each case checks two operating points: the command
+holds its first value until it steps at 0.5 s, checked at the start, and its second after,
+checked at the end.
+
+The pushrod force is F_in = 3.5 · 500 u = 1750 u N. The booster's run-out assist is
+F_assist_max = 0.0533 (101325 - 33000) - 97 = 3544.7225 N. The cylinder's bore area is
+pi 0.025²/4 = 4.908738521e-4 m², and spring and seal take 138 + 80 = 218 N, so
+p_mc = (F_out - 218)/4.908738521e-4. The plugs keep V_disp at 0, so the pedal sits at
+3.5 · 2.5e-3 = 8.75e-3 m, the master cylinder's dead stroke through the lever.
+
+- `below_cut_in`, u = -0.5 then 0.02. At -0.5 the pedal clamps the command to 0, so F_in = 0.
+  At 0.02, F_in = 35 N, below the 40 N cut-in, so F_out = 0 and p_mc = 0.
+- `boosted`, u = 0.022857142857142857 then 0.2. The first is the double nearest 40/1750: F_in is
+  exactly 40 N in floating point, the cut-in itself, so the booster jumps in, F_out =
+  500 + 5 · 0 = 500 N, and p_mc = 282/4.908738521e-4 = 574485.68 Pa. At 0.2, F_in = 350 N; the
+  boosted branch 500 + 5 (350 - 40) = 2050 N is below run-out, 350 + 3544.7225 = 3894.7225 N, so
+  F_out = 2050 N and p_mc = 1832/4.908738521e-4 = 3732119.75 Pa.
+- `run_out`, u = 1 then 1.5. At full pedal F_in = 1750 N; run-out, 1750 + 3544.7225 =
+  5294.7225 N, is below the boosted branch 500 + 5 · 1710 = 9050 N, so F_out = 5294.7225 N and
+  p_mc = 5076.7225/4.908738521e-4 = 10342214.15 Pa. At 1.5 the pedal clamps the command to 1, so
+  the foot force stays 500 N and F_in 1750 N.
+"""
+test component ForceChain
+  "Pedal command, stepping at 0.5 s; both levels set per case"
+  command = BlockComponents.Sources.Step(height = 0.5, offset = 1.0, start_time = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 300, "y2": 400}}}
+  }
+  pedal = VehicleComponents.Chassis.Brakes.Pedal() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+  }
+  booster = VehicleComponents.Chassis.Brakes.StaticBooster() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 300, "y2": 400}}}
+  }
+  master = VehicleComponents.Chassis.Brakes.MasterCylinder() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 300, "y2": 400}}}
+  }
+  "Pedal pivot"
+  pivot = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  }
+  "Booster housing"
+  booster_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
+  }
+  "Master-cylinder housing"
+  master_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 550, "y2": 650}}}
+  }
+  front_plug = VehicleComponents.Chassis.Brakes.ClosedHydraulicPort() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 200, "y2": 300}}}
+  }
+  rear_plug = VehicleComponents.Chassis.Brakes.ClosedHydraulicPort() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 450, "y2": 550}}}
+  }
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
+relations
+  connect(command.y, pedal.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(pedal.rod, booster.input) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(booster.rod_out, master.pushrod) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(pedal.support, pivot.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(booster.support, booster_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(master.support, master_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(master.front, front_plug.port) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1100, "y": 325}, {"x": 1100, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(master.rear, rear_plug.port) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1100, "y": 375}, {"x": 1100, "y": 500}], "E": 2}],
+      "path": {}
+    }
+  }
+  continuity(medium, master.front.medium)
+metadata {
+  "Dyad": {
+    "tests": {
+      "below_cut_in": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-10,
+        "params": {"command.offset": -0.5, "command.height": 0.52},
+        "atol": {"pedal.F_rod": 1e-9, "booster.F_out": 1e-6, "master.p_mc": 1e-3},
+        "expect": {
+          "initial": {"pedal.F_rod": 0.0},
+          "final": {"booster.F_out": 0.0, "master.p_mc": 0.0}
+        }
+      },
+      "boosted": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-10,
+        "params": {"command.offset": 0.022857142857142857, "command.height": 0.17714285714285716},
+        "atol": {"pedal.F_rod": 1e-9, "booster.F_out": 1e-9, "master.p_mc": 0.01},
+        "expect": {
+          "initial": {"pedal.F_rod": 40.0, "booster.F_out": 500.0, "master.p_mc": 574485.68},
+          "final": {"pedal.F_rod": 350.0, "booster.F_out": 2050.0, "master.p_mc": 3732119.75}
+        }
+      },
+      "run_out": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-10,
+        "atol": {
+          "pedal.F_ped": 1e-9,
+          "pedal.F_rod": 1e-6,
+          "booster.F_out": 1e-6,
+          "master.p_mc": 0.01,
+          "pedal.x_ped": 1e-12
+        },
+        "expect": {
+          "initial": {
+            "pedal.F_rod": 1750.0,
+            "booster.F_out": 5294.7225,
+            "master.p_mc": 10342214.15,
+            "pedal.x_ped": 8.75e-3
+          },
+          "final": {"pedal.F_ped": 500.0, "pedal.F_rod": 1750.0}
+        }
+      }
+    }
+  }
+}
+end

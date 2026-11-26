@@ -199,5 +199,13 @@ component.
 end
 
 
+include("ABSValve_definition.jl")
 include("Caliper_definition.jl")
+include("ElectricVacuumPump_definition.jl")
+include("ForceChain_definition.jl")
+include("HydraulicStop_definition.jl")
 include("Line_definition.jl")
+include("MasterCylinder_definition.jl")
+include("Split_definition.jl")
+include("VacuumBooster_definition.jl")
+include("VacuumSourceSelector_definition.jl")

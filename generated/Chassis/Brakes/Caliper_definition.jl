@@ -14,17 +14,18 @@ The friction, its sine ramp below `w0` and the shaft ports are
 `Chassis.Brakes.PartialFrictionBrake`'s; `support` must be connected. `port` is the brake-fluid
 connection.
 
-Pressures are gauge: the caliper's pressure p is `port.p` less the ambient pressure `p_amb`, since
-HydraulicComponents ports carry absolute pressure. A released circuit at ambient pressure leaves
-the caliper empty and applies no torque. The admitted fluid volume V sets p. Up to the clearance
-take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no torque;
-beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with
-u = V - V0, and the friction torque magnitude is K (p - p0).
+Pressures are gauge: the caliper's pressure p is `port.p` less `p_amb` (`VehicleComponents.DOT4` has
+the convention). A released circuit at ambient pressure leaves the caliper empty and applies no
+torque. The admitted fluid volume V sets p. V is the admitted fluid's mass over its density at
+`p_amb`, so it counts fluid, not the pressure it was admitted at: a fill and a release at different
+pressures cancel, and the fluid's own compressibility is part of the pressure-volume law. Up to the
+clearance take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no
+torque; beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with u =
+V - V0, and the friction torque magnitude is K (p - p0).
 
-Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. `p_amb` defaults
-to 100325 Pa, the reference pressure of `HydraulicComponents.IsothermalCompressible` and of
-`VehicleComponents.DOT4`; set it to the reference of any other medium. The other defaults are a
-front axle's, gauge (textbook).
+Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. `p_amb` is the
+medium's reference pressure; set it to the reference of any other medium. The other defaults are
+a front axle's, gauge (textbook).
 
 ## Parameters:
 
@@ -54,9 +55,9 @@ front axle's, gauge (textbook).
 | `phi`         | Shaft angle relative to the support                         | rad  |
 | `w`         | Shaft speed relative to the support                         | rad/s  |
 | `tau_friction`         | Friction torque removed from the shaft line, with the sign of w                         | N.m  |
-| `V`         | Fluid volume admitted to the caliper                         | m3  |
+| `V`         | Fluid admitted to the caliper, as volume at p_amb                         | m3  |
 | `p`         | Caliper pressure, gauge: above p_amb                         | Pa  |
-| `rho`         | Fluid density at the caliper pressure                         | kg/m3  |
+| `rho_ref`         | Fluid density at p_amb, which converts admitted mass to V                         | kg/m3  |
 | `u`         | Volume beyond the clearance take-up                         | m3  |
 """
 @component function Caliper(; name = nothing, var"w0"=0.2, var"K"=0.00049, var"p0"=Float64(50000.0), var"V0"=5e-7, var"K1"=Float64(1000000000000.0), var"K3"=Float64(4.8e+23), var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
@@ -132,9 +133,9 @@ front axle's, gauge (textbook).
   append!(__vars, @variables (phi(t)::Real), [description = "Shaft angle relative to the support"])
   append!(__vars, @variables (w(t)::Real), [description = "Shaft speed relative to the support"])
   append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction torque removed from the shaft line, with the sign of w"])
-  append!(__vars, @variables (V(t)::Real), [description = "Fluid volume admitted to the caliper"])
+  append!(__vars, @variables (V(t)::Real), [description = "Fluid admitted to the caliper, as volume at p_amb"])
   append!(__vars, @variables (p(t)::Real), [description = "Caliper pressure, gauge: above p_amb"])
-  append!(__vars, @variables (rho(t)::Real), [description = "Fluid density at the caliper pressure"])
+  append!(__vars, @variables (rho_ref(t)::Real), [description = "Fluid density at p_amb, which converts admitted mass to V"])
   append!(__vars, @variables (u(t)::Real), [description = "Volume beyond the clearance take-up"])
 
   ### Variables (assignments)
@@ -160,9 +161,9 @@ front axle's, gauge (textbook).
   __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
   __ovr_p__initial = pop!(__overrides, "p.initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
   __ovr_p__guess = pop!(__overrides, "p.guess", nothing)
-  __ovr_rho = pop!(__overrides, "rho", nothing); isnothing(__ovr_rho) || push!(__eqs, rho ~ __ovr_rho)
-  __ovr_rho__initial = pop!(__overrides, "rho.initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
-  __ovr_rho__guess = pop!(__overrides, "rho.guess", nothing)
+  __ovr_rho_ref = pop!(__overrides, "rho_ref", nothing); isnothing(__ovr_rho_ref) || push!(__eqs, rho_ref ~ __ovr_rho_ref)
+  __ovr_rho_ref__initial = pop!(__overrides, "rho_ref.initial", nothing); isnothing(__ovr_rho_ref__initial) || (__initial_conditions[rho_ref] = __ovr_rho_ref__initial)
+  __ovr_rho_ref__guess = pop!(__overrides, "rho_ref.guess", nothing)
   __ovr_u = pop!(__overrides, "u", nothing); isnothing(__ovr_u) || push!(__eqs, u ~ __ovr_u)
   __ovr_u__initial = pop!(__overrides, "u.initial", nothing); isnothing(__ovr_u__initial) || (__initial_conditions[u] = __ovr_u__initial)
   __ovr_u__guess = pop!(__overrides, "u.guess", nothing)
@@ -187,7 +188,7 @@ front axle's, gauge (textbook).
   isnothing(__ovr_tau_friction__guess) || (__guesses[tau_friction] = __ovr_tau_friction__guess)
   isnothing(__ovr_V__guess) || (__guesses[V] = __ovr_V__guess)
   isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
-  isnothing(__ovr_rho__guess) || (__guesses[rho] = __ovr_rho__guess)
+  isnothing(__ovr_rho_ref__guess) || (__guesses[rho_ref] = __ovr_rho_ref__guess)
   isnothing(__ovr_u__guess) || (__guesses[u] = __ovr_u__guess)
 
   ### Initialization Equations
@@ -204,8 +205,8 @@ front axle's, gauge (textbook).
   push!(__eqs, tau_friction ~ tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0)))
   push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
   push!(__eqs, port.p ~ p_amb + p)
-  push!(__eqs, rho ~ HydraulicComponents.density(port__medium, port.p))
-  push!(__eqs, ModelingToolkit.D_nounits(V) ~ port.m_flow / rho)
+  push!(__eqs, rho_ref ~ HydraulicComponents.density(port__medium, p_amb))
+  push!(__eqs, ModelingToolkit.D_nounits(V) ~ port.m_flow / rho_ref)
   push!(__eqs, u ~ V - V0)
   push!(__eqs, p ~ ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3))
   push!(__eqs, tau ~ ifelse(V < V0, 0.0, K * (p - p0)))

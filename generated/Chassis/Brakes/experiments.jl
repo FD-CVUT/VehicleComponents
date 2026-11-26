@@ -9,5 +9,14 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
+include("ABSValve_experiment.jl")
 include("Caliper_experiment.jl")
+include("ClosedHydraulicPort_experiment.jl")
+include("ElectricVacuumPump_experiment.jl")
 include("Line_experiment.jl")
+include("MasterCylinder_experiment.jl")
+include("Pedal_experiment.jl")
+include("Split_experiment.jl")
+include("StaticBooster_experiment.jl")
+include("VacuumBooster_experiment.jl")
+include("VacuumSourceSelector_experiment.jl")

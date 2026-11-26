@@ -1,0 +1,53 @@
+"""
+Hose junction that joins the booster's vacuum hose to one vacuum source, the intake manifold or an
+electric pump, chosen by `use_pump`. The source not chosen is cut off and sees no flow.
+
+Ports: `booster` the hose from the booster's check valve; `manifold` the hose to the intake
+manifold; `pump` the hose to the electric vacuum pump.
+
+    booster.p     = use_pump ? pump.p : manifold.p
+    manifold.mdot = use_pump ? 0 : -booster.mdot
+    pump.mdot     = use_pump ? -booster.mdot : 0
+
+The choice is made when the model is compiled, so the source not chosen drops out of the
+equations and the selector causes no events; a run cannot switch sources. The port not chosen may
+be wired to its source or left open, as an EV leaves `manifold`: either way it passes no flow and
+its pressure takes no part. The chosen port left open is a capped hose, so the booster's check
+valve stays shut and its vacuum leaks away.
+
+Assumptions: an ideal junction with no volume and no restriction.
+"""
+component VacuumSourceSelector
+  "Hose from the booster's check valve"
+  booster = VehicleComponents.Gas.Port() {^booster}
+  "Hose to the intake manifold"
+  manifold = VehicleComponents.Gas.Port() {^manifold}
+  "Hose to the electric vacuum pump"
+  pump = VehicleComponents.Gas.Port() {^pump}
+  "Take the vacuum from the electric pump rather than the intake manifold"
+  structural parameter use_pump::Boolean = false
+relations
+  if use_pump
+    booster.p = pump.p
+    pump.mdot = -booster.mdot
+    manifold.mdot = 0.0
+  else
+    booster.p = manifold.p
+    manifold.mdot = -booster.mdot
+    pump.mdot = 0.0
+  end
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/VacuumSourceSelector.svg"}},
+  "_links": {
+    "booster": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}
+    },
+    "manifold": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "pump": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

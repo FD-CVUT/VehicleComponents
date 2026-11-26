@@ -1,0 +1,52 @@
+"""
+Brake booster's mechanical side: an input rod from the pedal and an output rod to the master
+cylinder, rigid with each other, and the housing that takes the assist. An extending component
+binds the output-force magnitude `F_out` to its law.
+
+Ports: `input` the input rod; `rod_out` the output rod; `support` the housing. The flange forces
+take the stdlib's sign, the force on this part along s: the input rod pushes the booster toward
++s with F_in, and the booster pushes the output rod on toward +s with F_out. The housing takes
+the difference, the assist.
+
+The parameters are the characteristic both boosters share: the cut-in `F_cut`, the jump-in
+`F_jump`, the servo ratio `SR` above it, the diaphragm area `A_d`, the return-spring preload
+`F_rs0`, and the atmosphere `p_atm` (101325 Pa, `Gas.Port` has why). Defaults: `A_d` and `F_rs0`
+from PATH (UCB-ITS-PRR-97-21, Table 2.1); `SR`, `F_cut` and `F_jump` assumed.
+"""
+partial component PartialBooster
+  "Input rod from the pedal"
+  input = Flange() {
+    "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+  }
+  "Output rod to the master cylinder"
+  rod_out = Flange() {
+    "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+  }
+  "Booster housing, which takes the assist force"
+  support = Flange() {
+    "Dyad": {
+      "placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}
+    }
+  }
+  "Servo ratio above the jump-in"
+  parameter SR::Real = 5.0
+  "Input force at cut-in"
+  parameter F_cut::Force = 40.0
+  "Output force at cut-in, the jump-in"
+  parameter F_jump::Force = 500.0
+  "Effective diaphragm area"
+  parameter A_d::Area = 0.0533
+  "Return-spring preload"
+  parameter F_rs0::Force = 97.0
+  "Atmospheric absolute pressure"
+  parameter p_atm::Pressure = 101325.0
+  "Input-force magnitude"
+  variable F_in::Force
+  "Output-force magnitude"
+  variable F_out::Force
+relations
+  input.s = rod_out.s
+  F_in = input.f
+  F_out = -rod_out.f
+  input.f + rod_out.f + support.f = 0.0
+end
