@@ -1,20 +1,25 @@
 """
 One axle load on a 1400 kg mass that 2800 N of traction accelerates at 2800/1400 = 2 m/s², its
-`load` flange on a fixed road. `downforce` pushes the downforce flange with its `f_constant`: 0 N
-in `launch`, 1000 N in `launch_with_downforce`.
+`load` flange on a fixed road. `downforce` pushes the downforce flange with its `f_constant`:
+1000 N in `launch_with_downforce`, 0 N in the other cases.
 
 `a_pitch` starts at 0, so the axle starts at its static share, 0.55 m g = 0.55 · 1400 · 9.80665 =
-7551.1205 N. After 2 s, 20 lag time constants, the transfer m a h/L = 1400 · 2 · 0.17 = 476 N is
-complete to within 476 e^-20 = 1e-6 N: the axle ends at 8027.1205 N, all of it taken by the road.
-Downforce adds 0.55 · 1000 = 550 N throughout: 8101.1205 N at the start, 8577.1205 N at the end.
-The snapshot keeps the lag between the two.
+7551.1205 N. The transfer m a h/L = 1400 · 2 · 0.17 = 476 N follows a first-order lag of
+T_pitch = 0.1 s, F_z(t) = 7551.1205 + 476 (1 - e^(-t/0.1)):
+
+- `launch` stops one time constant in: 7551.1205 + 476 (1 - e^-1) = 7551.1205 + 300.8894 =
+  7852.0099 N.
+- `launch_with_downforce` adds 0.55 · 1000 = 550 N throughout: 8101.1205 N at the start and
+  8402.0099 N at 0.1 s.
+- `settled` runs 2 s, 20 time constants, so the lag is complete to within 476 e^-20 = 1e-6 N: the
+  axle ends at 8027.1205 N, all of it taken by the road.
 """
 test component AxleLoad
   traction = TranslationalComponents.Sources.ConstantForce(f_constant = 2800.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 800, "x2": 900, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 300, "y2": 400}}}
   }
   mass = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 900, "x2": 1000, "y1": 300, "y2": 400}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
     "Dyad": {
@@ -25,7 +30,7 @@ test component AxleLoad
     "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 550, "y2": 650}}}
   }
   road = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 850, "y2": 950}}}
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 800, "y2": 900}}}
   }
   "Pushes the car onto the road, overridden per case"
   downforce = TranslationalComponents.Sources.ConstantForce(f_constant = 0.0) {
@@ -35,7 +40,7 @@ relations
   connect(traction.flange, mass.flange_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(traction.flange, axle.flange) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 950, "y": 350}, {"x": 950, "y": 600}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 800, "y": 350}, {"x": 800, "y": 600}], "E": 2}],
       "path": {}
     }
   }
@@ -44,7 +49,7 @@ relations
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 850, "y": 450}, {"x": 500, "y": 450}, {"x": 500, "y": 250}],
+          "M": [{"x": 700, "y": 450}, {"x": 500, "y": 450}, {"x": 500, "y": 250}],
           "E": 2
         }
       ],
@@ -63,28 +68,29 @@ metadata {
   "Dyad": {
     "tests": {
       "launch": {
-        "stop": 2,
+        "stop": 0.1,
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"axle.F_z": 0.01, "road.flange.f": 0.01},
-        "expect": {
-          "initial": {"axle.F_z": 7551.1205},
-          "final": {"axle.F_z": 8027.1205, "road.flange.f": 8027.1205},
-          "signals": ["axle.F_z"]
-        }
+        "atol": {"axle.F_z": 0.01},
+        "expect": {"initial": {"axle.F_z": 7551.1205}, "final": {"axle.F_z": 7852.0099}}
       },
       "launch_with_downforce": {
-        "stop": 2,
+        "stop": 0.1,
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
         "params": {"downforce.f_constant": 1000.0},
+        "atol": {"axle.F_z": 0.01},
+        "expect": {"initial": {"axle.F_z": 8101.1205}, "final": {"axle.F_z": 8402.0099}}
+      },
+      "settled": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
         "atol": {"axle.F_z": 0.01, "road.flange.f": 0.01},
-        "expect": {
-          "initial": {"axle.F_z": 8101.1205},
-          "final": {"axle.F_z": 8577.1205, "road.flange.f": 8577.1205}
-        }
+        "expect": {"final": {"axle.F_z": 8027.1205, "road.flange.f": 8027.1205}}
       }
     }
   }

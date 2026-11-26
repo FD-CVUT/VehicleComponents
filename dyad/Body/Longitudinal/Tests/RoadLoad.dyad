@@ -15,7 +15,7 @@ At 30 m/s the rolling resistance's standstill regularization is fully saturated.
 test component RoadLoad
   "Holds the flange at a fixed speed, overridden per case"
   speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0, s = initial 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 850, "y1": 250, "y2": 350}}}
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 850, "y1": 200, "y2": 300}}}
   }
   "Road gradient, overridden per case"
   grade = BlockComponents.Sources.Constant(k = 0.0) {
@@ -23,21 +23,18 @@ test component RoadLoad
   }
   "Car tire on asphalt"
   tire = BlockComponents.Sources.Constant(k = 0.012) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
+    "Dyad": {
+      "placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600, "rot": 270}}
+    }
   }
   load = VehicleComponents.Body.Longitudinal.RoadLoad() {
     "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 200, "y2": 300}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 500, "y2": 600}}}
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 450, "y2": 550}}}
   }
 relations
-  connect(speed.flange, load.flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 750, "y": 300}, {"x": 750, "y": 250}], "E": 2}],
-      "path": {}
-    }
-  }
+  connect(speed.flange, load.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(speed.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(grade.y, load.grade) {
     "Dyad": {
@@ -50,14 +47,7 @@ relations
       "edges": [
         {
           "S": 1,
-          "M": [
-            {"x": 350, "y": 550},
-            {"x": 350, "y": 450},
-            {"x": 250, "y": 450},
-            {"x": 250, "y": 150},
-            {"x": 550, "y": 150},
-            {"x": 550, "y": 225}
-          ],
+          "M": [{"x": 250, "y": 150}, {"x": 550, "y": 150}, {"x": 550, "y": 225}],
           "E": 2
         }
       ],

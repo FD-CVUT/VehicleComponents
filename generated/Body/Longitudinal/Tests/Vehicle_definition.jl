@@ -16,8 +16,11 @@ rolling resistance and along-slope weight. From v0 it approaches v_inf = sqrt(F/
 
 `flat_from_rest` starts at rest on a 0 grade. Rolling resistance is regularized to zero at
 standstill, so the start acceleration is 500/1400 = 0.357143 m/s². F = 500 - 0.012 · 13729.31 =
-335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s. At 800 s, k v_inf t/m = 6.43 and v
-is within 2e-4 m/s of v_inf. The snapshot keeps the run-up.
+335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s and k v_inf/m = 0.00804083 1/s.
+At 100 s, k v_inf t/m = 0.804083 and v = 29.78087 · tanh(0.804083) = 19.84340 m/s. The
+regularization spares about f_r m g · 0.002 ln 2/0.357 = 0.64 N s of rolling resistance while the
+body leaves standstill, which puts v at 100 s ahead by under 3e-4 m/s. `flat_settled` runs to
+800 s, where k v_inf t/m = 6.43 and v is within 2e-4 m/s of v_inf.
 
 `climb` starts at 10 m/s on a 2 % grade. Rolling resistance is 0.012 · 13729.31 · cos(atan(0.02))
 = 164.71878 N and the along-slope weight 13729.31 · sin(atan(0.02)) = 274.53130 N, so

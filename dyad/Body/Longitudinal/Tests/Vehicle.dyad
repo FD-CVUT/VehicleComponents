@@ -8,8 +8,11 @@ rolling resistance and along-slope weight. From v0 it approaches v_inf = sqrt(F/
 
 `flat_from_rest` starts at rest on a 0 grade. Rolling resistance is regularized to zero at
 standstill, so the start acceleration is 500/1400 = 0.357143 m/s². F = 500 - 0.012 · 13729.31 =
-335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s. At 800 s, k v_inf t/m = 6.43 and v
-is within 2e-4 m/s of v_inf. The snapshot keeps the run-up.
+335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s and k v_inf/m = 0.00804083 1/s.
+At 100 s, k v_inf t/m = 0.804083 and v = 29.78087 · tanh(0.804083) = 19.84340 m/s. The
+regularization spares about f_r m g · 0.002 ln 2/0.357 = 0.64 N s of rolling resistance while the
+body leaves standstill, which puts v at 100 s ahead by under 3e-4 m/s. `flat_settled` runs to
+800 s, where k v_inf t/m = 6.43 and v is within 2e-4 m/s of v_inf.
 
 `climb` starts at 10 m/s on a 2 % grade. Rolling resistance is 0.012 · 13729.31 · cos(atan(0.02))
 = 164.71878 N and the along-slope weight 13729.31 · sin(atan(0.02)) = 274.53130 N, so
@@ -20,7 +23,7 @@ v(10 s) = 12.67731 · tanh(1.102506) = 10.15956 m/s.
 """
 test component Vehicle
   traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 850, "y1": 250, "y2": 350}}}
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 850, "y1": 200, "y2": 300}}}
   }
   "Road gradient, overridden per case"
   grade = BlockComponents.Sources.Constant(k = 0.0) {
@@ -28,21 +31,18 @@ test component Vehicle
   }
   "Car tire on asphalt"
   tire = BlockComponents.Sources.Constant(k = 0.012) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
+    "Dyad": {
+      "placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600, "rot": 270}}
+    }
   }
   body = VehicleComponents.Body.Longitudinal.Vehicle() {
     "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 200, "y2": 300}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 500, "y2": 600}}}
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 450, "y2": 550}}}
   }
 relations
-  connect(traction.flange, body.flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 750, "y": 300}, {"x": 750, "y": 250}], "E": 2}],
-      "path": {}
-    }
-  }
+  connect(traction.flange, body.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(grade.y, body.grade) {
     "Dyad": {
@@ -55,14 +55,7 @@ relations
       "edges": [
         {
           "S": 1,
-          "M": [
-            {"x": 350, "y": 550},
-            {"x": 350, "y": 450},
-            {"x": 250, "y": 450},
-            {"x": 250, "y": 150},
-            {"x": 550, "y": 150},
-            {"x": 550, "y": 225}
-          ],
+          "M": [{"x": 250, "y": 150}, {"x": 550, "y": 150}, {"x": 550, "y": 225}],
           "E": 2
         }
       ],
@@ -73,16 +66,23 @@ metadata {
   "Dyad": {
     "tests": {
       "flat_from_rest": {
-        "stop": 800,
+        "stop": 100,
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
         "atol": {"body.mass.a": 0.001, "body.mass.v": 0.001},
         "expect": {
           "initial": {"body.mass.a": 0.357143, "body.mass.v": 0},
-          "final": {"body.mass.a": 0, "body.mass.v": 29.78087},
-          "signals": ["body.mass.v"]
+          "final": {"body.mass.v": 19.8434}
         }
+      },
+      "flat_settled": {
+        "stop": 800,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"body.mass.a": 0.001, "body.mass.v": 0.001},
+        "expect": {"final": {"body.mass.a": 0, "body.mass.v": 29.78087}}
       },
       "climb": {
         "stop": 10,

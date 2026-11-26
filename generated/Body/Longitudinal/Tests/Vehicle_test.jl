@@ -11,7 +11,7 @@ __dyad_run_test_case!(
   component_stem="Vehicle",
   module_path=String["Body", "Longitudinal", "Tests"],
   start=0e+0,
-  stop=8e+2,
+  stop=1e+2,
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
@@ -21,11 +21,28 @@ __dyad_run_test_case!(
     (m -> m.body.mass.a, "body.mass.a", 0.357143, 0.001, 1e-5),
     (m -> m.body.mass.v, "body.mass.v", 0, 0.001, 1e-5),
   ],
+  expected_final=Tuple[(m -> m.body.mass.v, "body.mass.v", 19.8434, 0.001, 1e-5)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Body.Longitudinal.Tests.Vehicle,
+  "flat_settled for VehicleComponents.Body.Longitudinal.Tests.Vehicle";
+  case_name="flat_settled",
+  component_stem="Vehicle",
+  module_path=String["Body", "Longitudinal", "Tests"],
+  start=0e+0,
+  stop=8e+2,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}(),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.body.mass.a, "body.mass.a", 0, 0.001, 1e-5),
     (m -> m.body.mass.v, "body.mass.v", 29.78087, 0.001, 1e-5),
   ],
-  signals=Tuple[(m -> m.body.mass.v, "body.mass.v", 0.001, 1e-5)],
+  signals=Tuple[],
 )
 __dyad_run_test_case!(
   VehicleComponents.Body.Longitudinal.Tests.Vehicle,

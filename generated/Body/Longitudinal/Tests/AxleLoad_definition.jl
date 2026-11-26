@@ -8,14 +8,19 @@
    AxleLoad(; name, __overrides)
 
 One axle load on a 1400 kg mass that 2800 N of traction accelerates at 2800/1400 = 2 m/s², its
-`load` flange on a fixed road. `downforce` pushes the downforce flange with its `f_constant`: 0 N
-in `launch`, 1000 N in `launch_with_downforce`.
+`load` flange on a fixed road. `downforce` pushes the downforce flange with its `f_constant`:
+1000 N in `launch_with_downforce`, 0 N in the other cases.
 
 `a_pitch` starts at 0, so the axle starts at its static share, 0.55 m g = 0.55 · 1400 · 9.80665 =
-7551.1205 N. After 2 s, 20 lag time constants, the transfer m a h/L = 1400 · 2 · 0.17 = 476 N is
-complete to within 476 e^-20 = 1e-6 N: the axle ends at 8027.1205 N, all of it taken by the road.
-Downforce adds 0.55 · 1000 = 550 N throughout: 8101.1205 N at the start, 8577.1205 N at the end.
-The snapshot keeps the lag between the two.
+7551.1205 N. The transfer m a h/L = 1400 · 2 · 0.17 = 476 N follows a first-order lag of
+T_pitch = 0.1 s, F_z(t) = 7551.1205 + 476 (1 - e^(-t/0.1)):
+
+- `launch` stops one time constant in: 7551.1205 + 476 (1 - e^-1) = 7551.1205 + 300.8894 =
+  7852.0099 N.
+- `launch_with_downforce` adds 0.55 · 1000 = 550 N throughout: 8101.1205 N at the start and
+  8402.0099 N at 0.1 s.
+- `settled` runs 2 s, 20 time constants, so the lag is complete to within 476 e^-20 = 1e-6 N: the
+  axle ends at 8027.1205 N, all of it taken by the road.
 """
 @component function AxleLoad(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
