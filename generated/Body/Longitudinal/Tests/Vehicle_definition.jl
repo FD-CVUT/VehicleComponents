@@ -7,10 +7,24 @@
 @doc Markdown.doc"""
    Vehicle(; name, __overrides)
 
-500 N of traction on two bodies: `flat` from rest on a 0 grade, and `climbing`
-at 10 m/s on a 2 % grade. On the flat the start acceleration is 500/1400 = 0.3571 m/s² and the
-speed settles where drag and rolling resistance take the whole 500 N. On the climb the road load
-at 10 m/s is 477.05 N, leaving 0.0164 m/s².
+One body pushed by 500 N of traction on f_r = 0.012, with the grade and the start set per case.
+With m = 1400 kg, m g = 13729.31 N and k = 1/2 rho CdA = 0.5 · 1.2 · 0.63 = 0.378 kg/m, a body
+above standstill on a constant grade obeys m dv/dt = F - k v², where F is the traction less
+rolling resistance and along-slope weight. From v0 it approaches v_inf = sqrt(F/k) as
+
+    v(t) = v_inf tanh(k v_inf t/m + atanh(v0/v_inf))
+
+`flat_from_rest` starts at rest on a 0 grade. Rolling resistance is regularized to zero at
+standstill, so the start acceleration is 500/1400 = 0.357143 m/s². F = 500 - 0.012 · 13729.31 =
+335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s. At 800 s, k v_inf t/m = 6.43 and v
+is within 2e-4 m/s of v_inf. The snapshot keeps the run-up.
+
+`climb` starts at 10 m/s on a 2 % grade. Rolling resistance is 0.012 · 13729.31 · cos(atan(0.02))
+= 164.71878 N and the along-slope weight 13729.31 · sin(atan(0.02)) = 274.53130 N, so
+F = 60.74992 N. Drag at 10 m/s is 37.8 N, so the start acceleration is
+(60.74992 - 37.8)/1400 = 0.0163928 m/s². v_inf = sqrt(60.74992/0.378) = 12.67731 m/s,
+k v_inf/m = 0.00342287 1/s and atanh(10/12.67731) = 1.068277, so
+v(10 s) = 12.67731 · tanh(1.102506) = 10.15956 m/s.
 """
 @component function Vehicle(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -56,30 +70,18 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   __constants = Any[]
 
   ### Components
-  # Subcomponent flat_traction of type TranslationalComponents.Sources.ConstantForce
-  flat_traction_overrides = __pop_subcomponent_overrides!(__overrides, "flat_traction")
-  push!(__systems, @named flat_traction = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(500.0), __overrides = flat_traction_overrides))
-  # Subcomponent level of type BlockComponents.Sources.Constant
-  level_overrides = __pop_subcomponent_overrides!(__overrides, "level")
-  push!(__systems, @named level = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = level_overrides))
+  # Subcomponent traction of type TranslationalComponents.Sources.ConstantForce
+  traction_overrides = __pop_subcomponent_overrides!(__overrides, "traction")
+  push!(__systems, @named traction = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(500.0), __overrides = traction_overrides))
+  # Subcomponent grade of type BlockComponents.Sources.Constant
+  grade_overrides = __pop_subcomponent_overrides!(__overrides, "grade")
+  push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = grade_overrides))
   # Subcomponent tire of type BlockComponents.Sources.Constant
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
   push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=0.012, __overrides = tire_overrides))
-  # Subcomponent flat of type VehicleComponents.Body.Longitudinal.Vehicle
-  flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = flat_overrides))
-  # Subcomponent climb_traction of type TranslationalComponents.Sources.ConstantForce
-  climb_traction_overrides = __pop_subcomponent_overrides!(__overrides, "climb_traction")
-  push!(__systems, @named climb_traction = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(500.0), __overrides = climb_traction_overrides))
-  # Subcomponent grade of type BlockComponents.Sources.Constant
-  grade_overrides = __pop_subcomponent_overrides!(__overrides, "grade")
-  push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=0.02, __overrides = grade_overrides))
-  # Subcomponent climbing of type VehicleComponents.Body.Longitudinal.Vehicle
-  climbing_overrides = __pop_subcomponent_overrides!(__overrides, "climbing")
-  climbing_dict = Dict{String, Any}()
-  climbing_dict["mass.v.initial"] = ModelingToolkit.default_to_parentscope(10.0)
-  merge!(climbing_dict, climbing_overrides)
-  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = climbing_dict))
+  # Subcomponent body of type VehicleComponents.Body.Longitudinal.Vehicle
+  body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
+  push!(__systems, @named body = VehicleComponents.Body.Longitudinal.Vehicle(; __overrides = body_overrides))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
@@ -95,14 +97,10 @@ at 10 m/s is 477.05 N, leaving 0.0164 m/s².
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(flat_traction.flange, flat.flange))
-  push!(__eqs, connect(climb_traction.flange, climbing.flange))
-  push!(__eqs, connect(flat_traction.support, climb_traction.support))
-  push!(__eqs, connect(flat_traction.support, fixed.flange))
-  push!(__eqs, connect(grade.y, climbing.grade))
-  push!(__eqs, connect(level.y, flat.grade))
-  push!(__eqs, connect(tire.y, flat.f_r))
-  push!(__eqs, connect(tire.y, climbing.f_r))
+  push!(__eqs, connect(traction.flange, body.flange))
+  push!(__eqs, connect(traction.support, fixed.flange))
+  push!(__eqs, connect(grade.y, body.grade))
+  push!(__eqs, connect(tire.y, body.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

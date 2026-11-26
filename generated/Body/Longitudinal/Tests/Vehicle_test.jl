@@ -18,14 +18,14 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
-    (m -> m.flat.mass.a, "flat.mass.a", 0.35714285714285715, 0.001, 1e-5),
-    (m -> m.flat.mass.v, "flat.mass.v", 0, 0.001, 1e-5),
+    (m -> m.body.mass.a, "body.mass.a", 0.357143, 0.001, 1e-5),
+    (m -> m.body.mass.v, "body.mass.v", 0, 0.001, 1e-5),
   ],
   expected_final=Tuple[
-    (m -> m.flat.mass.a, "flat.mass.a", 0, 0.001, 1e-5),
-    (m -> m.flat.mass.v, "flat.mass.v", 29.780869893947216, 0.001, 1e-5),
+    (m -> m.body.mass.a, "body.mass.a", 0, 0.001, 1e-5),
+    (m -> m.body.mass.v, "body.mass.v", 29.78087, 0.001, 1e-5),
   ],
-  signals=Tuple[(m -> m.flat.mass.v, "flat.mass.v", 0.001, 1e-5)],
+  signals=Tuple[(m -> m.body.mass.v, "body.mass.v", 0.001, 1e-5)],
 )
 __dyad_run_test_case!(
   VehicleComponents.Body.Longitudinal.Tests.Vehicle,
@@ -38,12 +38,12 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}(),
-  initial_conditions=Tuple[],
+  params=Dict{String, Any}("grade.k" => 0.02),
+  initial_conditions=Tuple[(m -> m.body.mass.v, 10.0)],
   expected_initial=Tuple[
-    (m -> m.climbing.mass.a, "climbing.mass.a", 0.0163928, 0.001, 1e-5),
-    (m -> m.climbing.mass.v, "climbing.mass.v", 10, 0.001, 1e-5),
+    (m -> m.body.mass.a, "body.mass.a", 0.0163928, 0.0001, 1e-5),
+    (m -> m.body.mass.v, "body.mass.v", 10, 0.001, 1e-5),
   ],
-  expected_final=Tuple[(m -> m.climbing.mass.v, "climbing.mass.v", 10.15956, 0.001, 1e-5)],
-  signals=Tuple[(m -> m.climbing.mass.v, "climbing.mass.v", 0.001, 1e-5)],
+  expected_final=Tuple[(m -> m.body.mass.v, "body.mass.v", 10.15956, 0.001, 1e-5)],
+  signals=Tuple[],
 )

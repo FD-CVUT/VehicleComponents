@@ -1,6 +1,10 @@
 """
-A 1400 kg mass on a flat road that turns into a 10 % climb at t = 1 s. The along-slope weight
-is m g sin(atan(0.1)) = 1366.12 N, which decelerates the mass at 0.9758 m/s².
+A 1400 kg mass at rest on a flat road that turns into a 10 % climb at t = 1 s.
+
+Before the step the force is 0. After it the along-slope weight is
+m g sin(atan(0.1)) = 13729.31 · 0.0995037 = 1366.1174 N, which decelerates the mass at
+-1366.1174/1400 = -0.975798 m/s². Over the 4 s of climb to t = 5 s the mass reaches
+-0.975798 · 4 = -3.90319 m/s.
 """
 test component GradeForce
   grade = BlockComponents.Sources.Step(height = 0.10, offset = 0.0, start_time = 1.0) {
@@ -27,11 +31,10 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"force.f": 0.01, "mass.a": 0.0001},
+        "atol": {"force.f": 0.01, "mass.a": 0.0001, "mass.v": 0.001},
         "expect": {
-          "initial": {"force.f": 0, "mass.a": 0},
-          "final": {"force.f": 1366.1174045921907, "mass.a": -0.9757981461372791},
-          "signals": ["force.f", "mass.v"]
+          "initial": {"force.f": 0, "mass.a": 0, "mass.v": 0},
+          "final": {"force.f": 1366.1174, "mass.a": -0.975798, "mass.v": -3.90319}
         }
       }
     }

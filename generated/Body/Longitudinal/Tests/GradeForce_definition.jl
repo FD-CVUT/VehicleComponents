@@ -7,8 +7,12 @@
 @doc Markdown.doc"""
    GradeForce(; name, __overrides)
 
-A 1400 kg mass on a flat road that turns into a 10 % climb at t = 1 s. The along-slope weight
-is m g sin(atan(0.1)) = 1366.12 N, which decelerates the mass at 0.9758 m/s².
+A 1400 kg mass at rest on a flat road that turns into a 10 % climb at t = 1 s.
+
+Before the step the force is 0. After it the along-slope weight is
+m g sin(atan(0.1)) = 13729.31 · 0.0995037 = 1366.1174 N, which decelerates the mass at
+-1366.1174/1400 = -0.975798 m/s². Over the 4 s of climb to t = 5 s the mass reaches
+-0.975798 · 4 = -3.90319 m/s.
 """
 @component function GradeForce(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

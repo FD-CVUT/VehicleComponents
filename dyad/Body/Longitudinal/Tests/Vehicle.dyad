@@ -1,89 +1,71 @@
 """
-500 N of traction on two bodies: `flat` from rest on a 0 grade, and `climbing`
-at 10 m/s on a 2 % grade. On the flat the start acceleration is 500/1400 = 0.3571 m/s² and the
-speed settles where drag and rolling resistance take the whole 500 N. On the climb the road load
-at 10 m/s is 477.05 N, leaving 0.0164 m/s².
+One body pushed by 500 N of traction on f_r = 0.012, with the grade and the start set per case.
+With m = 1400 kg, m g = 13729.31 N and k = 1/2 rho CdA = 0.5 · 1.2 · 0.63 = 0.378 kg/m, a body
+above standstill on a constant grade obeys m dv/dt = F - k v², where F is the traction less
+rolling resistance and along-slope weight. From v0 it approaches v_inf = sqrt(F/k) as
+
+    v(t) = v_inf tanh(k v_inf t/m + atanh(v0/v_inf))
+
+`flat_from_rest` starts at rest on a 0 grade. Rolling resistance is regularized to zero at
+standstill, so the start acceleration is 500/1400 = 0.357143 m/s². F = 500 - 0.012 · 13729.31 =
+335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s. At 800 s, k v_inf t/m = 6.43 and v
+is within 2e-4 m/s of v_inf. The snapshot keeps the run-up.
+
+`climb` starts at 10 m/s on a 2 % grade. Rolling resistance is 0.012 · 13729.31 · cos(atan(0.02))
+= 164.71878 N and the along-slope weight 13729.31 · sin(atan(0.02)) = 274.53130 N, so
+F = 60.74992 N. Drag at 10 m/s is 37.8 N, so the start acceleration is
+(60.74992 - 37.8)/1400 = 0.0163928 m/s². v_inf = sqrt(60.74992/0.378) = 12.67731 m/s,
+k v_inf/m = 0.00342287 1/s and atanh(10/12.67731) = 1.068277, so
+v(10 s) = 12.67731 · tanh(1.102506) = 10.15956 m/s.
 """
 test component Vehicle
-  flat_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 350, "y2": 450}}}
+  traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 850, "y1": 250, "y2": 350}}}
   }
-  level = BlockComponents.Sources.Constant(k = 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 200, "y2": 300}}}
+  "Road gradient, overridden per case"
+  grade = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 250, "y2": 350}}}
   }
   "Car tire on asphalt"
   tire = BlockComponents.Sources.Constant(k = 0.012) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
   }
-  flat = VehicleComponents.Body.Longitudinal.Vehicle() {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 350, "y2": 450}}}
-  }
-  climb_traction = TranslationalComponents.Sources.ConstantForce(f_constant = 500.0) {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 850, "x2": 950, "y1": 700, "y2": 800, "rot": 180}}
-    }
-  }
-  grade = BlockComponents.Sources.Constant(k = 0.02) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 700, "y2": 800}}}
-  }
-  climbing = VehicleComponents.Body.Longitudinal.Vehicle(mass(v = initial 10.0)) {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 700, "y2": 800}}}
+  body = VehicleComponents.Body.Longitudinal.Vehicle() {
+    "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 200, "y2": 300}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1000, "x2": 1100, "y1": 450, "y2": 550, "rot": 270}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 500, "y2": 600}}}
   }
 relations
-  connect(flat_traction.flange, flat.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(climb_traction.flange, climbing.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(flat_traction.support, climb_traction.support) {
+  connect(traction.flange, body.flange) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 800, "y": 650}, {"x": 900, "y": 650}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 750, "y": 300}, {"x": 750, "y": 250}], "E": 2}],
       "path": {}
     }
   }
-  connect(flat_traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 500}], "E": 2}], "path": {}}}
-  connect(grade.y, climbing.grade) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(level.y, flat.grade) {
+  connect(traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(grade.y, body.grade) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 550, "y": 300}, {"x": 550, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(tire.y, body.f_r) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 400, "y": 250},
-            {"x": 400, "y": 450},
-            {"x": 450, "y": 450},
-            {"x": 450, "y": 400}
+            {"x": 350, "y": 550},
+            {"x": 350, "y": 450},
+            {"x": 250, "y": 450},
+            {"x": 250, "y": 150},
+            {"x": 550, "y": 150},
+            {"x": 550, "y": 225}
           ],
           "E": 2
         }
       ],
-      "path": {}
-    }
-  }
-  connect(tire.y, flat.f_r) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [
-            {"x": 350, "y": 500},
-            {"x": 350, "y": 400},
-            {"x": 150, "y": 400},
-            {"x": 150, "y": 100},
-            {"x": 450, "y": 100},
-            {"x": 450, "y": 375}
-          ],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(tire.y, climbing.f_r) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 450, "y": 500}, {"x": 450, "y": 725}], "E": 2}],
       "path": {}
     }
   }
@@ -95,11 +77,11 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"flat.mass.a": 0.001, "flat.mass.v": 0.001},
+        "atol": {"body.mass.a": 0.001, "body.mass.v": 0.001},
         "expect": {
-          "initial": {"flat.mass.a": 0.35714285714285715, "flat.mass.v": 0},
-          "final": {"flat.mass.a": 0, "flat.mass.v": 29.780869893947216},
-          "signals": ["flat.mass.v"]
+          "initial": {"body.mass.a": 0.357143, "body.mass.v": 0},
+          "final": {"body.mass.a": 0, "body.mass.v": 29.78087},
+          "signals": ["body.mass.v"]
         }
       },
       "climb": {
@@ -107,11 +89,12 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"climbing.mass.a": 0.001, "climbing.mass.v": 0.001},
+        "params": {"grade.k": 0.02},
+        "initial": {"body.mass.v": 10.0},
+        "atol": {"body.mass.a": 0.0001, "body.mass.v": 0.001},
         "expect": {
-          "initial": {"climbing.mass.a": 0.0163928, "climbing.mass.v": 10},
-          "final": {"climbing.mass.v": 10.15956},
-          "signals": ["climbing.mass.v"]
+          "initial": {"body.mass.a": 0.0163928, "body.mass.v": 10},
+          "final": {"body.mass.v": 10.15956}
         }
       }
     }
