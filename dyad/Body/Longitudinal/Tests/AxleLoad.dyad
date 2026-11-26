@@ -1,43 +1,69 @@
 """
 One axle load on a 1400 kg mass that 2800 N of traction accelerates at 2800/1400 = 2 m/s², both
-its load flanges on one fixed road, so the road takes the whole axle's load. `downforce` pushes the
-downforce flange with its `f_constant`: 1000 N in `launch_with_downforce`, -20000 N of lift in
-`lifted`, 0 N in the other cases.
+its load flanges on one `Chassis.Wheel.LoadedSlip`, as a model with one wheel per axle wires them.
+The wheel is parked: its hub is fixed and its shaft held, so it neither rolls nor slips (kappa = 0,
+mu(0) = 0) and passes no tire force, and its `F_n` reads the whole axle's load. `downforce`
+pushes the downforce flange with its `f_constant`: 1000 N in `launch_with_downforce`, -20000 N of
+lift in `lifted`, -13000 N in `braking`, 0 N in the other cases.
 
 `a_pitch` starts at 0, so the axle starts at its static share, 0.55 m g = 0.55 · 1400 · 9.80665 =
 7551.1205 N. The transfer m a h/L = 1400 · 2 · 0.17 = 476 N follows a first-order lag of
 T_pitch = 0.1 s, F_z(t) = 7551.1205 + 476 (1 - e^(-t/0.1)):
 
 - `launch` stops one time constant in: 7551.1205 + 476 (1 - e^-1) = 7551.1205 + 300.8894 =
-  7852.0099 N.
+  7852.0099 N, all of it on the wheel.
 - `launch_with_downforce` adds 0.55 · 1000 = 550 N to the static share only, none to the lagged
   transfer: 8101.1205 N at the start and 7852.0099 + 550 = 8402.0099 N at 0.1 s.
 - `settled` runs 2 s, 20 time constants, so the lag is complete to within 476 e^-20 = 1e-6 N: the
-  axle ends at 8027.1205 N, all of it taken by the road.
+  axle ends at 8027.1205 N, all of it on the wheel.
 - `lifted` takes 0.55 · 20000 = 11000 N off the static share, leaving
   0.55 (1400 · 9.80665 - 20000) = -3448.8795 N. The transfer adds at most 476 N, so the unfloored
   load stays below -2972.8795 N for the whole run: the axle cannot pull on the road, and `F_z`
-  and the road's force stay at 0 from start to end.
+  and the wheel's load stay at 0 from start to end.
+- `braking` reverses the traction, a = -2800/1400 = -2 m/s², under 13000 N of lift. The axle
+  starts on the road at 0.55 (1400 · 9.80665 - 13000) = 0.55 · 729.31 = 401.1205 N, and the
+  transfer takes 476 (1 - e^(-t/0.1)) off it, so the unfloored load crosses zero at
+  t = 0.1 ln(476/74.8795) = 0.185 s and would end at 1 s at 401.1205 - 476 (1 - e^-10) =
+  -74.8579 N. With the floor, `F_z` and the wheel's load end at 0.
 """
 test component AxleLoad
   traction = TranslationalComponents.Sources.ConstantForce(f_constant = 2800.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 200, "y2": 300}}}
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 700, "y2": 800}}}
   }
   mass = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 200, "y2": 300}}}
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 450, "y2": 550}}}
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 1200, "y2": 1300}}}
   }
   axle = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 700, "y2": 800}}}
+    "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 950, "y2": 850}}}
   }
-  road = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 950, "y2": 1050}}}
+  "Parked wheel standing for the road contact"
+  wheel = VehicleComponents.Chassis.Wheel.LoadedSlip() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 500, "y2": 600, "rot": 180}}
+    }
+  }
+  "Holds the parked wheel's hub"
+  hub = TranslationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 550, "x2": 650, "y1": 200, "y2": 300, "rot": 180}}
+    }
+  }
+  "Holds the parked wheel's shaft"
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 450, "y2": 550, "rot": 270}}
+    }
+  }
+  "Dry road"
+  grip = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 400, "y2": 500}}}
   }
   "Pushes the car onto the road, overridden per case"
   downforce = TranslationalComponents.Sources.ConstantForce(f_constant = 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 800, "y2": 700}}}
+    "Dyad": {"placement": {"diagram": {"x1": 800, "x2": 700, "y1": 950, "y2": 1050}}}
   }
 relations
   connect(traction.flange, mass.flange_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
@@ -47,10 +73,10 @@ relations
         {
           "S": 1,
           "M": [
-            {"x": 450, "y": 250},
-            {"x": 450, "y": 400},
-            {"x": 700, "y": 400},
-            {"x": 700, "y": 750}
+            {"x": 850, "y": 750},
+            {"x": 850, "y": 650},
+            {"x": 600, "y": 650},
+            {"x": 600, "y": 900}
           ],
           "E": 2
         }
@@ -58,37 +84,58 @@ relations
       "path": {}
     }
   }
-  connect(traction.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(axle.load_left, road.flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 575, "y": 850}, {"x": 600, "y": 850}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(axle.load_right, road.flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 625, "y": 850}, {"x": 600, "y": 850}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(downforce.flange, axle.downforce) {
+  connect(traction.support, fixed.flange) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 500, "y": 750}, {"x": 500, "y": 650}, {"x": 600, "y": 650}],
+          "M": [
+            {"x": 750, "y": 850},
+            {"x": 850, "y": 850},
+            {"x": 850, "y": 1150},
+            {"x": 750, "y": 1150}
+          ],
           "E": 2
         }
       ],
       "path": {}
     }
   }
-  connect(downforce.support, fixed.flange) {
+  connect(axle.load_left, wheel.load) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 250, "y": 400}, {"x": 350, "y": 400}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 425, "y": 800}, {"x": 500, "y": 800}], "E": 2}],
       "path": {}
     }
   }
+  connect(axle.load_right, wheel.load) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 475, "y": 800}, {"x": 500, "y": 800}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(wheel.flange, hub.flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 150, "y": 550}, {"x": 150, "y": 350}, {"x": 600, "y": 350}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(wheel.spline, housing.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 550}, {"x": 650, "y": 500}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(grip.y, wheel.mu_scale) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 450}], "E": 2}], "path": {}}}
+  connect(downforce.flange, axle.downforce) {
+    "Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 1000}], "E": 2}], "path": {}}
+  }
+  connect(downforce.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {
@@ -97,8 +144,11 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"axle.F_z": 0.01},
-        "expect": {"initial": {"axle.F_z": 7551.1205}, "final": {"axle.F_z": 7852.0099}}
+        "atol": {"axle.F_z": 0.01, "wheel.F_n": 0.01},
+        "expect": {
+          "initial": {"axle.F_z": 7551.1205, "wheel.F_n": 7551.1205},
+          "final": {"axle.F_z": 7852.0099, "wheel.F_n": 7852.0099}
+        }
       },
       "launch_with_downforce": {
         "stop": 0.1,
@@ -114,8 +164,8 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "atol": {"axle.F_z": 0.01, "road.flange.f": 0.01},
-        "expect": {"final": {"axle.F_z": 8027.1205, "road.flange.f": 8027.1205}}
+        "atol": {"axle.F_z": 0.01, "wheel.F_n": 0.01},
+        "expect": {"final": {"axle.F_z": 8027.1205, "wheel.F_n": 8027.1205}}
       },
       "lifted": {
         "stop": 0.5,
@@ -123,8 +173,20 @@ metadata {
         "abstol": 1e-6,
         "reltol": 1e-6,
         "params": {"downforce.f_constant": -20000.0},
-        "atol": {"axle.F_z": 0.01, "road.flange.f": 0.01},
-        "expect": {"initial": {"axle.F_z": 0.0}, "final": {"axle.F_z": 0.0, "road.flange.f": 0.0}}
+        "atol": {"axle.F_z": 0.01, "wheel.F_n": 0.01},
+        "expect": {"initial": {"axle.F_z": 0.0}, "final": {"axle.F_z": 0.0, "wheel.F_n": 0.0}}
+      },
+      "braking": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"traction.f_constant": -2800.0, "downforce.f_constant": -13000.0},
+        "atol": {"axle.F_z": 0.01, "wheel.F_n": 0.01},
+        "expect": {
+          "initial": {"axle.F_z": 401.1205, "wheel.F_n": 401.1205},
+          "final": {"axle.F_z": 0.0, "wheel.F_n": 0.0}
+        }
       }
     }
   }

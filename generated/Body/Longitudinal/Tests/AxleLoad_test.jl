@@ -17,8 +17,14 @@ __dyad_run_test_case!(
   solver=ODEAlg.Auto(),
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[(m -> m.axle.F_z, "axle.F_z", 7551.1205, 0.01, 1e-5)],
-  expected_final=Tuple[(m -> m.axle.F_z, "axle.F_z", 7852.0099, 0.01, 1e-5)],
+  expected_initial=Tuple[
+    (m -> m.axle.F_z, "axle.F_z", 7551.1205, 0.01, 1e-5),
+    (m -> m.wheel.F_n, "wheel.F_n", 7551.1205, 0.01, 1e-5),
+  ],
+  expected_final=Tuple[
+    (m -> m.axle.F_z, "axle.F_z", 7852.0099, 0.01, 1e-5),
+    (m -> m.wheel.F_n, "wheel.F_n", 7852.0099, 0.01, 1e-5),
+  ],
   signals=Tuple[],
 )
 __dyad_run_test_case!(
@@ -54,7 +60,7 @@ __dyad_run_test_case!(
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 8027.1205, 0.01, 1e-5),
-    (m -> m.road.flange.f, "road.flange.f", 8027.1205, 0.01, 1e-5),
+    (m -> m.wheel.F_n, "wheel.F_n", 8027.1205, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )
@@ -74,7 +80,30 @@ __dyad_run_test_case!(
   expected_initial=Tuple[(m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5)],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
-    (m -> m.road.flange.f, "road.flange.f", 0, 0.01, 1e-5),
+    (m -> m.wheel.F_n, "wheel.F_n", 0, 0.01, 1e-5),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Body.Longitudinal.Tests.AxleLoad,
+  "braking for VehicleComponents.Body.Longitudinal.Tests.AxleLoad";
+  case_name="braking",
+  component_stem="AxleLoad",
+  module_path=String["Body", "Longitudinal", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("traction.f_constant" => -2800.0, "downforce.f_constant" => -13000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[
+    (m -> m.axle.F_z, "axle.F_z", 401.1205, 0.01, 1e-5),
+    (m -> m.wheel.F_n, "wheel.F_n", 401.1205, 0.01, 1e-5),
+  ],
+  expected_final=Tuple[
+    (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
+    (m -> m.wheel.F_n, "wheel.F_n", 0, 0.01, 1e-5),
   ],
   signals=Tuple[],
 )

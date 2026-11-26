@@ -48,8 +48,8 @@ __dyad_run_test_case!(
   expected_final=Tuple[
     (m -> m.wheel_left.kappa, "wheel_left.kappa", 0.006562, 0.000001, 1e-7),
     (m -> m.wheel_right.kappa, "wheel_right.kappa", 0.006562, 0.000001, 1e-7),
-    (m -> m.wheel_left.F_n, "wheel_left.F_n", 3938.8545, 0.001, 1e-7),
-    (m -> m.wheel_right.F_n, "wheel_right.F_n", 3938.8545, 0.001, 1e-7),
+    (m -> m.wheel_left.F_n, "wheel_left.F_n", 3938.8547, 0.001, 1e-7),
+    (m -> m.wheel_right.F_n, "wheel_right.F_n", 3938.8547, 0.001, 1e-7),
     (m -> m.body.a, "body.a", 1.372222, 0.00001, 1e-7),
   ],
   signals=Tuple[],

@@ -29,14 +29,15 @@ lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
 - `grip`, mu_scale = 1: as in the `Slip` rig, steady slip gives
   F_x = (tau r/J)/(r²/J + (1 + kappa)/m) for the axle's 600 N m on its 1 kg m², now with
   mu(kappa) = F_x/F_z and F_z = 0.55 m g + F_x h/L. Iterating from kappa = 0 settles at
-  kappa = 0.0065620, F_x = 1921.111 N and F_z = 7877.709 N, 3938.8545 N per wheel, so
+  kappa = 0.0065620, F_x = 1921.111 N and F_z = 7877.7094 N, 3938.8547 N per wheel, so
   a = 1.372222 m/s². The slip settles within milliseconds, as in the `Slip` rig; the weight
   transfer of 1400 · 1.372 · 0.17 = 326.6 N follows the 0.1 s lag, so by 2 s it is within
   326.6 e^-20 = 7e-7 N.
 - `lifted`, 20000 N of lift on a dry road: the axle's static share alone would be
   0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the axle is off the road and `F_z` stays at 0.
   The tires pass no force, the mass stays at rest, a = 0, so no weight transfers, while each
-  wheel's whole 300 N m spins it up at 300/0.5 = 600 rad/s².
+  wheel's whole 300 N m spins it up at 300/0.5 = 600 rad/s². With the axle's floor no tire sees a
+  negative load here; the `Slip` rig's `lifted` case covers the tire's own clamp.
 """
 @component function LoadedSlip(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -148,18 +149,16 @@ lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
   push!(__eqs, connect(drive_left.spline, inertia_left.spline_a))
   push!(__eqs, connect(drive_left.support, housing_left.spline))
   push!(__eqs, connect(inertia_left.spline_b, wheel_left.spline))
-  push!(__eqs, connect(wheel_left.flange, body.flange_a))
   push!(__eqs, connect(drive_right.spline, inertia_right.spline_a))
   push!(__eqs, connect(drive_right.support, housing_right.spline))
   push!(__eqs, connect(inertia_right.spline_b, wheel_right.spline))
   push!(__eqs, connect(wheel_right.flange, body.flange_b))
-  push!(__eqs, connect(axle.flange, body.flange_b))
+  push!(__eqs, connect(wheel_left.flange, body.flange_a, axle.flange))
   push!(__eqs, connect(axle.load_left, wheel_left.load))
   push!(__eqs, connect(axle.load_right, wheel_right.load))
   push!(__eqs, connect(lift.flange, axle.downforce))
   push!(__eqs, connect(lift.support, ground.flange))
-  push!(__eqs, connect(road.y, wheel_left.mu_scale))
-  push!(__eqs, connect(road.y, wheel_right.mu_scale))
+  push!(__eqs, connect(road.y, wheel_left.mu_scale, wheel_right.mu_scale))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
