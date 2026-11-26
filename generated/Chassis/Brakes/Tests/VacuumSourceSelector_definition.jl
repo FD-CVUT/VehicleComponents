@@ -7,12 +7,10 @@
 @doc Markdown.doc"""
    VacuumSourceSelector(; name, __overrides)
 
-A `VacuumSourceSelector` joining a default `VacuumBooster` at rest to a manifold held at 30 kPa
-and a pump held at 20 kPa, both absolute `Interfaces.GasPressureSource`s. The booster's output rod
-is held still, so its chamber volumes do not change; the chambers start at 33 kPa. `use_pump` is
-set per case. The rig also covers `Interfaces.GasPressureSource` and `Interfaces.GasPort`: the
-chosen source must hold its pressure and take, through the hose, exactly the air the booster
-gives up.
+Two `VacuumSourceSelector`s, one choosing the manifold and one the pump, since the choice is
+structural. Each joins its own default `VacuumBooster` at rest to its own manifold held at 30 kPa
+and its own pump held at 20 kPa, both absolute `Gas.PressureSource`s. Each booster's output rod
+is held still, so its chamber volumes do not change; the chambers start at 33 kPa.
 
 At rest the input force is 0, below the 40 N cut-in, so the booster's vacuum valve is fully open
 and joins the rear chamber to the front one; the atmospheric valve is shut. Air leaks into the
@@ -27,10 +25,10 @@ pressures lie below the chambers' 33 kPa start, so the check valve opens at once
 drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 · 298.15 ·
 1.26e-7) = 0.26 s, so by 5 s they are within e^-19 of the balance.
 
-- `manifold`, use_pump = 0, p_s = 30000 Pa: p_f = (1.26e-7 · 30000 + 1.4e-10 · 101325)/(1.26e-7
-  + 1.4e-10) = 30079.162 Pa, and the manifold takes 1.26e-7 · 79.162 = 9.97442e-6 kg/s.
-- `pump`, use_pump = 1, p_s = 20000 Pa: p_f = (1.26e-7 · 20000 + 1.4e-10 · 101325)/(1.26e-7 +
-  1.4e-10) = 20090.261 Pa, and the pump takes 1.26e-7 · 90.261 = 1.137286e-5 kg/s.
+- To the manifold, p_s = 30000 Pa: p_f = (1.26e-7 · 30000 + 1.4e-10 · 101325)/(1.26e-7 +
+  1.4e-10) = 30079.162 Pa, and the manifold takes 1.26e-7 · 79.162 = 9.97442e-6 kg/s.
+- To the pump, p_s = 20000 Pa: p_f = (1.26e-7 · 20000 + 1.4e-10 · 101325)/(1.26e-7 + 1.4e-10) =
+  20090.261 Pa, and the pump takes 1.26e-7 · 90.261 = 1.137286e-5 kg/s.
 """
 @component function VacuumSourceSelector(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -76,30 +74,54 @@ drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 �
   __constants = Any[]
 
   ### Components
-  # Subcomponent manifold_pressure of type BlockComponents.Sources.Constant
-  manifold_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "manifold_pressure")
-  push!(__systems, @named manifold_pressure = BlockComponents.Sources.Constant(; k=Float64(30000.0), __overrides = manifold_pressure_overrides))
-  # Subcomponent manifold of type VehicleComponents.Interfaces.GasPressureSource
-  manifold_overrides = __pop_subcomponent_overrides!(__overrides, "manifold")
-  push!(__systems, @named manifold = VehicleComponents.Interfaces.GasPressureSource(; __overrides = manifold_overrides))
-  # Subcomponent pump_pressure of type BlockComponents.Sources.Constant
-  pump_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pump_pressure")
-  push!(__systems, @named pump_pressure = BlockComponents.Sources.Constant(; k=Float64(20000.0), __overrides = pump_pressure_overrides))
-  # Subcomponent pump of type VehicleComponents.Interfaces.GasPressureSource
-  pump_overrides = __pop_subcomponent_overrides!(__overrides, "pump")
-  push!(__systems, @named pump = VehicleComponents.Interfaces.GasPressureSource(; __overrides = pump_overrides))
-  # Subcomponent selector of type VehicleComponents.Chassis.Brakes.VacuumSourceSelector
-  selector_overrides = __pop_subcomponent_overrides!(__overrides, "selector")
-  push!(__systems, @named selector = VehicleComponents.Chassis.Brakes.VacuumSourceSelector(; use_pump=Float64(0.0), __overrides = selector_overrides))
-  # Subcomponent booster of type VehicleComponents.Chassis.Brakes.VacuumBooster
-  booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleComponents.Chassis.Brakes.VacuumBooster(; __overrides = booster_overrides))
-  # Subcomponent rod of type TranslationalComponents.Components.Fixed
-  rod_overrides = __pop_subcomponent_overrides!(__overrides, "rod")
-  push!(__systems, @named rod = TranslationalComponents.Components.Fixed(; __overrides = rod_overrides))
-  # Subcomponent housing of type TranslationalComponents.Components.Fixed
-  housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = TranslationalComponents.Components.Fixed(; __overrides = housing_overrides))
+  # Subcomponent m_manifold_pressure of type BlockComponents.Sources.Constant
+  m_manifold_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "m_manifold_pressure")
+  push!(__systems, @named m_manifold_pressure = BlockComponents.Sources.Constant(; k=Float64(30000.0), __overrides = m_manifold_pressure_overrides))
+  # Subcomponent m_manifold of type VehicleComponents.Gas.PressureSource
+  m_manifold_overrides = __pop_subcomponent_overrides!(__overrides, "m_manifold")
+  push!(__systems, @named m_manifold = VehicleComponents.Gas.PressureSource(; __overrides = m_manifold_overrides))
+  # Subcomponent m_pump_pressure of type BlockComponents.Sources.Constant
+  m_pump_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "m_pump_pressure")
+  push!(__systems, @named m_pump_pressure = BlockComponents.Sources.Constant(; k=Float64(20000.0), __overrides = m_pump_pressure_overrides))
+  # Subcomponent m_pump of type VehicleComponents.Gas.PressureSource
+  m_pump_overrides = __pop_subcomponent_overrides!(__overrides, "m_pump")
+  push!(__systems, @named m_pump = VehicleComponents.Gas.PressureSource(; __overrides = m_pump_overrides))
+  # Subcomponent m_selector of type VehicleComponents.Chassis.Brakes.VacuumSourceSelector
+  m_selector_overrides = __pop_subcomponent_overrides!(__overrides, "m_selector")
+  push!(__systems, @named m_selector = VehicleComponents.Chassis.Brakes.VacuumSourceSelector(; use_pump=false, __overrides = m_selector_overrides))
+  # Subcomponent m_booster of type VehicleComponents.Chassis.Brakes.VacuumBooster
+  m_booster_overrides = __pop_subcomponent_overrides!(__overrides, "m_booster")
+  push!(__systems, @named m_booster = VehicleComponents.Chassis.Brakes.VacuumBooster(; __overrides = m_booster_overrides))
+  # Subcomponent m_rod of type TranslationalComponents.Components.Fixed
+  m_rod_overrides = __pop_subcomponent_overrides!(__overrides, "m_rod")
+  push!(__systems, @named m_rod = TranslationalComponents.Components.Fixed(; __overrides = m_rod_overrides))
+  # Subcomponent m_housing of type TranslationalComponents.Components.Fixed
+  m_housing_overrides = __pop_subcomponent_overrides!(__overrides, "m_housing")
+  push!(__systems, @named m_housing = TranslationalComponents.Components.Fixed(; __overrides = m_housing_overrides))
+  # Subcomponent p_manifold_pressure of type BlockComponents.Sources.Constant
+  p_manifold_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "p_manifold_pressure")
+  push!(__systems, @named p_manifold_pressure = BlockComponents.Sources.Constant(; k=Float64(30000.0), __overrides = p_manifold_pressure_overrides))
+  # Subcomponent p_manifold of type VehicleComponents.Gas.PressureSource
+  p_manifold_overrides = __pop_subcomponent_overrides!(__overrides, "p_manifold")
+  push!(__systems, @named p_manifold = VehicleComponents.Gas.PressureSource(; __overrides = p_manifold_overrides))
+  # Subcomponent p_pump_pressure of type BlockComponents.Sources.Constant
+  p_pump_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "p_pump_pressure")
+  push!(__systems, @named p_pump_pressure = BlockComponents.Sources.Constant(; k=Float64(20000.0), __overrides = p_pump_pressure_overrides))
+  # Subcomponent p_pump of type VehicleComponents.Gas.PressureSource
+  p_pump_overrides = __pop_subcomponent_overrides!(__overrides, "p_pump")
+  push!(__systems, @named p_pump = VehicleComponents.Gas.PressureSource(; __overrides = p_pump_overrides))
+  # Subcomponent p_selector of type VehicleComponents.Chassis.Brakes.VacuumSourceSelector
+  p_selector_overrides = __pop_subcomponent_overrides!(__overrides, "p_selector")
+  push!(__systems, @named p_selector = VehicleComponents.Chassis.Brakes.VacuumSourceSelector(; use_pump=true, __overrides = p_selector_overrides))
+  # Subcomponent p_booster of type VehicleComponents.Chassis.Brakes.VacuumBooster
+  p_booster_overrides = __pop_subcomponent_overrides!(__overrides, "p_booster")
+  push!(__systems, @named p_booster = VehicleComponents.Chassis.Brakes.VacuumBooster(; __overrides = p_booster_overrides))
+  # Subcomponent p_rod of type TranslationalComponents.Components.Fixed
+  p_rod_overrides = __pop_subcomponent_overrides!(__overrides, "p_rod")
+  push!(__systems, @named p_rod = TranslationalComponents.Components.Fixed(; __overrides = p_rod_overrides))
+  # Subcomponent p_housing of type TranslationalComponents.Components.Fixed
+  p_housing_overrides = __pop_subcomponent_overrides!(__overrides, "p_housing")
+  push!(__systems, @named p_housing = TranslationalComponents.Components.Fixed(; __overrides = p_housing_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -112,13 +134,20 @@ drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 �
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(manifold_pressure.y, manifold.p))
-  push!(__eqs, connect(pump_pressure.y, pump.p))
-  push!(__eqs, connect(manifold.port, selector.manifold))
-  push!(__eqs, connect(pump.port, selector.pump))
-  push!(__eqs, connect(selector.booster, booster.vacuum))
-  push!(__eqs, connect(booster.rod_out, rod.flange))
-  push!(__eqs, connect(booster.support, housing.flange))
+  push!(__eqs, connect(m_manifold_pressure.y, m_manifold.p))
+  push!(__eqs, connect(m_pump_pressure.y, m_pump.p))
+  push!(__eqs, connect(m_manifold.port, m_selector.manifold))
+  push!(__eqs, connect(m_pump.port, m_selector.pump))
+  push!(__eqs, connect(m_selector.booster, m_booster.vacuum))
+  push!(__eqs, connect(m_booster.rod_out, m_rod.flange))
+  push!(__eqs, connect(m_booster.support, m_housing.flange))
+  push!(__eqs, connect(p_manifold_pressure.y, p_manifold.p))
+  push!(__eqs, connect(p_pump_pressure.y, p_pump.p))
+  push!(__eqs, connect(p_manifold.port, p_selector.manifold))
+  push!(__eqs, connect(p_pump.port, p_selector.pump))
+  push!(__eqs, connect(p_selector.booster, p_booster.vacuum))
+  push!(__eqs, connect(p_booster.rod_out, p_rod.flange))
+  push!(__eqs, connect(p_booster.support, p_housing.flange))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

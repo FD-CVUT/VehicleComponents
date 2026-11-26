@@ -20,7 +20,7 @@ __dyad_run_test_case!(
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.booster.p_r, "booster.p_r", 101325, 1, 1e-7),
-    (m -> m.booster.p_f, "booster.p_f", 33075.832, 1, 1e-7),
+    (m -> m.booster.p_vac, "booster.p_vac", 33075.832, 1, 1e-7),
     (m -> m.booster.F_out, "booster.F_out", 4720.1846, 0.01, 1e-7),
     (m -> m.master.p_mc, "master.p_mc", 9171775.1, 20, 1e-7),
     (m -> m.caliper_f.V, "caliper_f.V", 0.0000029092485, 5e-12, 1e-7),
@@ -64,7 +64,7 @@ __dyad_run_test_case!(
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.booster.p_r, "booster.p_r", 33075.832, 1, 1e-7),
-    (m -> m.booster.p_f, "booster.p_f", 33075.832, 1, 1e-7),
+    (m -> m.booster.p_vac, "booster.p_vac", 33075.832, 1, 1e-7),
     (m -> m.booster.F_out, "booster.F_out", 0, 0.000001, 1e-7),
     (m -> m.master.p_mc, "master.p_mc", 0, 0.001, 1e-7),
     (m -> m.caliper_f.V, "caliper_f.V", 0, 1e-11, 1e-7),

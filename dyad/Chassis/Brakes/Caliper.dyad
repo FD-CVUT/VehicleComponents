@@ -6,20 +6,18 @@ The friction, its sine ramp below `w0` and the shaft ports are
 `Chassis.Brakes.PartialFrictionBrake`'s; `support` must be connected. `port` is the brake-fluid
 connection.
 
-Pressures are gauge: the caliper's pressure p is `port.p` less the ambient pressure `p_amb`, since
-HydraulicComponents ports carry absolute pressure. A released circuit at ambient pressure leaves
-the caliper empty and applies no torque. The admitted fluid volume V sets p. V is the admitted
-fluid's mass over its density at `p_amb`, so it counts fluid, not the pressure it was admitted at:
-a fill and a release at different pressures cancel, and the fluid's own compressibility is part of
-the pressure-volume law. Up to the clearance
-take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no torque;
-beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with
-u = V - V0, and the friction torque magnitude is K (p - p0).
+Pressures are gauge: the caliper's pressure p is `port.p` less `p_amb` (`VehicleComponents.DOT4` has
+the convention). A released circuit at ambient pressure leaves the caliper empty and applies no
+torque. The admitted fluid volume V sets p. V is the admitted fluid's mass over its density at
+`p_amb`, so it counts fluid, not the pressure it was admitted at: a fill and a release at different
+pressures cancel, and the fluid's own compressibility is part of the pressure-volume law. Up to the
+clearance take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no
+torque; beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with u =
+V - V0, and the friction torque magnitude is K (p - p0).
 
-Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. `p_amb` defaults
-to 100325 Pa, the reference pressure of `HydraulicComponents.IsothermalCompressible` and of
-`VehicleComponents.DOT4`; set it to the reference of any other medium. The other defaults are a
-front axle's, gauge (textbook).
+Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. `p_amb` is the
+medium's reference pressure; set it to the reference of any other medium. The other defaults are
+a front axle's, gauge (textbook).
 """
 component Caliper
   extends VehicleComponents.Chassis.Brakes.PartialFrictionBrake(w0 = 0.2)

@@ -35,11 +35,10 @@ VehicleComponents = {url = "https://github.com/FD-CVUT/VehicleComponents", rev =
 ## Module tree and tests
 
 Components live in nested submodules by vehicle domain (`Body`, `Chassis`, `Powertrain`,
-`Electrical`, `Control`, `CanBus`, `Driver`, `Road`, `Sensors`, `Blocks`), with the connectors
-several domains share in `Interfaces` and complete vehicles under `Examples`. Tests are Dyad test
-models in each domain's `Tests` submodule (fast tier, every PR) and under `Examples` (example tier,
-nightly). [AGENTS.md](AGENTS.md) has the full tree, and
-[docs/agents/tests.md](docs/agents/tests.md) the test rules.
+`Electrical`, `Control`, `CanBus`, `Driver`, `Road`, `Sensors`, `Blocks`, `Gas`), with complete
+vehicles under `Examples`. Tests are Dyad test models in each domain's `Tests` submodule (fast
+tier, every PR) and under `Examples` (example tier, nightly). [AGENTS.md](AGENTS.md) has the full
+tree, and [docs/agents/tests.md](docs/agents/tests.md) the test rules.
 
 ```sh
 mise run test            # fast tier

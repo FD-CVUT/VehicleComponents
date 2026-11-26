@@ -20,17 +20,19 @@ manifold; `pump` the hose to the electric vacuum pump.
 Both source ports must be connected: an open port already carries no flow, and the selector's own
 zero-flow equation for the source not chosen then leaves its pressure undetermined, which the
 compiler resolves into a wrong circuit without an error. A car with only one source wires a
-`VehicleComponents.Interfaces.GasPressureSource` at ambient, 101325 Pa, to the other port, as
-an EV does on `manifold`.
+`VehicleComponents.Gas.PressureSource` at the atmosphere, 101325 Pa, to the other port, as an EV
+does on `manifold`.
 
-Assumptions: an ideal junction with no volume and no restriction; the choice holds for the whole
-run.
+The choice is made when the model is compiled, so the source not chosen drops out of the
+equations and the selector causes no events; a run cannot switch sources.
+
+Assumptions: an ideal junction with no volume and no restriction.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `use_pump`         | Vacuum source: 0 the intake manifold, 1 the electric pump                         | --  |   0.0 |
+| `use_pump`         | Take the vacuum from the electric pump rather than the intake manifold                         | --  |   false |
 
 ## Connectors
 
@@ -40,26 +42,53 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter. ([`GasPort`](@ref))
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere. ([`Port`](@ref))
  * `manifold` - One end of an air hose: absolute pressure across it, air mass flow through it.
 
 Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter. ([`GasPort`](@ref))
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere. ([`Port`](@ref))
  * `pump` - One end of an air hose: absolute pressure across it, air mass flow through it.
 
 Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter. ([`GasPort`](@ref))
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere. ([`Port`](@ref))
 """
-@component function VacuumSourceSelector(; name = nothing, var"use_pump"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function VacuumSourceSelector(; name = nothing, var"use_pump"=false, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -93,9 +122,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__use_pump = use_pump
-  append!(__params, @parameters (use_pump::Real), [description = "Vacuum source: 0 the intake manifold, 1 the electric pump"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, use_pump, __local__use_pump)
 
   ### Final Parameters (assignments)
 
@@ -109,9 +135,9 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named booster = VehicleComponents.Interfaces.GasPort())
-  push!(__systems, @named manifold = VehicleComponents.Interfaces.GasPort())
-  push!(__systems, @named pump = VehicleComponents.Interfaces.GasPort())
+  push!(__systems, @named booster = VehicleComponents.Gas.Port())
+  push!(__systems, @named manifold = VehicleComponents.Gas.Port())
+  push!(__systems, @named pump = VehicleComponents.Gas.Port())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -124,9 +150,17 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, booster.p ~ ifelse(use_pump > 0.5, pump.p, manifold.p))
-  push!(__eqs, manifold.mdot ~ ifelse(use_pump > 0.5, 0.0, -booster.mdot))
-  push!(__eqs, pump.mdot ~ ifelse(use_pump > 0.5, -booster.mdot, 0.0))
+
+  ### Control Structures
+  if use_pump
+    push!(__eqs, booster.p ~ pump.p)
+    push!(__eqs, pump.mdot ~ -booster.mdot)
+    push!(__eqs, manifold.mdot ~ 0.0)
+  else
+    push!(__eqs, booster.p ~ manifold.p)
+    push!(__eqs, manifold.mdot ~ -booster.mdot)
+    push!(__eqs, pump.mdot ~ 0.0)
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Chassis.Brakes.Tests.VacuumSourceSelector,
-  "manifold for VehicleComponents.Chassis.Brakes.Tests.VacuumSourceSelector";
-  case_name="manifold",
+  "drain for VehicleComponents.Chassis.Brakes.Tests.VacuumSourceSelector";
+  case_name="drain",
   component_stem="VacuumSourceSelector",
   module_path=String["Chassis", "Brakes", "Tests"],
   start=0e+0,
@@ -19,30 +19,12 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.booster.p_f, "booster.p_f", 30079.162, 0.01, 1e-9),
-    (m -> m.manifold.port.mdot, "manifold.port.mdot", 0.00000997442, 1e-10, 1e-9),
-    (m -> m.pump.port.mdot, "pump.port.mdot", 0, 1e-12, 1e-9),
-  ],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Chassis.Brakes.Tests.VacuumSourceSelector,
-  "pump for VehicleComponents.Chassis.Brakes.Tests.VacuumSourceSelector";
-  case_name="pump",
-  component_stem="VacuumSourceSelector",
-  module_path=String["Chassis", "Brakes", "Tests"],
-  start=0e+0,
-  stop=5e+0,
-  abstol=1e-8,
-  reltol=1e-10,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("selector.use_pump" => 1.0),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.booster.p_f, "booster.p_f", 20090.261, 0.01, 1e-9),
-    (m -> m.manifold.port.mdot, "manifold.port.mdot", 0, 1e-12, 1e-9),
-    (m -> m.pump.port.mdot, "pump.port.mdot", 0.00001137286, 1e-10, 1e-9),
+    (m -> m.m_booster.p_vac, "m_booster.p_vac", 30079.162, 0.01, 1e-9),
+    (m -> m.m_manifold.port.mdot, "m_manifold.port.mdot", 0.00000997442, 1e-10, 1e-9),
+    (m -> m.m_pump.port.mdot, "m_pump.port.mdot", 0, 1e-12, 1e-9),
+    (m -> m.p_booster.p_vac, "p_booster.p_vac", 20090.261, 0.01, 1e-9),
+    (m -> m.p_manifold.port.mdot, "p_manifold.port.mdot", 0, 1e-12, 1e-9),
+    (m -> m.p_pump.port.mdot, "p_pump.port.mdot", 0.00001137286, 1e-10, 1e-9),
   ],
   signals=Tuple[],
 )

@@ -19,7 +19,7 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.pump.p_h, "pump.p_h", 14000, 0.01, 1e-9),
+    (m -> m.pump.vacuum.p, "pump.vacuum.p", 14000, 0.01, 1e-9),
     (m -> m.pump.running, "pump.running", 1, 1e-8, 1e-9),
   ],
   signals=Tuple[],
@@ -42,7 +42,7 @@ __dyad_run_test_case!(
   ],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.pump.p_h, "pump.p_h", 14000, 0.01, 1e-9),
+    (m -> m.pump.vacuum.p, "pump.vacuum.p", 14000, 0.01, 1e-9),
     (m -> m.pump.running, "pump.running", 1, 1e-8, 1e-9),
   ],
   signals=Tuple[],
@@ -65,7 +65,7 @@ __dyad_run_test_case!(
   ],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.pump.p_h, "pump.p_h", 30000, 0.01, 1e-9),
+    (m -> m.pump.vacuum.p, "pump.vacuum.p", 30000, 0.01, 1e-9),
     (m -> m.pump.running, "pump.running", 0, 1e-8, 1e-9),
   ],
   signals=Tuple[],
@@ -87,9 +87,6 @@ __dyad_run_test_case!(
     (m -> m.pump.y, 1.0),
   ],
   expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.pump.p_h, "pump.p_h", 14000, 0.01, 1e-9),
-    (m -> m.pump.running, "pump.running", 0, 1e-8, 1e-9),
-  ],
+  expected_final=Tuple[(m -> m.pump.running, "pump.running", 0, 1e-8, 1e-9)],
   signals=Tuple[],
 )

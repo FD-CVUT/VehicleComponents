@@ -2,71 +2,28 @@
 Static vacuum booster: the pushrod force the booster passes to the master cylinder, as a static
 function of the force on its input rod.
 
-Ports: `input` the input rod from the pedal; `rod_out` the output rod to the master cylinder;
-`support` the housing, which takes the assist force. The rods are one rigid piece, so the booster
-adds no travel. The flange forces follow the stdlib's sign, the force on this part along s: the
-input rod pushes the booster toward +s, and the booster pushes the output rod on toward +s.
-
-The output force F_out follows the booster's characteristic of the input force F_in:
+The rods, the housing, the flange signs and the shared parameters are
+`Chassis.Brakes.PartialBooster`'s. The output force F_out follows the booster's characteristic of
+the input force F_in:
 
     F_out = 0                                                    for F_in < F_cut
     F_out = min(F_jump + SR (F_in - F_cut), F_in + F_assist_max)  otherwise
 
 no output below the cut-in `F_cut`, the jump-in `F_jump` at cut-in, the servo ratio `SR` above it,
 and run-out once the diaphragm's whole pressure difference is used: F_assist_max =
-A_d (p_atm - p_vac) - F_rs0.
+A_d (p_atm - p_f) - F_rs0. With little vacuum F_assist_max turns negative, the return spring
+holds back part of the input, and F_out stops at 0 rather than pull on the master cylinder.
 
-Assumptions: the vacuum chamber holds `p_vac` whatever the assist draws; the valve and the
-chambers have no dynamics (see `VacuumBooster` for both). Defaults: `A_d`, `p_vac` and `F_rs0`
-from PATH (UCB-ITS-PRR-97-21, Table 2.1), `SR`, `F_cut`, `F_jump` assumed, `p_atm` the standard
-atmosphere, the air the assist works against; it is not the brake fluid's reference pressure
-`p_amb` (100325 Pa) of the hydraulic parts.
+Assumptions: the front (vacuum) chamber holds `p_f` whatever the assist draws; the valve and the
+chambers have no dynamics (see `VacuumBooster` for both). `p_f` defaults to PATH's idle 33 kPa.
 """
 component StaticBooster
-  "Input rod from the pedal"
-  input = Flange() {^input}
-  "Output rod to the master cylinder"
-  rod_out = Flange() {^rod_out}
-  "Booster housing, which takes the assist force"
-  support = Flange() {^support}
-  "Servo ratio above the jump-in"
-  parameter SR::Real = 5.0
-  "Input force at cut-in"
-  parameter F_cut::Force = 40.0
-  "Output force at cut-in, the jump-in"
-  parameter F_jump::Force = 500.0
-  "Effective diaphragm area"
-  parameter A_d::Area = 0.0533
-  "Vacuum-chamber absolute pressure"
-  parameter p_vac::Pressure = 33e3
-  "Return-spring preload"
-  parameter F_rs0::Force = 97.0
-  "Atmospheric absolute pressure"
-  parameter p_atm::Pressure = 101325.0
+  extends VehicleComponents.Chassis.Brakes.PartialBooster
+  "Front (vacuum) chamber absolute pressure"
+  parameter p_f::Pressure = 33e3
   "Largest assist, with the full pressure difference across the diaphragm, less the spring preload"
-  final parameter F_assist_max::Force = A_d * (p_atm - p_vac) - F_rs0
-  "Input-force magnitude"
-  variable F_in::Force
-  "Output-force magnitude"
-  variable F_out::Force
+  final parameter F_assist_max::Force = A_d * (p_atm - p_f) - F_rs0
 relations
-  input.s = rod_out.s
-  F_in = input.f
-  F_out = -rod_out.f
   F_out = max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max)))
-  input.f + rod_out.f + support.f = 0.0
-metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/StaticBooster.svg"}},
-  "_links": {
-    "input": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
-    },
-    "rod_out": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-    },
-    "support": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
-    }
-  }
-}
+metadata {"Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/StaticBooster.svg"}}}
 end

@@ -10,11 +10,12 @@ using OrdinaryDiffEqDefault
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "tests.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "tests.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "tests.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "tests.jl"))
 end
 
 
-@testset "`VehicleComponents.Interfaces`" begin
-include("GasPressureSource_test.jl")
+@testset "`VehicleComponents.Gas`" begin
+include("PressureSource_test.jl")
 end
+include("Tests/tests.jl")

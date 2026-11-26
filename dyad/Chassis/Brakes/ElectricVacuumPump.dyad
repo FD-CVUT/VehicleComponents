@@ -15,25 +15,24 @@ ultimate pressure `p_min`:
     mdot_pump = Q/(R T) max(p_h - p_min, 0) y
     V_h/(R T) dp_h/dt = vacuum.mdot - mdot_pump
 
-with the latch state y relaxing to its target over `T_latch`. All pressures are absolute.
+with the latch state y relaxing to its target over `T_latch`. The air side follows `Gas.Port`'s
+conventions: absolute pressures, the atmosphere at 101325 Pa, ideal air.
 
-Assumptions: the hose air is an ideal gas at the fixed temperature `T`; the latch's transition
-time stands in for the switch and the motor spin-up. The hose starts at ambient and the pump
-running, as a pump switched on with the booster at ambient would; give another start at the
-declaration, `ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`. Ambient is the standard
-atmosphere, 101325 Pa, the air the pump draws against, not the brake fluid's reference pressure
-`p_amb` of the hydraulic parts.
+Assumptions: the hose air is at the fixed temperature `T`; the latch's transition time stands in
+for the switch and the motor spin-up. The hose starts at the atmosphere and the pump running, as a
+pump switched on with the booster at the atmosphere would; give another start at the declaration,
+`ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`.
 
 `Q` and `p_min` are derived from Hella's UP28, which evacuates 3.2 L to 500 mbar in 5.5 to 6 s and
-reaches at least 86 % vacuum: p_min = 0.14 · 101325 = 14.2 kPa, rounded to 14 kPa. A volume V
-pumped from the atmosphere follows V dp/dt = -Q (p - p_min), so it reaches p_1 = 50 kPa after
-t = (V/Q) ln((101325 - 14000)/(50000 - 14000)) = 0.8861 V/Q. The middle of the datum, t = 5.75 s,
-gives Q = 0.8861 · 3.2e-3/5.75 = 0.493e-3 m³/s, rounded to 0.49e-3 m³/s (5.79 s). The switch points
-are the aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch` are assumed.
+reaches at least 86 % vacuum: p_min = 0.14 · 101325 = 14.2 kPa, rounded to 14 kPa. A volume V pumped
+from the atmosphere follows V dp/dt = -Q (p - p_min), so it reaches p_1 = 50 kPa after t = (V/Q)
+ln((101325 - 14000)/(50000 - 14000)) = 0.8861 V/Q. The middle of the datum, t = 5.75 s, gives Q =
+0.8861 · 3.2e-3/5.75 = 0.493e-3 m³/s, rounded to 0.49e-3 m³/s (5.79 s). The switch points are the
+aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch` are assumed.
 """
 component ElectricVacuumPump
   "Hose from the booster's check valve"
-  vacuum = VehicleComponents.Interfaces.GasPort() {^vacuum}
+  vacuum = VehicleComponents.Gas.Port() {^vacuum}
   "Booster vacuum-sensor pressure, absolute"
   p_sense = RealInput() {^p_sense}
   "Pump on/off state, 0 to 1"

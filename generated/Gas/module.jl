@@ -3,17 +3,18 @@
 ### If you edit this code it is likely to get overwritten.
 ### Instead, update the Dyad source code and regenerate this file
 
-module Interfaces
+module Gas
 
 using ..VehicleComponents
 using ..VehicleComponents: __dyad_sym_union, __pop_subcomponent_overrides!, __symbol_overrides, __dyad_override_enum_field, __dyad_isa_variant, __dyad_promoted_value_fits, __dyad_seed_parameter!, __dyad_bind_final!, @__dyad_switch
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "module.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "module.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "module.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "module.jl"))
 end
 include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
+include("Tests/module.jl")
 include("precompilation.jl")
 
-end # module Interfaces
+end # module Gas

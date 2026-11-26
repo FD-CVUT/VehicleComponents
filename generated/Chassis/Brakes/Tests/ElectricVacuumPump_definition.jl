@@ -22,8 +22,7 @@ p_min with the time constant V_h/Q = 0.05e-3/0.49e-3 = 0.102 s; by 3 s that is w
 - `stays_off`, starting at 30 kPa with the pump stopped, sensor at 30 kPa: the latch holds the
   pump off, so the hose stays at 30 kPa and `running` at 0.
 - `switches_off`, starting with the pump running and the hose already at p_min = 14 kPa, sensor
-  at 10 kPa, below p_off: the latch switches the pump off, so `running` ends at 0. At p_min the
-  pump moves no air, Q/(R T) max(p_h - p_min, 0) = 0, so the hose stays at 14 kPa.
+  at 10 kPa, below p_off: the latch switches the pump off, so `running` ends at 0.
 """
 @component function ElectricVacuumPump(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

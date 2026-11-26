@@ -24,14 +24,12 @@ u = V - 0.5e-6 m³ above p0 = 0.5e5 Pa. Bisection on [0, 1e-4] gives V = 1.24861
 compliance dV/dp, under 3 ms above 1 MPa, so it has settled well before each check.
 
 The valve's opening y and its held pressure p_hold both follow with T_v, and
-p_b = min(p_a, y p_a + (1 - y) p_hold). The `backflow` cases tighten abstol to 1e-14 because
-V_disp is a pure integral of the flow, so the solver's absolute error accumulates on it, where
-the caliper's V is pulled back onto its pressure.
+p_b = min(p_a, y p_a + (1 - y) p_hold). The cases that check V_disp tighten abstol to 1e-14
+because V_disp is a pure integral of the flow, so the solver's absolute error accumulates on it,
+where the caliper's V is pulled back onto its pressure.
 
 - `open`, p_cmd = 20 MPa, 10 MPa on the cylinder: the inlet stays open and the caliper fills to
-  10 MPa, V = 2.994991e-6 m³. The cylinder gave up the same fluid, V_disp = 2.994991e-6 m³, so a
-  positive pushrod force moved its rod out, x_rod = 2.5e-3 + 2.994991e-6/4.908738521e-4 =
-  8.601346e-3 m.
+  10 MPa, V = 2.994991e-6 m³. The cylinder gave up the same fluid, V_disp = 2.994991e-6 m³.
 - `limited`, p_cmd = 4 MPa: the request is closed from the start, so the opening decays, the held
   pressure rises to the command and the caliper ends at 4 MPa, V = 2.178818e-6 m³.
 - `dump`, p_cmd = 4 MPa, the caliper starting full at 10 MPa (the valve holding 10 MPa): the valve
@@ -40,8 +38,8 @@ the caliper's V is pulled back onto its pressure.
 - `close`, p_cmd = 20 MPa stepping down to 4 MPa at 0.5 s: the inlet is open first, so the
   caliper fills to 10 MPa and the held pressure follows the clamped command, 10 MPa, reaching it
   to within e^-16. At the step the opening decays, y = e^(-(t - 0.5)/0.03), and the held pressure
-  relaxes to the command, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03). So at 0.53 s p_hold =
-  4e6 + 6e6 e^-1 = 6207276.6 Pa and p_b = 1e7 - 6e6 (1 - e^-1)² = 7602541.6 Pa. The caliper then
+  relaxes to the command, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03). So at 0.53 s
+  p_b = e^-1 1e7 + (1 - e^-1)(4e6 + 6e6 e^-1) = 1e7 - 6e6 (1 - e^-1)² = 7602541.6 Pa. The caliper then
   dumps into the valve and, with `return_dump` = 0, the dumped fluid leaves the model: the
   master-cylinder side passes no fluid, port_a.m_flow = 0.
 - `close_return`, the same with `return_dump` = 1: all the dumped fluid re-enters at `port_a`, so
@@ -53,13 +51,13 @@ the caliper's V is pulled back onto its pressure.
 - `backflow`, the valve starting closed (y = 0), holding the caliper at 8 MPa (V = 2.777744e-6 m³)
   with p_cmd = 8 MPa and 10 MPa on the cylinder. At 0.5 s the command steps to 1 MPa and the
   cylinder force to 3 MPa. The held pressure starts at 8 MPa, above p_a, so the check valve
-  conducts: p_b = p_a = 3 MPa, and the caliper drains to 3 MPa back into the master cylinder, not
-  out of the model. By 0.53 s it has settled to within e^-10: m_dump = 0, caliper V =
-  1.959060e-6 m³, and the cylinder took back V(8 MPa) - V(3 MPa) = 0.818684e-6 m³, V_disp =
-  -0.818684e-6 m³. The held pressure falls below 3 MPa at 0.5 + 0.03 ln(3.5) = 0.5376 s; from
-  then the valve dumps the caliper on to the command.
-- `backflow_dump`, the same run on to 1.5 s: the caliper ends at 1 MPa, V = 1.248618e-6 m³, and the
-  fluid dumped below 3 MPa left the model, so the cylinder still holds V_disp = -0.818684e-6 m³.
+  conducts: p_b = p_a = 3 MPa, and the caliper drains to 3 MPa, V = 1.959060e-6 m³, back into the
+  master cylinder, not out of the model, settling within a few ms. The held pressure falls below
+  3 MPa only at 0.5 + 0.03 ln(3.5) = 0.5376 s; from then the valve dumps the caliper on to the
+  command, and that fluid leaves the model. By 1 s the held pressure is within
+  7e6 e^(-0.5/0.03) = 0.4 Pa of 1 MPa, so the caliper ends at V = 1.248618e-6 m³, and the cylinder
+  holds what it took back through the check valve, V(8 MPa) - V(3 MPa) = 0.818684e-6 m³:
+  V_disp = -0.818684e-6 m³. Had the check valve's flow been dumped, V_disp would stay at 0.
 """
 @component function ABSValve(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

@@ -7,7 +7,7 @@
 using ModelingToolkit
 import Markdown
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "types.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "types.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "dyad", "Gas", "Tests", "types.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "dyad", "Gas", "Tests", "types.jl"))
 end
 

@@ -34,13 +34,11 @@ pulsing. At 1 it re-enters at `port_a`, as if an ideal return pump with no accum
 straight back to the master cylinder: the pedal is pushed back with every dump, the pulsation a
 driver feels. `m_dump` is the fluid that leaves the model.
 
-Pressures are gauge: the ports carry absolute pressure, `p_amb` + p, as `Caliper` and
-`MasterCylinder` read it.
+Pressures are gauge: the ports carry `p_amb` + p (`VehicleComponents.DOT4` has the convention).
 
-Assumptions: the valve has no flow restriction and no volume of its own; it starts open, y = 1,
-with the held pressure at 0. A start with the valve closed sets both at the declaration,
-`ABSValve(y = initial 0.0, p_hold = initial 8e6)`. `p_amb` defaults to 100325 Pa, the reference
-pressure of `VehicleComponents.DOT4`. `T_v` lumps the electronics' and the solenoid's reaction
+Assumptions: the valve has no flow restriction and no volume of its own; it starts open, y = 1, with
+the held pressure at 0. A start with the valve closed sets both at the declaration, `ABSValve(y =
+initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the solenoid's reaction
 (assumed).
 
 ## Parameters:
@@ -180,7 +178,7 @@ pressure of `VehicleComponents.DOT4`. `T_v` lumps the electronics' and the solen
   push!(__eqs, p_target ~ min(max(p_cmd, 0.0), max(p_a, 0.0)))
   push!(__eqs, ModelingToolkit.D_nounits(p_hold) ~ (p_target - p_hold) / T_v)
   push!(__eqs, ModelingToolkit.D_nounits(y) ~ (ifelse(p_cmd >= p_a, 1.0, 0.0) - y) / T_v)
-  push!(__eqs, p_b ~ min(p_a, y * p_a + (1.0 - y) * max(p_hold, 0.0)))
+  push!(__eqs, p_b ~ min(p_a, y * p_a + (1.0 - y) * p_hold))
   push!(__eqs, port_a.m_flow ~ ifelse((p_cmd >= p_a) | (p_hold >= p_a), -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0)))
   push!(__eqs, m_dump ~ port_a.m_flow + port_b.m_flow)
 

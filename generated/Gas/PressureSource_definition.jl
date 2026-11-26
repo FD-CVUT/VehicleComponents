@@ -5,16 +5,15 @@
 
 
 @doc Markdown.doc"""
-   GasPressureSource(; name, __overrides)
+   PressureSource(; name, __overrides)
 
 Ideal pressure reservoir on an air hose: holds the hose at `p` whatever air flows in or out.
 
-Ports: `p` the absolute pressure to hold; `port` the hose connection, which passes whatever air
-the circuit sends.
+Ports: `p` the pressure to hold, absolute (`Gas.Port` has the air side's conventions); `port` the
+hose connection, which passes whatever air the circuit sends.
 
 Assumptions: the reservoir is too large to be drawn down, such as an engine's intake manifold at a
-fixed operating point or the atmosphere. `p` is absolute: a pressure meant as gauge needs the
-atmosphere, 101325 Pa on the air side, added before it reaches `p`.
+fixed operating point or the atmosphere.
 
 ## Connectors
 
@@ -25,15 +24,24 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter. ([`GasPort`](@ref))
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere. ([`Port`](@ref))
 """
-@component function GasPressureSource(; name = nothing, __overrides = Dict{String, Any}())
+@component function PressureSource(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = GasPressureSource()
+    @named model = PressureSource()
   """))
 
   __overrides = Dict{String, Any}(__overrides)
@@ -73,7 +81,7 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named port = VehicleComponents.Interfaces.GasPort())
+  push!(__systems, @named port = VehicleComponents.Gas.Port())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -91,4 +99,4 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export GasPressureSource
+export PressureSource

@@ -1,0 +1,37 @@
+"""
+A `Gas.PressureSource` holding 30 kPa absolute on a hose that a `Gas.Tests.Leak` feeds from the
+atmosphere: C_leak = 1e-9 kg/(s Pa), p_atm = 101325 Pa.
+
+The source holds the hose at p = 30000 Pa whatever flows, so the leak passes
+1e-9 (101325 - 30000) = 7.1325e-5 kg/s, and the source takes all of it through the hose:
+`source.port.mdot` = 7.1325e-5 kg/s, positive into the source.
+"""
+test component PressureSource
+  "Source pressure, absolute"
+  pressure = BlockComponents.Sources.Constant(k = 30e3) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  source = VehicleComponents.Gas.PressureSource() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  leak = VehicleComponents.Gas.Tests.Leak() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(pressure.y, source.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(source.port, leak.port) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "leak": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-12,
+        "reltol": 1e-10,
+        "atol": {"source.port.p": 1e-6, "source.port.mdot": 1e-15},
+        "expect": {"final": {"source.port.p": 30000.0, "source.port.mdot": 7.1325e-5}}
+      }
+    }
+  }
+}
+end

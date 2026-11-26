@@ -11,8 +11,8 @@ using OrdinaryDiffEqDefault
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "definitions.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "definitions.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "definitions.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "definitions.jl"))
 end
 
 import BlockComponents
@@ -199,5 +199,5 @@ component.
 end
 
 
-include("GasPort_definition.jl")
-include("GasPressureSource_definition.jl")
+include("Port_definition.jl")
+include("PressureSource_definition.jl")

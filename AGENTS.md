@@ -35,7 +35,8 @@ Electrical.Machines, Electrical.PowerElectronics, Electrical.Battery
   Helpers          signal blocks one domain's components share; any domain may have one
 Control            ABS, ESP, TCS, Cruise, brake allocation, regen blend
 CanBus, Driver, Road, Sensors, Blocks
-Interfaces         connectors of a domain the stdlib lacks, with the boundary source that ends one
+Gas                air hoses: the port, its conventions and its boundary sources, which the
+                   brakes' vacuum and the engine's air path share
 Examples
   Powertrain       ICE, BEV, Hybrid.Series, Hybrid.Parallel.P1/P2/P3/P4
   Chassis          ABS, ESP, TCS, Brakes

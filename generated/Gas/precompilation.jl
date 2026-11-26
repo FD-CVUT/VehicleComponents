@@ -6,8 +6,8 @@
 
 using PrecompileTools: @setup_workload, @compile_workload
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "precompilation.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Interfaces", "precompilation.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "precompilation.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Gas", "precompilation.jl"))
 end
 
 

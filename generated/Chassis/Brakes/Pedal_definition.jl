@@ -42,7 +42,6 @@ asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted ped
 | `F_ped`         | Driver's foot-force magnitude                         | N  |
 | `F_rod`         | Force delivered at the pushrod                         | N  |
 | `x_ped`         | Pedal travel relative to the pivot                         | m  |
-| `x_rod`         | Pushrod travel relative to the pivot                         | m  |
 """
 @component function Pedal(; name = nothing, var"i_p"=3.5, var"F_max"=Float64(500.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -95,7 +94,6 @@ asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted ped
   append!(__vars, @variables (F_ped(t)::Real), [description = "Driver's foot-force magnitude"])
   append!(__vars, @variables (F_rod(t)::Real), [description = "Force delivered at the pushrod"])
   append!(__vars, @variables (x_ped(t)::Real), [description = "Pedal travel relative to the pivot"])
-  append!(__vars, @variables (x_rod(t)::Real), [description = "Pushrod travel relative to the pivot"])
 
   ### Variables (assignments)
   __ovr_F_ped = pop!(__overrides, "F_ped", nothing); isnothing(__ovr_F_ped) || push!(__eqs, F_ped ~ __ovr_F_ped)
@@ -107,9 +105,6 @@ asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted ped
   __ovr_x_ped = pop!(__overrides, "x_ped", nothing); isnothing(__ovr_x_ped) || push!(__eqs, x_ped ~ __ovr_x_ped)
   __ovr_x_ped__initial = pop!(__overrides, "x_ped.initial", nothing); isnothing(__ovr_x_ped__initial) || (__initial_conditions[x_ped] = __ovr_x_ped__initial)
   __ovr_x_ped__guess = pop!(__overrides, "x_ped.guess", nothing)
-  __ovr_x_rod = pop!(__overrides, "x_rod", nothing); isnothing(__ovr_x_rod) || push!(__eqs, x_rod ~ __ovr_x_rod)
-  __ovr_x_rod__initial = pop!(__overrides, "x_rod.initial", nothing); isnothing(__ovr_x_rod__initial) || (__initial_conditions[x_rod] = __ovr_x_rod__initial)
-  __ovr_x_rod__guess = pop!(__overrides, "x_rod.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -125,7 +120,6 @@ asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted ped
   isnothing(__ovr_F_ped__guess) || (__guesses[F_ped] = __ovr_F_ped__guess)
   isnothing(__ovr_F_rod__guess) || (__guesses[F_rod] = __ovr_F_rod__guess)
   isnothing(__ovr_x_ped__guess) || (__guesses[x_ped] = __ovr_x_ped__guess)
-  isnothing(__ovr_x_rod__guess) || (__guesses[x_rod] = __ovr_x_rod__guess)
 
   ### Initialization Equations
 
@@ -133,8 +127,7 @@ asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted ped
   __assertions = []
 
   ### Equations
-  push!(__eqs, x_rod ~ rod.s - support.s)
-  push!(__eqs, x_ped ~ i_p * x_rod)
+  push!(__eqs, x_ped ~ i_p * (rod.s - support.s))
   push!(__eqs, F_ped ~ min(max(u, 0.0), 1.0) * F_max)
   push!(__eqs, F_rod ~ -rod.f)
   push!(__eqs, F_rod ~ i_p * F_ped)

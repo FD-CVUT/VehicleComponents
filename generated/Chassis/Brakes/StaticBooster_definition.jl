@@ -5,30 +5,25 @@
 
 
 @doc Markdown.doc"""
-   StaticBooster(; name, SR, F_cut, F_jump, A_d, p_vac, F_rs0, p_atm, __overrides)
+   StaticBooster(; name, SR, F_cut, F_jump, A_d, F_rs0, p_atm, p_f, __overrides)
 
 Static vacuum booster: the pushrod force the booster passes to the master cylinder, as a static
 function of the force on its input rod.
 
-Ports: `input` the input rod from the pedal; `rod_out` the output rod to the master cylinder;
-`support` the housing, which takes the assist force. The rods are one rigid piece, so the booster
-adds no travel. The flange forces follow the stdlib's sign, the force on this part along s: the
-input rod pushes the booster toward +s, and the booster pushes the output rod on toward +s.
-
-The output force F_out follows the booster's characteristic of the input force F_in:
+The rods, the housing, the flange signs and the shared parameters are
+`Chassis.Brakes.PartialBooster`'s. The output force F_out follows the booster's characteristic of
+the input force F_in:
 
     F_out = 0                                                    for F_in < F_cut
     F_out = min(F_jump + SR (F_in - F_cut), F_in + F_assist_max)  otherwise
 
 no output below the cut-in `F_cut`, the jump-in `F_jump` at cut-in, the servo ratio `SR` above it,
 and run-out once the diaphragm's whole pressure difference is used: F_assist_max =
-A_d (p_atm - p_vac) - F_rs0.
+A_d (p_atm - p_f) - F_rs0. With little vacuum F_assist_max turns negative, the return spring
+holds back part of the input, and F_out stops at 0 rather than pull on the master cylinder.
 
-Assumptions: the vacuum chamber holds `p_vac` whatever the assist draws; the valve and the
-chambers have no dynamics (see `VacuumBooster` for both). Defaults: `A_d`, `p_vac` and `F_rs0`
-from PATH (UCB-ITS-PRR-97-21, Table 2.1), `SR`, `F_cut`, `F_jump` assumed, `p_atm` the standard
-atmosphere, the air the assist works against; it is not the brake fluid's reference pressure
-`p_amb` (100325 Pa) of the hydraulic parts.
+Assumptions: the front (vacuum) chamber holds `p_f` whatever the assist draws; the valve and the
+chambers have no dynamics (see `VacuumBooster` for both). `p_f` defaults to PATH's idle 33 kPa.
 
 ## Parameters:
 
@@ -38,9 +33,9 @@ atmosphere, the air the assist works against; it is not the brake fluid's refere
 | `F_cut`         | Input force at cut-in                         | N  |   40.0 |
 | `F_jump`         | Output force at cut-in, the jump-in                         | N  |   500.0 |
 | `A_d`         | Effective diaphragm area                         | m2  |   0.0533 |
-| `p_vac`         | Vacuum-chamber absolute pressure                         | Pa  |   33e3 |
 | `F_rs0`         | Return-spring preload                         | N  |   97.0 |
 | `p_atm`         | Atmospheric absolute pressure                         | Pa  |   101325.0 |
+| `p_f`         | Front (vacuum) chamber absolute pressure                         | Pa  |   33e3 |
 
 ## Connectors
 
@@ -55,7 +50,7 @@ atmosphere, the air the assist works against; it is not the brake fluid's refere
 | `F_in`         | Input-force magnitude                         | N  |
 | `F_out`         | Output-force magnitude                         | N  |
 """
-@component function StaticBooster(; name = nothing, var"SR"=Float64(5.0), var"F_cut"=Float64(40.0), var"F_jump"=Float64(500.0), var"A_d"=0.0533, var"p_vac"=Float64(33000.0), var"F_rs0"=Float64(97.0), var"p_atm"=Float64(101325.0), __overrides = Dict{String, Any}())
+@component function StaticBooster(; name = nothing, var"SR"=Float64(5.0), var"F_cut"=Float64(40.0), var"F_jump"=Float64(500.0), var"A_d"=0.0533, var"F_rs0"=Float64(97.0), var"p_atm"=Float64(101325.0), var"p_f"=Float64(33000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -78,9 +73,9 @@ atmosphere, the air the assist works against; it is not the brake fluid's refere
   haskey(__overrides, "F_cut") && (F_cut = pop!(__overrides, "F_cut"))
   haskey(__overrides, "F_jump") && (F_jump = pop!(__overrides, "F_jump"))
   haskey(__overrides, "A_d") && (A_d = pop!(__overrides, "A_d"))
-  haskey(__overrides, "p_vac") && (p_vac = pop!(__overrides, "p_vac"))
   haskey(__overrides, "F_rs0") && (F_rs0 = pop!(__overrides, "F_rs0"))
   haskey(__overrides, "p_atm") && (p_atm = pop!(__overrides, "p_atm"))
+  haskey(__overrides, "p_f") && (p_f = pop!(__overrides, "p_f"))
 
   ### Structural Parameters (functions)
 
@@ -108,18 +103,18 @@ atmosphere, the air the assist works against; it is not the brake fluid's refere
   __local__A_d = A_d
   append!(__params, @parameters (A_d::Real), [description = "Effective diaphragm area"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, A_d, __local__A_d)
-  __local__p_vac = p_vac
-  append!(__params, @parameters (p_vac::Real), [description = "Vacuum-chamber absolute pressure"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac, __local__p_vac)
   __local__F_rs0 = F_rs0
   append!(__params, @parameters (F_rs0::Real), [description = "Return-spring preload"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, F_rs0, __local__F_rs0)
   __local__p_atm = p_atm
   append!(__params, @parameters (p_atm::Real), [description = "Atmospheric absolute pressure"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, p_atm, __local__p_atm)
+  __local__p_f = p_f
+  append!(__params, @parameters (p_f::Real), [description = "Front (vacuum) chamber absolute pressure"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_f, __local__p_f)
 
   ### Final Parameters (assignments)
-  __bindings[F_assist_max] = A_d * (p_atm - p_vac) - F_rs0
+  __bindings[F_assist_max] = A_d * (p_atm - p_f) - F_rs0
 
   ### Final Path Parameters
 
@@ -159,8 +154,8 @@ atmosphere, the air the assist works against; it is not the brake fluid's refere
   push!(__eqs, input.s ~ rod_out.s)
   push!(__eqs, F_in ~ input.f)
   push!(__eqs, F_out ~ -rod_out.f)
-  push!(__eqs, F_out ~ max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max))))
   push!(__eqs, input.f + rod_out.f + support.f ~ 0.0)
+  push!(__eqs, F_out ~ max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max))))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

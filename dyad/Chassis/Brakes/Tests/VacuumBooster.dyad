@@ -78,7 +78,7 @@ test component VacuumBooster
   vacuum_pressure = BlockComponents.Sources.Constant(k = 33e3) {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
   }
-  source = VehicleComponents.Interfaces.GasPressureSource() {
+  source = VehicleComponents.Gas.PressureSource() {
     "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 700, "y2": 800}}}
   }
   line_f = VehicleComponents.Chassis.Brakes.Line() {
@@ -227,7 +227,7 @@ metadata {
         "params": {"fall.start_time": 100.0},
         "atol": {
           "booster.p_r": 1.0,
-          "booster.p_f": 1.0,
+          "booster.p_vac": 1.0,
           "booster.F_out": 0.01,
           "master.p_mc": 20.0,
           "caliper_f.V": 5e-12,
@@ -236,7 +236,7 @@ metadata {
         "expect": {
           "final": {
             "booster.p_r": 101325.0,
-            "booster.p_f": 33075.832,
+            "booster.p_vac": 33075.832,
             "booster.F_out": 4720.1846,
             "master.p_mc": 9171775.1,
             "caliper_f.V": 2.9092485e-6,
@@ -260,7 +260,7 @@ metadata {
         "reltol": 1e-8,
         "atol": {
           "booster.p_r": 1.0,
-          "booster.p_f": 1.0,
+          "booster.p_vac": 1.0,
           "booster.F_out": 1e-6,
           "master.p_mc": 1e-3,
           "caliper_f.V": 1e-11,
@@ -269,7 +269,7 @@ metadata {
         "expect": {
           "final": {
             "booster.p_r": 33075.832,
-            "booster.p_f": 33075.832,
+            "booster.p_vac": 33075.832,
             "booster.F_out": 0.0,
             "master.p_mc": 0.0,
             "caliper_f.V": 0.0,

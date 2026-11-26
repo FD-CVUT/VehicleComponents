@@ -1,11 +1,11 @@
 """
 Dynamic vacuum booster: two air chambers on either side of the diaphragm, a static poppet valve,
-and a check valve to the vacuum source, behind the same mechanical ports as `StaticBooster`.
+and a check valve to the vacuum source.
 
-Ports: `input` the input rod from the pedal; `rod_out` the output rod to the master cylinder;
-`support` the housing, which takes the assist force; `vacuum` the hose from the check valve to the
-vacuum source, the intake manifold or a vacuum pump; `p_vac` the front-chamber pressure, what a
-booster vacuum sensor reads.
+The rods, the housing, the flange signs and the shared parameters are
+`Chassis.Brakes.PartialBooster`'s, as for `StaticBooster`. Ports of its own: `vacuum` the hose
+from the check valve to the vacuum source, the intake manifold or a vacuum pump; `p_vac` the
+front-chamber pressure, what a booster vacuum sensor reads.
 
 The front (vacuum) chamber p_f drains through the check valve into the `vacuum` hose. The valve
 compares the input force F_in with the reaction-disc force F_r: above the apply threshold it lets
@@ -20,48 +20,28 @@ travel x_p, the output rod's travel relative to the housing since the start of t
     dp_f/dt = n/V_f (R T (mdot_av - mdot_out + mdot_leak) + p_f A_d dx_p/dt)
     mdot_out = C_vm max(0, p_f - vacuum.p),  vacuum.mdot = -mdot_out
 
-The valve openings ramp linearly over `F_w` beyond each threshold. All pressures are absolute.
+The valve openings ramp linearly over `F_w` beyond each threshold. The air side follows
+`Gas.Port`'s conventions: absolute pressures, the atmosphere `p_atm`, ideal air.
 
-Assumptions: the chamber air is an ideal gas at the fixed temperature `T`, isothermal at the
-default `n` = 1; the rods are one rigid piece; the valves have no dynamics of their own. The run
-starts with the rods at rest, where the chambers hold `V_f0` and `V_r0`, whatever the master
-cylinder's dead stroke puts that position at. Both
-chambers start at 33 kPa, a booster at idle manifold vacuum; give another start at the
-declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial 101325.0)`.
-
-`p_atm` is the standard atmosphere, 101325 Pa, which the rear chamber fills from and the front one
-leaks from; it is the air the assist works against, so it is not the brake fluid's reference
-pressure `p_amb` (100325 Pa) of the hydraulic parts, where 1 kPa is 0.01 % of an apply but here
-1.5 % of the 68 kPa difference that drives the diaphragm.
+Assumptions: the chamber air is an ideal gas at the fixed temperature `T`, isothermal at the default
+`n` = 1; the valves have no dynamics of their own. The run starts with the rods at rest, where the
+chambers hold `V_f0` and `V_r0`. Both chambers start at 33 kPa, a booster at idle manifold vacuum;
+give another start at the declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial
+101325.0)`.
 
 PATH (UCB-ITS-PRR-97-21, Table 2.1) tabulates the flow coefficients in m s, which read as
 kg/(s Pa) give a rear-chamber time constant near 0.2 ms, a thousand times faster than PATH's own
 traces. Read per kPa they give 0.1 to 0.2 s, which matches, so the defaults are PATH's numbers
-divided by 1000 Pa/kPa. `A_d`, `F_rs0`, `K_rs`, `V_f0`, `V_r0` are PATH's; `T` MathWorks'; `F_app`
-and `F_rel` are assumed at 10 N where PATH gives 50 N, which would put the apply branch 250 N
-under `StaticBooster`'s; `SR`, `F_cut`, `F_jump` and `F_w` are assumed.
+divided by 1000 Pa/kPa. `K_rs`, `V_f0`, `V_r0` are PATH's; `T` MathWorks'; `F_app` and `F_rel`
+are assumed at 10 N where PATH gives 50 N, which would put the apply branch 250 N under
+`StaticBooster`'s; `F_w` is assumed.
 """
 component VacuumBooster
-  "Input rod from the pedal"
-  input = Flange() {^input}
-  "Output rod to the master cylinder"
-  rod_out = Flange() {^rod_out}
-  "Booster housing, which takes the assist force"
-  support = Flange() {^support}
+  extends VehicleComponents.Chassis.Brakes.PartialBooster
   "Hose from the check valve to the vacuum source"
-  vacuum = VehicleComponents.Interfaces.GasPort() {^vacuum}
+  vacuum = VehicleComponents.Gas.Port() {^vacuum}
   "Front-chamber absolute pressure, what a booster vacuum sensor reads"
   p_vac = RealOutput() {^p_vac}
-  "Servo ratio above the jump-in"
-  parameter SR::Real = 5.0
-  "Input force at cut-in"
-  parameter F_cut::Force = 40.0
-  "Output force at cut-in, the jump-in"
-  parameter F_jump::Force = 500.0
-  "Effective diaphragm area"
-  parameter A_d::Area = 0.0533
-  "Return-spring preload"
-  parameter F_rs0::Force = 97.0
   "Return-spring rate [N/m]"
   parameter K_rs::Real = 2411.0
   "Front-chamber volume at rest"
@@ -88,8 +68,6 @@ component VacuumBooster
   parameter T::Temperature = 298.15
   "Gas constant of air [J/(kg K)]"
   parameter R::Real = 287.05
-  "Atmospheric absolute pressure"
-  parameter p_atm::Pressure = 101325.0
   "Front (vacuum) chamber absolute pressure"
   variable p_f::Pressure = initial 33e3
   "Rear (working) chamber absolute pressure"
@@ -100,10 +78,6 @@ component VacuumBooster
   variable V_f::Volume
   "Rear-chamber volume"
   variable V_r::Volume
-  "Input-force magnitude"
-  variable F_in::Force
-  "Output-force magnitude"
-  variable F_out::Force
   "Reaction-disc force on the input plunger"
   variable F_r::Force
   "Valve force error"
@@ -120,13 +94,7 @@ component VacuumBooster
   variable mdot_leak::MassFlowRate
   "Air flow out of the front chamber through the check valve"
   variable mdot_out::MassFlowRate
-  "Assist available with the rear chamber at atmosphere, at the present front pressure"
-  variable F_assist_max::Force
 relations
-  input.s = rod_out.s
-  F_in = input.f
-  F_out = -rod_out.f
-  input.f + rod_out.f + support.f = 0.0
   der(x_p) = der(rod_out.s) - der(support.s)
   V_f = V_f0 - A_d * x_p
   V_r = V_r0 + A_d * x_p
@@ -143,19 +111,9 @@ relations
   der(p_r) = n / V_r * (R * T * (mdot_aa - mdot_av) - p_r * A_d * der(x_p))
   der(p_f) = n / V_f * (R * T * (mdot_av - mdot_out + mdot_leak) + p_f * A_d * der(x_p))
   p_vac = p_f
-  F_assist_max = A_d * (p_atm - p_f) - F_rs0
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/VacuumBooster.svg"}},
   "_links": {
-    "input": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
-    },
-    "rod_out": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-    },
-    "support": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
-    },
     "vacuum": {
       "Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 200, "x2": 300, "y1": -50, "y2": 50}}}
     },

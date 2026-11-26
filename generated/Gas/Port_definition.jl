@@ -11,15 +11,24 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter.
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere.
 """
-@connector function GasPort(; name=nothing)
+@connector function Port(; name=nothing)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = GasPort()
+    @named model = Port()
   """))
   __params = Symbolics.SymbolicT[]
   __vars = @variables begin
@@ -30,4 +39,4 @@ holds its ambient reference as a parameter.
   )
   return System(Equation[], t, __vars, __params; name, metadata = __metadata)
 end
-export GasPort
+export Port

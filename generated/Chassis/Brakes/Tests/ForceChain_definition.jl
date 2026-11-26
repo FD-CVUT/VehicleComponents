@@ -8,30 +8,30 @@
    ForceChain(; name, __overrides)
 
 The brake force chain from pedal to master-cylinder pressure, the reference check of the brake
-system: a constant pedal command, set per case, pushes the default `Pedal` (i_p = 3.5,
-F_max = 500 N) into the default `StaticBooster` and on into the default `MasterCylinder`. Both
-circuits are plugged with a `ClosedHydraulicPort`, so no fluid moves and the pressure is the
-force balance alone. Pivot and housings are fixed.
+system: a pedal command pushes the default `Pedal` (i_p = 3.5, F_max = 500 N) into the default
+`StaticBooster` and on into the default `MasterCylinder`. Both circuits are plugged with a
+`ClosedHydraulicPort`, so no fluid moves and the pressure is the force balance alone. Pivot and
+housings are fixed. The chain has no state, so each case checks two operating points: the command
+holds its first value until it steps at 0.5 s, checked at the start, and its second after,
+checked at the end.
 
 The pushrod force is F_in = 3.5 · 500 u = 1750 u N. The booster's run-out assist is
 F_assist_max = 0.0533 (101325 - 33000) - 97 = 3544.7225 N. The cylinder's bore area is
 pi 0.025²/4 = 4.908738521e-4 m², and spring and seal take 138 + 80 = 218 N, so
-p_mc = (F_out - 218)/4.908738521e-4. The plugs keep V_disp at 0, so the pushrod sits at the dead
-stroke, x_rod = 2.5e-3 m, and the pedal at 3.5 · 2.5e-3 = 8.75e-3 m.
+p_mc = (F_out - 218)/4.908738521e-4. The plugs keep V_disp at 0, so the pedal sits at
+3.5 · 2.5e-3 = 8.75e-3 m, the master cylinder's dead stroke through the lever.
 
-- `below_cut_in`, u = 0.02: F_in = 35 N, below the 40 N cut-in, so F_out = 0 and p_mc = 0.
-- `cut_in`, u = 0.022857142857142857, the double nearest 40/1750: F_in is exactly 40 N in floating
-  point, the cut-in itself, so the booster jumps in, F_out = 500 + 5 · 0 = 500 N, and
-  p_mc = 282/4.908738521e-4 = 574485.68 Pa.
-- `boosted`, u = 0.2: F_in = 350 N; the boosted branch 500 + 5 (350 - 40) = 2050 N is below
-  run-out, 350 + 3544.7225 = 3894.7225 N, so F_out = 2050 N and
-  p_mc = 1832/4.908738521e-4 = 3732119.75 Pa.
-- `run_out`, u = 1, full pedal: F_in = 1750 N; run-out, 1750 + 3544.7225 = 5294.7225 N, is below
-  the boosted branch 500 + 5 · 1710 = 9050 N, so F_out = 5294.7225 N and
-  p_mc = 5076.7225/4.908738521e-4 = 10342214.15 Pa.
-- `negative_command`, u = -0.5: the pedal clamps the command to 0, so F_in = 0 and p_mc = 0.
-- `over_command`, u = 1.5: the pedal clamps the command to 1, so it is `run_out` again,
-  F_in = 1750 N and F_out = 5294.7225 N.
+- `below_cut_in`, u = -0.5 then 0.02. At -0.5 the pedal clamps the command to 0, so F_in = 0.
+  At 0.02, F_in = 35 N, below the 40 N cut-in, so F_out = 0 and p_mc = 0.
+- `boosted`, u = 0.022857142857142857 then 0.2. The first is the double nearest 40/1750: F_in is
+  exactly 40 N in floating point, the cut-in itself, so the booster jumps in, F_out =
+  500 + 5 · 0 = 500 N, and p_mc = 282/4.908738521e-4 = 574485.68 Pa. At 0.2, F_in = 350 N; the
+  boosted branch 500 + 5 (350 - 40) = 2050 N is below run-out, 350 + 3544.7225 = 3894.7225 N, so
+  F_out = 2050 N and p_mc = 1832/4.908738521e-4 = 3732119.75 Pa.
+- `run_out`, u = 1 then 1.5. At full pedal F_in = 1750 N; run-out, 1750 + 3544.7225 =
+  5294.7225 N, is below the boosted branch 500 + 5 · 1710 = 9050 N, so F_out = 5294.7225 N and
+  p_mc = 5076.7225/4.908738521e-4 = 10342214.15 Pa. At 1.5 the pedal clamps the command to 1, so
+  the foot force stays 500 N and F_in 1750 N.
 """
 @component function ForceChain(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -81,9 +81,9 @@ stroke, x_rod = 2.5e-3 m, and the pedal at 3.5 · 2.5e-3 = 8.75e-3 m.
   __constants = Any[]
 
   ### Components
-  # Subcomponent command of type BlockComponents.Sources.Constant
+  # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = command_overrides))
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=0.5, offset=Float64(1.0), start_time=0.5, __overrides = command_overrides))
   # Subcomponent pedal of type VehicleComponents.Chassis.Brakes.Pedal
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
   push!(__systems, @named pedal = VehicleComponents.Chassis.Brakes.Pedal(; __overrides = pedal_overrides))

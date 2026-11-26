@@ -16,21 +16,14 @@ caliper through a 4 m one. The wheel (r = 0.31 m, F_z = 13729.31 N) rolls at
 The pushrod force is 3.5 · 500 · 0.6 = 1050 N. Run-out, 1050 + 3544.7225 = 4594.7225 N, is below
 the boosted branch 500 + 5 · 1010 = 5550 N, so the booster passes 4594.7225 N and the master
 cylinder holds p_mc = (4594.7225 - 218)/4.908738521e-4 = 8916185.86 Pa (the `ForceChain` rig has
-each step). Once the calipers have filled, no fluid flows and both sit at p_mc:
-
-- front caliper: p - p0 = 8866185.86 = 1e12 u + 4.8e23 u³, bisection on [0, 1e-4] gives
-  u = 2.381656e-6 m³, so V = 2.881656e-6 m³;
-- rear caliper: 8866185.86 = 2.5e12 u + 7.5e24 u³ gives u = 0.952663e-6 m³, so
-  V = 1.252663e-6 m³.
+each step). Once the calipers have filled, no fluid flows and both sit at p_mc; the slower fill,
+the rear's through 4 m of line, takes well under 0.1 s at this pressure (the `MasterCylinder` rig
+has the fill and the displaced volume).
 
 Both apply 68.9e-5 (8916185.86 - 0.5e5) = 6108.80 N m, above the tire's ceiling
 r mu_A F_z = 4256.09 N m, so the wheel locks and the tire slides: the mass decelerates at
--0.7 · 13729.31/1400 = -6.864655 m/s². It decelerates at most at mu_A g from 0.5 s, so at 2.5 s it
-still moves at 25 - 2 · 9.81 = 5.4 m/s or more.
-
-The cylinder and the calipers both count fluid as volume at p_amb, so the cylinder gave up exactly
-the calipers' fluid, 2.881656e-6 + 1.252663e-6 = 4.134319e-6 m³, and
-x_rod = 2.5e-3 + 4.134319e-6/4.908738521e-4 = 0.01092237 m.
+-0.7 · 13729.31/1400 = -6.864655 m/s². It decelerates at most at mu_A g from 0.5 s, so at 1.5 s it
+still moves at 25 - 9.81 = 15.2 m/s or more, far above the tire's slip regularization speed.
 """
 @component function HydraulicStop(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

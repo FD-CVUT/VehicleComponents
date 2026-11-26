@@ -27,14 +27,12 @@ x_rod = s_dead + V_disp/A_mc. The flange forces follow the stdlib's sign, the fo
 along s: the booster pushes the pushrod toward +s, which builds pressure and moves x_rod
 positive.
 
-Pressures are gauge: the ports carry absolute pressure, `p_amb` + p_mc, as `Caliper` reads it.
+Pressures are gauge: the ports carry `p_amb` + p_mc (`VehicleComponents.DOT4` has the convention).
 
 Assumptions: the pistons have no mass and the seal friction always opposes the apply, so the
 release follows the same law; both circuits share one pressure, as a tandem cylinder's floating
-piston gives. The cylinder starts with nothing displaced. `p_amb` defaults to 100325 Pa, the
-reference pressure of `VehicleComponents.DOT4`, at which the fluid has its tabulated density; it
-sits 1 kPa below the standard atmosphere, 0.01 % of a 10 MPa apply. Defaults: a 25 mm bore, `F_cs0` and `F_cf` from
-PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
+piston gives. The cylinder starts with nothing displaced. Defaults: a 25 mm bore, `F_cs0` and
+`F_cf` from PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
 
 ## Parameters:
 

@@ -23,21 +23,20 @@ ultimate pressure `p_min`:
     mdot_pump = Q/(R T) max(p_h - p_min, 0) y
     V_h/(R T) dp_h/dt = vacuum.mdot - mdot_pump
 
-with the latch state y relaxing to its target over `T_latch`. All pressures are absolute.
+with the latch state y relaxing to its target over `T_latch`. The air side follows `Gas.Port`'s
+conventions: absolute pressures, the atmosphere at 101325 Pa, ideal air.
 
-Assumptions: the hose air is an ideal gas at the fixed temperature `T`; the latch's transition
-time stands in for the switch and the motor spin-up. The hose starts at ambient and the pump
-running, as a pump switched on with the booster at ambient would; give another start at the
-declaration, `ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`. Ambient is the standard
-atmosphere, 101325 Pa, the air the pump draws against, not the brake fluid's reference pressure
-`p_amb` of the hydraulic parts.
+Assumptions: the hose air is at the fixed temperature `T`; the latch's transition time stands in
+for the switch and the motor spin-up. The hose starts at the atmosphere and the pump running, as a
+pump switched on with the booster at the atmosphere would; give another start at the declaration,
+`ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`.
 
 `Q` and `p_min` are derived from Hella's UP28, which evacuates 3.2 L to 500 mbar in 5.5 to 6 s and
-reaches at least 86 % vacuum: p_min = 0.14 · 101325 = 14.2 kPa, rounded to 14 kPa. A volume V
-pumped from the atmosphere follows V dp/dt = -Q (p - p_min), so it reaches p_1 = 50 kPa after
-t = (V/Q) ln((101325 - 14000)/(50000 - 14000)) = 0.8861 V/Q. The middle of the datum, t = 5.75 s,
-gives Q = 0.8861 · 3.2e-3/5.75 = 0.493e-3 m³/s, rounded to 0.49e-3 m³/s (5.79 s). The switch points
-are the aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch` are assumed.
+reaches at least 86 % vacuum: p_min = 0.14 · 101325 = 14.2 kPa, rounded to 14 kPa. A volume V pumped
+from the atmosphere follows V dp/dt = -Q (p - p_min), so it reaches p_1 = 50 kPa after t = (V/Q)
+ln((101325 - 14000)/(50000 - 14000)) = 0.8861 V/Q. The middle of the datum, t = 5.75 s, gives Q =
+0.8861 · 3.2e-3/5.75 = 0.493e-3 m³/s, rounded to 0.49e-3 m³/s (5.79 s). The switch points are the
+aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch` are assumed.
 
 ## Parameters:
 
@@ -60,8 +59,17 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter. ([`GasPort`](@ref))
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere. ([`Port`](@ref))
  * `p_sense` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `running` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
@@ -172,7 +180,7 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named vacuum = VehicleComponents.Interfaces.GasPort())
+  push!(__systems, @named vacuum = VehicleComponents.Gas.Port())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

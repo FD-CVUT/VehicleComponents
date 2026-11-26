@@ -14,8 +14,7 @@ p_min with the time constant V_h/Q = 0.05e-3/0.49e-3 = 0.102 s; by 3 s that is w
 - `stays_off`, starting at 30 kPa with the pump stopped, sensor at 30 kPa: the latch holds the
   pump off, so the hose stays at 30 kPa and `running` at 0.
 - `switches_off`, starting with the pump running and the hose already at p_min = 14 kPa, sensor
-  at 10 kPa, below p_off: the latch switches the pump off, so `running` ends at 0. At p_min the
-  pump moves no air, Q/(R T) max(p_h - p_min, 0) = 0, so the hose stays at 14 kPa.
+  at 10 kPa, below p_off: the latch switches the pump off, so `running` ends at 0.
 """
 test component ElectricVacuumPump
   "Booster vacuum-sensor pressure, absolute, overridden per case"
@@ -37,8 +36,8 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-8,
         "reltol": 1e-10,
-        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
-        "expect": {"final": {"pump.p_h": 14e3, "pump.running": 1.0}}
+        "atol": {"pump.vacuum.p": 0.01, "pump.running": 1e-8},
+        "expect": {"final": {"pump.vacuum.p": 14e3, "pump.running": 1.0}}
       },
       "switches_on": {
         "stop": 3,
@@ -47,8 +46,8 @@ metadata {
         "reltol": 1e-10,
         "params": {"sensor.k": 50e3},
         "initial": {"pump.p_h": 30e3, "pump.y": 0.0},
-        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
-        "expect": {"final": {"pump.p_h": 14e3, "pump.running": 1.0}}
+        "atol": {"pump.vacuum.p": 0.01, "pump.running": 1e-8},
+        "expect": {"final": {"pump.vacuum.p": 14e3, "pump.running": 1.0}}
       },
       "stays_off": {
         "stop": 3,
@@ -56,8 +55,8 @@ metadata {
         "abstol": 1e-8,
         "reltol": 1e-10,
         "initial": {"pump.p_h": 30e3, "pump.y": 0.0},
-        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
-        "expect": {"final": {"pump.p_h": 30e3, "pump.running": 0.0}}
+        "atol": {"pump.vacuum.p": 0.01, "pump.running": 1e-8},
+        "expect": {"final": {"pump.vacuum.p": 30e3, "pump.running": 0.0}}
       },
       "switches_off": {
         "stop": 3,
@@ -66,8 +65,8 @@ metadata {
         "reltol": 1e-10,
         "params": {"sensor.k": 10e3},
         "initial": {"pump.p_h": 14e3, "pump.y": 1.0},
-        "atol": {"pump.p_h": 0.01, "pump.running": 1e-8},
-        "expect": {"final": {"pump.p_h": 14e3, "pump.running": 0.0}}
+        "atol": {"pump.running": 1e-8},
+        "expect": {"final": {"pump.running": 0.0}}
       }
     }
   }

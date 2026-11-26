@@ -126,9 +126,9 @@ out, p_f = (1.26e-7 · 33000 + 1.4e-10 · 101325)/(1.26e-7 + 1.4e-10) = 33075.83
   # Subcomponent vacuum_pressure of type BlockComponents.Sources.Constant
   vacuum_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "vacuum_pressure")
   push!(__systems, @named vacuum_pressure = BlockComponents.Sources.Constant(; k=Float64(33000.0), __overrides = vacuum_pressure_overrides))
-  # Subcomponent source of type VehicleComponents.Interfaces.GasPressureSource
+  # Subcomponent source of type VehicleComponents.Gas.PressureSource
   source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
-  push!(__systems, @named source = VehicleComponents.Interfaces.GasPressureSource(; __overrides = source_overrides))
+  push!(__systems, @named source = VehicleComponents.Gas.PressureSource(; __overrides = source_overrides))
   # Subcomponent line_f of type VehicleComponents.Chassis.Brakes.Line
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
   push!(__systems, @named line_f = VehicleComponents.Chassis.Brakes.Line(; continuity__graph0=medium, __overrides = line_f_overrides))

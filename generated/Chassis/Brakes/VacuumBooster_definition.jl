@@ -5,15 +5,15 @@
 
 
 @doc Markdown.doc"""
-   VacuumBooster(; name, SR, F_cut, F_jump, A_d, F_rs0, K_rs, V_f0, V_r0, F_app, F_rel, F_w, C_aa, C_av, C_vm, C_leak, n, T, R, p_atm, __overrides)
+   VacuumBooster(; name, SR, F_cut, F_jump, A_d, F_rs0, p_atm, K_rs, V_f0, V_r0, F_app, F_rel, F_w, C_aa, C_av, C_vm, C_leak, n, T, R, __overrides)
 
 Dynamic vacuum booster: two air chambers on either side of the diaphragm, a static poppet valve,
-and a check valve to the vacuum source, behind the same mechanical ports as `StaticBooster`.
+and a check valve to the vacuum source.
 
-Ports: `input` the input rod from the pedal; `rod_out` the output rod to the master cylinder;
-`support` the housing, which takes the assist force; `vacuum` the hose from the check valve to the
-vacuum source, the intake manifold or a vacuum pump; `p_vac` the front-chamber pressure, what a
-booster vacuum sensor reads.
+The rods, the housing, the flange signs and the shared parameters are
+`Chassis.Brakes.PartialBooster`'s, as for `StaticBooster`. Ports of its own: `vacuum` the hose
+from the check valve to the vacuum source, the intake manifold or a vacuum pump; `p_vac` the
+front-chamber pressure, what a booster vacuum sensor reads.
 
 The front (vacuum) chamber p_f drains through the check valve into the `vacuum` hose. The valve
 compares the input force F_in with the reaction-disc force F_r: above the apply threshold it lets
@@ -28,26 +28,21 @@ travel x_p, the output rod's travel relative to the housing since the start of t
     dp_f/dt = n/V_f (R T (mdot_av - mdot_out + mdot_leak) + p_f A_d dx_p/dt)
     mdot_out = C_vm max(0, p_f - vacuum.p),  vacuum.mdot = -mdot_out
 
-The valve openings ramp linearly over `F_w` beyond each threshold. All pressures are absolute.
+The valve openings ramp linearly over `F_w` beyond each threshold. The air side follows
+`Gas.Port`'s conventions: absolute pressures, the atmosphere `p_atm`, ideal air.
 
-Assumptions: the chamber air is an ideal gas at the fixed temperature `T`, isothermal at the
-default `n` = 1; the rods are one rigid piece; the valves have no dynamics of their own. The run
-starts with the rods at rest, where the chambers hold `V_f0` and `V_r0`, whatever the master
-cylinder's dead stroke puts that position at. Both
-chambers start at 33 kPa, a booster at idle manifold vacuum; give another start at the
-declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial 101325.0)`.
-
-`p_atm` is the standard atmosphere, 101325 Pa, which the rear chamber fills from and the front one
-leaks from; it is the air the assist works against, so it is not the brake fluid's reference
-pressure `p_amb` (100325 Pa) of the hydraulic parts, where 1 kPa is 0.01 % of an apply but here
-1.5 % of the 68 kPa difference that drives the diaphragm.
+Assumptions: the chamber air is an ideal gas at the fixed temperature `T`, isothermal at the default
+`n` = 1; the valves have no dynamics of their own. The run starts with the rods at rest, where the
+chambers hold `V_f0` and `V_r0`. Both chambers start at 33 kPa, a booster at idle manifold vacuum;
+give another start at the declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial
+101325.0)`.
 
 PATH (UCB-ITS-PRR-97-21, Table 2.1) tabulates the flow coefficients in m s, which read as
 kg/(s Pa) give a rear-chamber time constant near 0.2 ms, a thousand times faster than PATH's own
 traces. Read per kPa they give 0.1 to 0.2 s, which matches, so the defaults are PATH's numbers
-divided by 1000 Pa/kPa. `A_d`, `F_rs0`, `K_rs`, `V_f0`, `V_r0` are PATH's; `T` MathWorks'; `F_app`
-and `F_rel` are assumed at 10 N where PATH gives 50 N, which would put the apply branch 250 N
-under `StaticBooster`'s; `SR`, `F_cut`, `F_jump` and `F_w` are assumed.
+divided by 1000 Pa/kPa. `K_rs`, `V_f0`, `V_r0` are PATH's; `T` MathWorks'; `F_app` and `F_rel`
+are assumed at 10 N where PATH gives 50 N, which would put the apply branch 250 N under
+`StaticBooster`'s; `F_w` is assumed.
 
 ## Parameters:
 
@@ -58,6 +53,7 @@ under `StaticBooster`'s; `SR`, `F_cut`, `F_jump` and `F_w` are assumed.
 | `F_jump`         | Output force at cut-in, the jump-in                         | N  |   500.0 |
 | `A_d`         | Effective diaphragm area                         | m2  |   0.0533 |
 | `F_rs0`         | Return-spring preload                         | N  |   97.0 |
+| `p_atm`         | Atmospheric absolute pressure                         | Pa  |   101325.0 |
 | `K_rs`         | Return-spring rate [N/m]                         | --  |   2411.0 |
 | `V_f0`         | Front-chamber volume at rest                         | m3  |   2.4e-3 |
 | `V_r0`         | Rear-chamber volume at rest                         | m3  |   0.43e-3 |
@@ -71,7 +67,6 @@ under `StaticBooster`'s; `SR`, `F_cut`, `F_jump` and `F_w` are assumed.
 | `n`         | Polytropic exponent of the chamber air, 1 for isothermal                         | --  |   1.0 |
 | `T`         | Chamber air temperature                         | K  |   298.15 |
 | `R`         | Gas constant of air [J/(kg K)]                         | --  |   287.05 |
-| `p_atm`         | Atmospheric absolute pressure                         | Pa  |   101325.0 |
 
 ## Connectors
 
@@ -84,21 +79,30 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose.
 
-`p` is absolute, as on a `HydraulicComponents` port; a component that works in gauge pressure
-holds its ambient reference as a parameter. ([`GasPort`](@ref))
+The air side's conventions, which every part with a `Gas.Port` follows:
+- `p` is absolute.
+- Ambient is the standard atmosphere, 101325 Pa; a pressure meant as gauge has it added.
+- Air is an ideal gas with the gas constant R = 287.05 J/(kg K), at a fixed temperature the part
+  states.
+
+The brake fluid's reference pressure, 100325 Pa (`VehicleComponents.DOT4`), is a different number
+for a different job: it is where the fluid has its tabulated density, and 1 kPa there is 0.01 % of
+a 10 MPa apply. The air side's ambient is what a booster's assist and a pump's work are measured
+against, where 1 kPa is 1.5 % of a booster's 68 kPa working difference, so it is the real
+atmosphere. ([`Port`](@ref))
  * `p_vac` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
+| `F_in`         | Input-force magnitude                         | N  |
+| `F_out`         | Output-force magnitude                         | N  |
 | `p_f`         | Front (vacuum) chamber absolute pressure                         | Pa  |
 | `p_r`         | Rear (working) chamber absolute pressure                         | Pa  |
 | `x_p`         | Piston travel since the start of the run                         | m  |
 | `V_f`         | Front-chamber volume                         | m3  |
 | `V_r`         | Rear-chamber volume                         | m3  |
-| `F_in`         | Input-force magnitude                         | N  |
-| `F_out`         | Output-force magnitude                         | N  |
 | `F_r`         | Reaction-disc force on the input plunger                         | N  |
 | `e`         | Valve force error                         | N  |
 | `u_atm`         | Atmospheric-valve opening, 0 to 1                         | --  |
@@ -107,9 +111,8 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
 | `mdot_av`         | Air flow from the rear chamber into the front chamber                         | kg/s  |
 | `mdot_leak`         | Air leaking from atmosphere into the front chamber                         | kg/s  |
 | `mdot_out`         | Air flow out of the front chamber through the check valve                         | kg/s  |
-| `F_assist_max`         | Assist available with the rear chamber at atmosphere, at the present front pressure                         | N  |
 """
-@component function VacuumBooster(; name = nothing, var"SR"=Float64(5.0), var"F_cut"=Float64(40.0), var"F_jump"=Float64(500.0), var"A_d"=0.0533, var"F_rs0"=Float64(97.0), var"K_rs"=Float64(2411.0), var"V_f0"=0.0024, var"V_r0"=0.00043, var"F_app"=Float64(10.0), var"F_rel"=Float64(10.0), var"F_w"=Float64(20.0), var"C_aa"=5.8e-8, var"C_av"=2.2e-7, var"C_vm"=1.26e-7, var"C_leak"=1.4e-10, var"n"=Float64(1.0), var"T"=298.15, var"R"=287.05, var"p_atm"=Float64(101325.0), __overrides = Dict{String, Any}())
+@component function VacuumBooster(; name = nothing, var"SR"=Float64(5.0), var"F_cut"=Float64(40.0), var"F_jump"=Float64(500.0), var"A_d"=0.0533, var"F_rs0"=Float64(97.0), var"p_atm"=Float64(101325.0), var"K_rs"=Float64(2411.0), var"V_f0"=0.0024, var"V_r0"=0.00043, var"F_app"=Float64(10.0), var"F_rel"=Float64(10.0), var"F_w"=Float64(20.0), var"C_aa"=5.8e-8, var"C_av"=2.2e-7, var"C_vm"=1.26e-7, var"C_leak"=1.4e-10, var"n"=Float64(1.0), var"T"=298.15, var"R"=287.05, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -133,6 +136,7 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   haskey(__overrides, "F_jump") && (F_jump = pop!(__overrides, "F_jump"))
   haskey(__overrides, "A_d") && (A_d = pop!(__overrides, "A_d"))
   haskey(__overrides, "F_rs0") && (F_rs0 = pop!(__overrides, "F_rs0"))
+  haskey(__overrides, "p_atm") && (p_atm = pop!(__overrides, "p_atm"))
   haskey(__overrides, "K_rs") && (K_rs = pop!(__overrides, "K_rs"))
   haskey(__overrides, "V_f0") && (V_f0 = pop!(__overrides, "V_f0"))
   haskey(__overrides, "V_r0") && (V_r0 = pop!(__overrides, "V_r0"))
@@ -146,7 +150,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   haskey(__overrides, "n") && (n = pop!(__overrides, "n"))
   haskey(__overrides, "T") && (T = pop!(__overrides, "T"))
   haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
-  haskey(__overrides, "p_atm") && (p_atm = pop!(__overrides, "p_atm"))
 
   ### Structural Parameters (functions)
 
@@ -176,6 +179,9 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __local__F_rs0 = F_rs0
   append!(__params, @parameters (F_rs0::Real), [description = "Return-spring preload"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, F_rs0, __local__F_rs0)
+  __local__p_atm = p_atm
+  append!(__params, @parameters (p_atm::Real), [description = "Atmospheric absolute pressure"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_atm, __local__p_atm)
   __local__K_rs = K_rs
   append!(__params, @parameters (K_rs::Real), [description = "Return-spring rate [N/m]"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, K_rs, __local__K_rs)
@@ -215,9 +221,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Gas constant of air [J/(kg K)]"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
-  __local__p_atm = p_atm
-  append!(__params, @parameters (p_atm::Real), [description = "Atmospheric absolute pressure"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, p_atm, __local__p_atm)
 
   ### Final Parameters (assignments)
 
@@ -225,13 +228,13 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   append!(__vars, @variables (p_vac(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (F_in(t)::Real), [description = "Input-force magnitude"])
+  append!(__vars, @variables (F_out(t)::Real), [description = "Output-force magnitude"])
   append!(__vars, @variables (p_f(t)::Real), [description = "Front (vacuum) chamber absolute pressure"])
   append!(__vars, @variables (p_r(t)::Real), [description = "Rear (working) chamber absolute pressure"])
   append!(__vars, @variables (x_p(t)::Real), [description = "Piston travel since the start of the run"])
   append!(__vars, @variables (V_f(t)::Real), [description = "Front-chamber volume"])
   append!(__vars, @variables (V_r(t)::Real), [description = "Rear-chamber volume"])
-  append!(__vars, @variables (F_in(t)::Real), [description = "Input-force magnitude"])
-  append!(__vars, @variables (F_out(t)::Real), [description = "Output-force magnitude"])
   append!(__vars, @variables (F_r(t)::Real), [description = "Reaction-disc force on the input plunger"])
   append!(__vars, @variables (e(t)::Real), [description = "Valve force error"])
   append!(__vars, @variables (u_atm(t)::Real), [description = "Atmospheric-valve opening, 0 to 1"])
@@ -240,9 +243,14 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   append!(__vars, @variables (mdot_av(t)::Real), [description = "Air flow from the rear chamber into the front chamber"])
   append!(__vars, @variables (mdot_leak(t)::Real), [description = "Air leaking from atmosphere into the front chamber"])
   append!(__vars, @variables (mdot_out(t)::Real), [description = "Air flow out of the front chamber through the check valve"])
-  append!(__vars, @variables (F_assist_max(t)::Real), [description = "Assist available with the rear chamber at atmosphere, at the present front pressure"])
 
   ### Variables (assignments)
+  __ovr_F_in = pop!(__overrides, "F_in", nothing); isnothing(__ovr_F_in) || push!(__eqs, F_in ~ __ovr_F_in)
+  __ovr_F_in__initial = pop!(__overrides, "F_in.initial", nothing); isnothing(__ovr_F_in__initial) || (__initial_conditions[F_in] = __ovr_F_in__initial)
+  __ovr_F_in__guess = pop!(__overrides, "F_in.guess", nothing)
+  __ovr_F_out = pop!(__overrides, "F_out", nothing); isnothing(__ovr_F_out) || push!(__eqs, F_out ~ __ovr_F_out)
+  __ovr_F_out__initial = pop!(__overrides, "F_out.initial", nothing); isnothing(__ovr_F_out__initial) || (__initial_conditions[F_out] = __ovr_F_out__initial)
+  __ovr_F_out__guess = pop!(__overrides, "F_out.guess", nothing)
   __ovr_p_f = pop!(__overrides, "p_f", nothing); isnothing(__ovr_p_f) || push!(__eqs, p_f ~ __ovr_p_f)
   __ovr_p_f__initial = pop!(__overrides, "p_f.initial", nothing); __ic_p_f = @something(__ovr_p_f__initial, 33000.0)
   ismissing(__ic_p_f) || (__initial_conditions[p_f] = __ic_p_f)
@@ -261,12 +269,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __ovr_V_r = pop!(__overrides, "V_r", nothing); isnothing(__ovr_V_r) || push!(__eqs, V_r ~ __ovr_V_r)
   __ovr_V_r__initial = pop!(__overrides, "V_r.initial", nothing); isnothing(__ovr_V_r__initial) || (__initial_conditions[V_r] = __ovr_V_r__initial)
   __ovr_V_r__guess = pop!(__overrides, "V_r.guess", nothing)
-  __ovr_F_in = pop!(__overrides, "F_in", nothing); isnothing(__ovr_F_in) || push!(__eqs, F_in ~ __ovr_F_in)
-  __ovr_F_in__initial = pop!(__overrides, "F_in.initial", nothing); isnothing(__ovr_F_in__initial) || (__initial_conditions[F_in] = __ovr_F_in__initial)
-  __ovr_F_in__guess = pop!(__overrides, "F_in.guess", nothing)
-  __ovr_F_out = pop!(__overrides, "F_out", nothing); isnothing(__ovr_F_out) || push!(__eqs, F_out ~ __ovr_F_out)
-  __ovr_F_out__initial = pop!(__overrides, "F_out.initial", nothing); isnothing(__ovr_F_out__initial) || (__initial_conditions[F_out] = __ovr_F_out__initial)
-  __ovr_F_out__guess = pop!(__overrides, "F_out.guess", nothing)
   __ovr_F_r = pop!(__overrides, "F_r", nothing); isnothing(__ovr_F_r) || push!(__eqs, F_r ~ __ovr_F_r)
   __ovr_F_r__initial = pop!(__overrides, "F_r.initial", nothing); isnothing(__ovr_F_r__initial) || (__initial_conditions[F_r] = __ovr_F_r__initial)
   __ovr_F_r__guess = pop!(__overrides, "F_r.guess", nothing)
@@ -291,9 +293,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   __ovr_mdot_out = pop!(__overrides, "mdot_out", nothing); isnothing(__ovr_mdot_out) || push!(__eqs, mdot_out ~ __ovr_mdot_out)
   __ovr_mdot_out__initial = pop!(__overrides, "mdot_out.initial", nothing); isnothing(__ovr_mdot_out__initial) || (__initial_conditions[mdot_out] = __ovr_mdot_out__initial)
   __ovr_mdot_out__guess = pop!(__overrides, "mdot_out.guess", nothing)
-  __ovr_F_assist_max = pop!(__overrides, "F_assist_max", nothing); isnothing(__ovr_F_assist_max) || push!(__eqs, F_assist_max ~ __ovr_F_assist_max)
-  __ovr_F_assist_max__initial = pop!(__overrides, "F_assist_max.initial", nothing); isnothing(__ovr_F_assist_max__initial) || (__initial_conditions[F_assist_max] = __ovr_F_assist_max__initial)
-  __ovr_F_assist_max__guess = pop!(__overrides, "F_assist_max.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -302,19 +301,19 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   push!(__systems, @named input = __Dyad__Flange())
   push!(__systems, @named rod_out = __Dyad__Flange())
   push!(__systems, @named support = __Dyad__Flange())
-  push!(__systems, @named vacuum = VehicleComponents.Interfaces.GasPort())
+  push!(__systems, @named vacuum = VehicleComponents.Gas.Port())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
+  isnothing(__ovr_F_in__guess) || (__guesses[F_in] = __ovr_F_in__guess)
+  isnothing(__ovr_F_out__guess) || (__guesses[F_out] = __ovr_F_out__guess)
   isnothing(__ovr_p_f__guess) || (__guesses[p_f] = __ovr_p_f__guess)
   isnothing(__ovr_p_r__guess) || (__guesses[p_r] = __ovr_p_r__guess)
   isnothing(__ovr_x_p__guess) || (__guesses[x_p] = __ovr_x_p__guess)
   isnothing(__ovr_V_f__guess) || (__guesses[V_f] = __ovr_V_f__guess)
   isnothing(__ovr_V_r__guess) || (__guesses[V_r] = __ovr_V_r__guess)
-  isnothing(__ovr_F_in__guess) || (__guesses[F_in] = __ovr_F_in__guess)
-  isnothing(__ovr_F_out__guess) || (__guesses[F_out] = __ovr_F_out__guess)
   isnothing(__ovr_F_r__guess) || (__guesses[F_r] = __ovr_F_r__guess)
   isnothing(__ovr_e__guess) || (__guesses[e] = __ovr_e__guess)
   isnothing(__ovr_u_atm__guess) || (__guesses[u_atm] = __ovr_u_atm__guess)
@@ -323,7 +322,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   isnothing(__ovr_mdot_av__guess) || (__guesses[mdot_av] = __ovr_mdot_av__guess)
   isnothing(__ovr_mdot_leak__guess) || (__guesses[mdot_leak] = __ovr_mdot_leak__guess)
   isnothing(__ovr_mdot_out__guess) || (__guesses[mdot_out] = __ovr_mdot_out__guess)
-  isnothing(__ovr_F_assist_max__guess) || (__guesses[F_assist_max] = __ovr_F_assist_max__guess)
 
   ### Initialization Equations
 
@@ -351,7 +349,6 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
   push!(__eqs, ModelingToolkit.D_nounits(p_r) ~ n / V_r * (R * T * (mdot_aa - mdot_av) - p_r * A_d * ModelingToolkit.D_nounits(x_p)))
   push!(__eqs, ModelingToolkit.D_nounits(p_f) ~ n / V_f * (R * T * (mdot_av - mdot_out + mdot_leak) + p_f * A_d * ModelingToolkit.D_nounits(x_p)))
   push!(__eqs, p_vac ~ p_f)
-  push!(__eqs, F_assist_max ~ A_d * (p_atm - p_f) - F_rs0)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

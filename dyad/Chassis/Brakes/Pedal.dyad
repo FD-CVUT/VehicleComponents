@@ -31,11 +31,8 @@ component Pedal
   variable F_rod::Force
   "Pedal travel relative to the pivot"
   variable x_ped::Length
-  "Pushrod travel relative to the pivot"
-  variable x_rod::Length
 relations
-  x_rod = rod.s - support.s
-  x_ped = i_p * x_rod
+  x_ped = i_p * (rod.s - support.s)
   F_ped = min(max(u, 0.0), 1.0) * F_max
   F_rod = -rod.f
   F_rod = i_p * F_ped

@@ -12,25 +12,33 @@ manifold; `pump` the hose to the electric vacuum pump.
 Both source ports must be connected: an open port already carries no flow, and the selector's own
 zero-flow equation for the source not chosen then leaves its pressure undetermined, which the
 compiler resolves into a wrong circuit without an error. A car with only one source wires a
-`VehicleComponents.Interfaces.GasPressureSource` at ambient, 101325 Pa, to the other port, as
-an EV does on `manifold`.
+`VehicleComponents.Gas.PressureSource` at the atmosphere, 101325 Pa, to the other port, as an EV
+does on `manifold`.
 
-Assumptions: an ideal junction with no volume and no restriction; the choice holds for the whole
-run.
+The choice is made when the model is compiled, so the source not chosen drops out of the
+equations and the selector causes no events; a run cannot switch sources.
+
+Assumptions: an ideal junction with no volume and no restriction.
 """
 component VacuumSourceSelector
   "Hose from the booster's check valve"
-  booster = VehicleComponents.Interfaces.GasPort() {^booster}
+  booster = VehicleComponents.Gas.Port() {^booster}
   "Hose to the intake manifold"
-  manifold = VehicleComponents.Interfaces.GasPort() {^manifold}
+  manifold = VehicleComponents.Gas.Port() {^manifold}
   "Hose to the electric vacuum pump"
-  pump = VehicleComponents.Interfaces.GasPort() {^pump}
-  "Vacuum source: 0 the intake manifold, 1 the electric pump"
-  parameter use_pump::Real = 0.0
+  pump = VehicleComponents.Gas.Port() {^pump}
+  "Take the vacuum from the electric pump rather than the intake manifold"
+  structural parameter use_pump::Boolean = false
 relations
-  booster.p = ifelse(use_pump > 0.5, pump.p, manifold.p)
-  manifold.mdot = ifelse(use_pump > 0.5, 0.0, -booster.mdot)
-  pump.mdot = ifelse(use_pump > 0.5, -booster.mdot, 0.0)
+  if use_pump
+    booster.p = pump.p
+    pump.mdot = -booster.mdot
+    manifold.mdot = 0.0
+  else
+    booster.p = manifold.p
+    manifold.mdot = -booster.mdot
+    pump.mdot = 0.0
+  end
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/VacuumSourceSelector.svg"}},
   "_links": {
