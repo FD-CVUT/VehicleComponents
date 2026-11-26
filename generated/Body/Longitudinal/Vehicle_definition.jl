@@ -138,7 +138,7 @@ serves a planar car whose mass lives in its multibody body.
   push!(__eqs, connect(ground.flange, drag.support, gradeforce.support, rolling.support))
   push!(__eqs, connect(grade, gradeforce.grade, rolling.inclination))
   push!(__eqs, connect(f_r, rolling.cr))
-  push!(__eqs, connect(flange, mass.flange_b))
+  push!(__eqs, connect(flange, mass.flange_a))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
