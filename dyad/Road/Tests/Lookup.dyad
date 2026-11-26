@@ -1,0 +1,55 @@
+"""
+`Road.Grip` and `Road.Slope` callables read from the packaged road files, evaluated along the
+road's center line (y = 0) at a position that ramps from x = 420 m at t = 0 to x = 475 m at
+t = 1 s.
+
+`assets/data/roads/generate.jl` writes `ice_patch_mu.crg` with grip
+1 - 0.7 smooth((x - 455)/4) smooth((495 - x)/4) on nodes every 0.5 m from x = 420 m, where
+smooth clamps its argument to [0, 1]. Both ends are nodes, which the spline interpolates: at
+x = 420 m the first factor is 0 and the grip is 1; at x = 475 m both factors are 1 and the grip
+is 1 - 0.7 = 0.3.
+
+It writes `ramp_z.crg` rising at 2 % along x from x = 0 to 500 m, then easing onto a plateau
+over 500 to 540 m, level across. Neither 420 nor 475 m is a node, but the nodes are 40 m apart
+from 0, so the spline's breaks, midway between nodes, include 500 and 540 m. The height is then
+linear, quadratic and constant between breaks and C1, so it lies in the spline's space and
+interpolation reproduces it exactly: on 0 to 500 m the fitted height is linear with derivative
+0.02. Along the heading 0 the slope is 0.02 at both ends; along the heading pi/2, across the
+level road, it is 0.
+"""
+test component Lookup
+  "Grip of the ice-patch road"
+  structural parameter grip::VehicleComponents.Road.Grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/ice_patch_mu.crg")
+  "Slope of the 2 % ramp road"
+  structural parameter slope::VehicleComponents.Road.Slope = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")
+  position = BlockComponents.Sources.Ramp(offset = 420.0, height = 55.0, duration = 1.0, start_time = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  "Grip at the position"
+  variable mu::Real
+  "Slope at the position, heading along x"
+  variable grade_along::Real
+  "Slope at the position, heading along y"
+  variable grade_across::Real
+relations
+  mu = grip(position.y, 0.0)
+  grade_along = slope(position.y, 0.0, 0.0)
+  grade_across = slope(position.y, 0.0, 1.5707963267948966)
+metadata {
+  "Dyad": {
+    "tests": {
+      "center_line": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"mu": 1e-9, "grade_along": 1e-9, "grade_across": 1e-9},
+        "expect": {
+          "initial": {"mu": 1.0, "grade_along": 0.02, "grade_across": 0.0},
+          "final": {"mu": 0.3, "grade_along": 0.02, "grade_across": 0.0}
+        }
+      }
+    }
+  }
+}
+end

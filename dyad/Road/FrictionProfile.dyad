@@ -1,0 +1,26 @@
+"""
+Road grip over time for a scenario that crosses a low-friction patch: nominal grip, the patch,
+then nominal grip again.
+
+Port: `y`, the dimensionless multiplier on the tire's friction coefficient, 1 on the nominal
+road. The output is 1 until `start_time`, `low` for `duration` after it, and 1 again from
+`start_time + duration` on. The patch edges are ideal steps in time, with no transition band.
+"""
+component FrictionProfile
+  "Grip multiplier on the tire's friction coefficient"
+  y = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  "Grip multiplier on the low-friction patch"
+  parameter low::Real = 0.2
+  "Time at which the patch begins"
+  parameter start_time::Time = 10.0
+  "Duration of the patch"
+  parameter duration::Time = 2.0
+  pulse = BlockComponents.Sources.Pulse(amplitude = low, offset = 1.0, start_time = start_time, duty_cycle = 1.0, period = duration) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+  }
+relations
+  connect(pulse.y, y) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Road/FrictionProfile.svg"}}
+}
+end

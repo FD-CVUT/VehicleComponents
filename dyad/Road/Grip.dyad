@@ -1,0 +1,8 @@
+"""
+Road grip as a function of world position: x and y in meters to a dimensionless multiplier on
+the tire's friction coefficient, 1 on a nominal dry road.
+
+`VehicleComponents.Road.grip(file)` builds one from an OpenCRG grip file; a component that
+needs grip takes it as a `structural parameter` of this type and calls it on its own position.
+"""
+type Grip = func(::Real, ::Real)::Real

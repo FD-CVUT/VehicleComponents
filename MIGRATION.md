@@ -20,6 +20,10 @@ not listed has not moved yet.
 | `CoastDownDriver` | `Driver.CoastDown` | |
 | `HardStopDriver` | `Driver.HardStop` | |
 | `Vehicle.DriveCycle` | `Driver.DriveCycle` | |
+| `RoadGrip` | `Road.Grip` | |
+| `RoadSlope` | `Road.Slope` | |
+| `Vehicle.GradeProfile` | `Road.GradeProfile` | |
+| `Vehicle.FrictionProfile` | `Road.FrictionProfile` | |
 | `Vehicle.ToKmPerHour` | `Blocks.ToKmPerHour` | |
 | `Vehicle.ToRPM` | `Blocks.ToRPM` | |
 | `Vehicle.ToPercent` | `Blocks.ToPercent` | |
@@ -39,3 +43,23 @@ not listed has not moved yet.
 | `dyad://VehicleSystemsComponents/data/drive_cycles/<file>` | `dyad://VehicleComponents/data/drive_cycles/<file>` |
 | `dyad://VehicleSystemsComponents/drivers/coast_down.csv` | `dyad://VehicleComponents/data/drivers/coast_down.csv` |
 | `dyad://VehicleSystemsComponents/drivers/hard_stop.csv` | `dyad://VehicleComponents/data/drivers/hard_stop.csv` |
+| `dyad://VehicleSystemsComponents/roads/<file>` | `dyad://VehicleComponents/data/roads/<file>` |
+
+## Julia functions
+
+The OpenCRG reader moved from the package root into the `Road` submodule.
+
+| Course | Library | Notes |
+|---|---|---|
+| `road_grip` | `Road.grip` | |
+| `road_height` | `Road.slope` | Named for what it returns: tan of the road angle along a heading, not a height. It returns a `Road.SurfaceSlope`, a callable that holds its fitted height `Surface` in `height`, not an anonymous function. |
+| `road_surface` | `Road.surface` | |
+| `RoadSurface` | `Road.Surface` | |
+| `road_lookup` | `Road.lookup` | |
+| `road_directional_slope` | `Road.directional_slope` | |
+| `road_extent` | `Road.extent` | Takes fitted roads (`Surface` or `SurfaceSlope`), no longer file names. |
+| `road_axes` | `Road.sample_axes` | Takes fitted roads, as `Road.extent` does. |
+| `road_mesh` | `Road.mesh` | Takes the fitted roads, not file names: `mesh(slope; grip = grip)` with what `Road.slope` and `Road.grip` return, so the drawing uses their default values, blend width and missing-value policy. |
+| `read_road` | not in the library | `Road.surface` reads and fits a file in one step. |
+| `road_dimension` | `Road.spline_dimension` | |
+| `road_path` | `Road.asset_path` | Resolves any `dyad://` URI through `DyadData`, not only this package's, and like `Driver.DriveCycle` finds the package through `Base.find_package`: a `dyad://VehicleComponents/...` path fails when `VehicleComponents` is only an indirect dependency of the active environment. |

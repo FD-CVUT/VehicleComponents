@@ -1,7 +1,8 @@
 # Test tiers over the Dyad test models the compiler turns into `generated/**/<Model>_test.jl`.
 #
 #   fast      every test model under a `Tests` submodule, in this process, each rig timed and
-#             failed past RIG_BUDGET_S (the default tier, and what `Pkg.test()` runs)
+#             failed past RIG_BUDGET_S, then every other `test/*.jl` file as plain Julia test
+#             sets (the default tier, and what `Pkg.test()` runs)
 #   examples  every test model under `Examples`, each in its own child process
 #   example   one rig file, relative to `generated/`; what the examples tier spawns
 #
@@ -15,6 +16,10 @@ using Test
 
 const GENERATED = normpath(@__DIR__, "..", "generated")
 const RIG_BUDGET_S = 30
+
+"Plain Julia test files for what a test model cannot express: `test/*.jl` but the harness's own."
+julia_tests() = sort!(filter(f -> endswith(f, ".jl") && f ∉ ("runtests.jl", "warm_up.jl"),
+    readdir(@__DIR__)))
 
 """
     rig_files() -> Vector{String}
@@ -106,6 +111,11 @@ function run_fast()
             end
         end
         test_no_seeded_snapshots(before)
+        for file in julia_tests()
+            @testset "$file" begin
+                Base.include(Module(Symbol(file)), joinpath(@__DIR__, file))
+            end
+        end
     end
 end
 

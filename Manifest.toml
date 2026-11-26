@@ -2,7 +2,7 @@
 
 julia_version = "1.13.2"
 manifest_format = "2.1"
-project_hash = "dbeb81655f64445f1a2347b4fd9ba61654a90b5f"
+project_hash = "dcc8a2d70d98f026a9bd7eae19af935b396b4ddb"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -1292,6 +1292,12 @@ deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 version = "0.3.30+0"
 
+[[deps.OpenCRG]]
+git-tree-sha1 = "a62d2c79c16ef94b1e2b7001a5647f550896a8bb"
+registries = "General"
+uuid = "40a2bf50-15af-408a-8ff9-1cb7955b13ad"
+version = "0.1.0"
+
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
@@ -2001,7 +2007,7 @@ version = "0.3.2"
     LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
 
 [[deps.VehicleComponents]]
-deps = ["BlockComponents", "DyadData", "DyadInterface", "JSON", "Markdown", "ModelingToolkit", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
+deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "JSON", "LinearAlgebra", "Markdown", "ModelingToolkit", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
 path = "."
 uuid = "8c616c4b-ea35-4d9d-a47e-f6124bcac953"
 version = "0.1.0"

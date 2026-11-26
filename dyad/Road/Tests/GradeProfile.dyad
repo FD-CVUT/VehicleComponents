@@ -1,0 +1,45 @@
+"""
+A 10 % climb that starts at t = 1 s, so the gradient is 0 at the start of every case.
+
+With the default infinite duration the climb lasts: at t = 2 s the gradient is 0.1. With a
+0.5 s duration the climb ends at t = 1.5 s, so the gradient is still 0.1 at t = 1.25 s and back
+to 0 at t = 2 s.
+"""
+test component GradeProfile
+  profile = VehicleComponents.Road.GradeProfile(gradient = 0.10, start_time = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+relations
+metadata {
+  "Dyad": {
+    "tests": {
+      "sustained": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"profile.y": 1e-9},
+        "expect": {"initial": {"profile.y": 0.0}, "final": {"profile.y": 0.1}}
+      },
+      "climbing": {
+        "stop": 1.25,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"profile.duration": 0.5},
+        "atol": {"profile.y": 1e-9},
+        "expect": {"initial": {"profile.y": 0.0}, "final": {"profile.y": 0.1}}
+      },
+      "leveled_out": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"profile.duration": 0.5},
+        "atol": {"profile.y": 1e-9},
+        "expect": {"initial": {"profile.y": 0.0}, "final": {"profile.y": 0.0}}
+      }
+    }
+  }
+}
+end
