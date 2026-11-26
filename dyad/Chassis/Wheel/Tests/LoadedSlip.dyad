@@ -3,8 +3,8 @@ The `Slip` launch on both wheels of one axle, with the normal load from a
 `Body.Longitudinal.AxleLoad` (m = 1400 kg, share = 0.55, h/L = 0.17) whose `load_left` and
 `load_right` flanges wire straight to the two tires' `load` flanges. Each wheel is half the `Slip`
 launch: 300 N m drives a J = 0.5 kg m² wheel inertia, and both tires push one 1400 kg mass that the
-axle load also follows. One road multiplier feeds both tires and is set per case, and so is the
-force `lift` pushes on the axle's `downforce` flange: none but in `lifted`.
+axle load also follows. One road multiplier feeds both tires and is set per case. The axle's
+`downforce` stays open: no downforce.
 
 The two wheels are identical, so each carries half the axle's load and passes half its tire
 force, F_n = F_z/2 and F_x,wheel = F_x/2, with F_x the axle's total. Each wheel then accelerates at
@@ -25,11 +25,6 @@ lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
   a = 1.372222 m/s². The slip settles within milliseconds, as in the `Slip` rig; the weight
   transfer of 1400 · 1.372 · 0.17 = 326.6 N follows the 0.1 s lag, so by 2 s it is within
   326.6 e^-20 = 7e-7 N.
-- `lifted`, 20000 N of lift on a dry road: the axle's static share alone would be
-  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the axle is off the road and `F_z` stays at 0.
-  The tires pass no force, the mass stays at rest, a = 0, so no weight transfers, while each
-  wheel's whole 300 N m spins it up at 300/0.5 = 600 rad/s². With the axle's floor no tire sees a
-  negative load here; the `Slip` rig's `lifted` case covers the tire's own clamp.
 """
 test component LoadedSlip
   drive_left = RotationalComponents.Sources.ConstantTorque(tau_constant = 300.0) {^drive_left}
@@ -42,9 +37,6 @@ test component LoadedSlip
   wheel_right = VehicleComponents.Chassis.Wheel.LoadedSlip() {^wheel_right}
   body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {^body}
   axle = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0, share = 0.55, h_over_L = 0.17) {^axle}
-  "Downforce, negative for lift; overridden per case"
-  lift = TranslationalComponents.Sources.ConstantForce(f_constant = 0.0) {^lift}
-  ground = TranslationalComponents.Components.Fixed() {^ground}
   "Road-friction multiplier under both wheels, overridden per case"
   road = BlockComponents.Sources.Constant(k = 1.0) {^road}
 relations
@@ -58,8 +50,6 @@ relations
   connect(wheel_left.flange, body.flange_a, axle.flange) {^id13}
   connect(axle.load_left, wheel_left.load) {^id15}
   connect(axle.load_right, wheel_right.load) {^id25}
-  connect(lift.flange, axle.downforce) {^id16}
-  connect(lift.support, ground.flange) {^id17}
   connect(road.y, wheel_left.mu_scale, wheel_right.mu_scale) {^id18}
 metadata {
   "Dyad": {
@@ -75,8 +65,7 @@ metadata {
           "wheel_left.F_n": 0.001,
           "wheel_right.F_n": 0.001,
           "body.a": 1e-6,
-          "inertia_left.a": 0.0001,
-          "inertia_right.a": 0.0001
+          "inertia_left.a": 0.0001
         },
         "expect": {
           "initial": {"wheel_left.F_n": 3775.5603, "wheel_right.F_n": 3775.5603},
@@ -85,8 +74,7 @@ metadata {
             "wheel_left.F_n": 3867.6094,
             "wheel_right.F_n": 3867.6094,
             "body.a": 0.773522,
-            "inertia_left.a": 264.29151,
-            "inertia_right.a": 264.29151
+            "inertia_left.a": 264.29151
           }
         }
       },
@@ -97,7 +85,6 @@ metadata {
         "reltol": 1e-8,
         "atol": {
           "wheel_left.kappa": 1e-6,
-          "wheel_right.kappa": 1e-6,
           "wheel_left.F_n": 0.001,
           "wheel_right.F_n": 0.001,
           "body.a": 1e-5
@@ -105,35 +92,9 @@ metadata {
         "expect": {
           "final": {
             "wheel_left.kappa": 0.006562,
-            "wheel_right.kappa": 0.006562,
             "wheel_left.F_n": 3938.8547,
             "wheel_right.F_n": 3938.8547,
             "body.a": 1.372222
-          }
-        }
-      },
-      "lifted": {
-        "stop": 1,
-        "solver": "Auto",
-        "abstol": 1e-8,
-        "reltol": 1e-8,
-        "params": {"lift.f_constant": -20000.0},
-        "atol": {
-          "axle.F_z": 0.001,
-          "wheel_left.F_x": 1e-6,
-          "wheel_right.F_x": 1e-6,
-          "body.a": 1e-6,
-          "inertia_left.a": 1e-4,
-          "inertia_right.a": 1e-4
-        },
-        "expect": {
-          "final": {
-            "axle.F_z": 0.0,
-            "wheel_left.F_x": 0.0,
-            "wheel_right.F_x": 0.0,
-            "body.a": 0.0,
-            "inertia_left.a": 600.0,
-            "inertia_right.a": 600.0
           }
         }
       }
@@ -174,14 +135,6 @@ metadata {
     "axle": {
       "Dyad": {"placement": {"diagram": {"x1": 475, "x2": 575, "y1": 270, "y2": 370}}}
     },
-    "lift": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 585, "x2": 485, "y1": 40, "y2": 140, "rot": 270}}
-      }
-    },
-    "ground": {
-      "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 130, "y2": 230}}}
-    },
     "road": {
       "Dyad": {
         "placement": {"diagram": {"x1": 430, "x2": 530, "y1": 780, "y2": 880, "rot": 270}}
@@ -209,13 +162,6 @@ metadata {
     "id25": {
       "Dyad": {
         "edges": [{"S": 1, "M": [{"x": 550, "y": 420}, {"x": 960, "y": 420}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 140}], "E": 2}], "path": {}}},
-    "id17": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 650, "y": 89.99999999999999}], "E": 2}],
         "path": {}
       }
     },

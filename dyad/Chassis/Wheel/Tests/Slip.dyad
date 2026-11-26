@@ -19,11 +19,10 @@ accelerates at 1921.097/1400 = 1.372212 m/s². The slip relaxes to that point at
 (r²/J + 1/m) F_z mu'(kappa)/max(v, v_eps) = 0.096814 · 6864.655 · 36.16/max(v, 0.5) =
 24000/max(v, 0.5) 1/s, at least 17000 1/s while v stays below 1.4 m/s, so by 1 s it is there.
 
-`lifted`, F_z = -3448.8795 N on a dry road, the load the `LoadedSlip` rig's axle would carry under
-20 kN of lift without its floor: the tire is off the road and passes no force, so the mass stays at
-rest and the whole 600 N m spins up the wheel at 600/1 = 600 rad/s². A tire that passed mu F_n
-with the negative load would instead slide at mu_S and pull the mass backward at
-0.7 · 3448.8795/1400 = 1.724440 m/s².
+`lifted`, a negative normal load F_z = -3000 N on a dry road: the tire is off the road and passes
+no force, so the mass stays at rest and the whole 600 N m spins up the wheel at 600/1 = 600 rad/s².
+A tire that passed mu F_n with the negative load would instead slide at mu_S and pull the mass
+backward at 0.7 · 3000/1400 = 1.5 m/s².
 """
 test component Slip
   drive = RotationalComponents.Sources.ConstantTorque(tau_constant = 600.0) {
@@ -91,7 +90,7 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-8,
         "reltol": 1e-8,
-        "params": {"wheel.F_z": -3448.8795},
+        "params": {"wheel.F_z": -3000.0},
         "atol": {"wheel.F_x": 1e-6, "body.a": 1e-6, "inertia.a": 0.0001},
         "expect": {"final": {"wheel.F_x": 0.0, "body.a": 0.0, "inertia.a": 600.0}}
       }

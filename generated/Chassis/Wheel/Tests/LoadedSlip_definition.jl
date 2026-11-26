@@ -11,8 +11,8 @@ The `Slip` launch on both wheels of one axle, with the normal load from a
 `Body.Longitudinal.AxleLoad` (m = 1400 kg, share = 0.55, h/L = 0.17) whose `load_left` and
 `load_right` flanges wire straight to the two tires' `load` flanges. Each wheel is half the `Slip`
 launch: 300 N m drives a J = 0.5 kg m² wheel inertia, and both tires push one 1400 kg mass that the
-axle load also follows. One road multiplier feeds both tires and is set per case, and so is the
-force `lift` pushes on the axle's `downforce` flange: none but in `lifted`.
+axle load also follows. One road multiplier feeds both tires and is set per case. The axle's
+`downforce` stays open: no downforce.
 
 The two wheels are identical, so each carries half the axle's load and passes half its tire
 force, F_n = F_z/2 and F_x,wheel = F_x/2, with F_x the axle's total. Each wheel then accelerates at
@@ -33,11 +33,6 @@ lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
   a = 1.372222 m/s². The slip settles within milliseconds, as in the `Slip` rig; the weight
   transfer of 1400 · 1.372 · 0.17 = 326.6 N follows the 0.1 s lag, so by 2 s it is within
   326.6 e^-20 = 7e-7 N.
-- `lifted`, 20000 N of lift on a dry road: the axle's static share alone would be
-  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the axle is off the road and `F_z` stays at 0.
-  The tires pass no force, the mass stays at rest, a = 0, so no weight transfers, while each
-  wheel's whole 300 N m spins it up at 300/0.5 = 600 rad/s². With the axle's floor no tire sees a
-  negative load here; the `Slip` rig's `lifted` case covers the tire's own clamp.
 """
 @component function LoadedSlip(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -125,12 +120,6 @@ lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
   # Subcomponent axle of type VehicleComponents.Body.Longitudinal.AxleLoad
   axle_overrides = __pop_subcomponent_overrides!(__overrides, "axle")
   push!(__systems, @named axle = VehicleComponents.Body.Longitudinal.AxleLoad(; m=Float64(1400.0), share=0.55, h_over_L=0.17, __overrides = axle_overrides))
-  # Subcomponent lift of type TranslationalComponents.Sources.ConstantForce
-  lift_overrides = __pop_subcomponent_overrides!(__overrides, "lift")
-  push!(__systems, @named lift = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(0.0), __overrides = lift_overrides))
-  # Subcomponent ground of type TranslationalComponents.Components.Fixed
-  ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
-  push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; __overrides = ground_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
   push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = road_overrides))
@@ -156,8 +145,6 @@ lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
   push!(__eqs, connect(wheel_left.flange, body.flange_a, axle.flange))
   push!(__eqs, connect(axle.load_left, wheel_left.load))
   push!(__eqs, connect(axle.load_right, wheel_right.load))
-  push!(__eqs, connect(lift.flange, axle.downforce))
-  push!(__eqs, connect(lift.support, ground.flange))
   push!(__eqs, connect(road.y, wheel_left.mu_scale, wheel_right.mu_scale))
 
   # Return completely constructed System

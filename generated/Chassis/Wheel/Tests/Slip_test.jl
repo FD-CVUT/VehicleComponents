@@ -56,7 +56,7 @@ __dyad_run_test_case!(
   abstol=1e-8,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("wheel.F_z" => -3448.8795),
+  params=Dict{String, Any}("wheel.F_z" => -3000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
