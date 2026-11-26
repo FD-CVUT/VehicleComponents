@@ -26,46 +26,21 @@ above 100 - 97.5 = 2.5 rad/s, well above w0, and the full torque acts.
 """
 test component Caliper
   "Absolute line pressure, overridden per case"
-  pressure = BlockComponents.Sources.Constant(k = 10100325.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
-  }
-  supply = HydraulicComponents.Sources.BoundaryPressure() {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
-  }
-  line = VehicleComponents.Chassis.Brakes.Line() {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
-  }
-  caliper = VehicleComponents.Chassis.Brakes.Caliper() {
-    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 200, "y2": 300}}}
-  }
-  disc = RotationalComponents.Components.Inertia(J = 100.0, phi = initial 0.0, w = initial 100.0) {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 200, "y2": 300, "rot": 180}}
-    }
-  }
-  housing = RotationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-  }
+  pressure = BlockComponents.Sources.Constant(k = 10100325.0) {^pressure}
+  supply = HydraulicComponents.Sources.BoundaryPressure() {^supply}
+  line = VehicleComponents.Chassis.Brakes.Line() {^line}
+  caliper = VehicleComponents.Chassis.Brakes.Caliper() {^caliper}
+  disc = RotationalComponents.Components.Inertia(J = 100.0, phi = initial 0.0, w = initial 100.0) {^disc}
+  housing = RotationalComponents.Components.Fixed() {^housing}
   "DOT 4 brake fluid"
   path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
 relations
-  connect(pressure.y, supply.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(supply.port, line.port_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(line.port_b, caliper.port) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 900, "y": 250}, {"x": 900, "y": 150}, {"x": 1000, "y": 150}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
+  connect(pressure.y, supply.p) {^id7}
+  connect(supply.port, line.port_a) {^id8}
+  connect(line.port_b, caliper.port) {^id9}
   continuity(medium, supply.port.medium)
-  connect(disc.spline_b, caliper.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(caliper.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(disc.spline_b, caliper.spline_a) {^id10}
+  connect(caliper.support, housing.spline) {^id11}
 metadata {
   "Dyad": {
     "tests": {
@@ -101,6 +76,39 @@ metadata {
         }
       }
     }
+  },
+  "_links": {
+    "pressure": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 560, "x2": 660, "y1": 0, "y2": 100, "rot": 90}}
+      }
+    },
+    "supply": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 560, "x2": 660, "y1": 150, "y2": 250, "rot": 90}}
+      }
+    },
+    "line": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 560, "x2": 660, "y1": 270, "y2": 370, "rot": 90}}
+      }
+    },
+    "caliper": {
+      "Dyad": {"placement": {"diagram": {"x1": 660, "x2": 560, "y1": 450, "y2": 550}}}
+    },
+    "disc": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 840, "x2": 940, "y1": 450, "y2": 550, "rot": 180}}
+      }
+    },
+    "housing": {
+      "Dyad": {"placement": {"diagram": {"x1": 560, "x2": 660, "y1": 710, "y2": 810}}}
+    },
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end
