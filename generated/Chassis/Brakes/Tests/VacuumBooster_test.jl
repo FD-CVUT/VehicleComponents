@@ -30,6 +30,26 @@ __dyad_run_test_case!(
 )
 __dyad_run_test_case!(
   VehicleComponents.Chassis.Brakes.Tests.VacuumBooster,
+  "servo for VehicleComponents.Chassis.Brakes.Tests.VacuumBooster";
+  case_name="servo",
+  component_stem="VacuumBooster",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=5e+0,
+  abstol=1e-10,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("pedal.F_max" => 300.0, "fall.start_time" => 100.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.booster.F_out, "booster.F_out", 1800, 50, 1e-7),
+    (m -> m.booster.e, "booster.e", 0, 10, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.VacuumBooster,
   "released for VehicleComponents.Chassis.Brakes.Tests.VacuumBooster";
   case_name="released",
   component_stem="VacuumBooster",

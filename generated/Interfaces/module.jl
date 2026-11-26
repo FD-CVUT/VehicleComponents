@@ -14,7 +14,6 @@ end
 include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
-include("Tests/module.jl")
 include("precompilation.jl")
 
 end # module Interfaces

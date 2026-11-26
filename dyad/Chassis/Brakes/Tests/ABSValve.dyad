@@ -1,7 +1,8 @@
 """
 One default `ABSValve` (T_v = 0.03 s) between a master-cylinder side held at 10 MPa gauge
 (10100325 Pa absolute, p_amb = 100325 Pa) and a default `Caliper` behind a default `Line`. The
-disc and the caliper housing are fixed. The allowed pressure p_cmd is constant, set per case.
+disc and the caliper housing are fixed. The allowed pressure p_cmd steps at 0.5 s; its level
+before and after the step is set per case, and is the same in the cases that do not cross.
 
 The caliper's pressure-volume law is the `Caliper` rig's: at 10 MPa it holds V = 2.99499e-6 m³.
 At 4 MPa, p - p0 = 3.95e6 = 1e12 u + 4.8e23 u³, and bisection on [0, 1e-4] gives
@@ -16,6 +17,18 @@ by 1 s.
 - `dump`, p_cmd = 4 MPa, the caliper starting full at 10 MPa (V = 2.99499e-6 m³, the valve
   holding 10 MPa): the valve dumps the caliper down to 4 MPa, V = 2.178818e-6 m³, with the
   master-cylinder side still at 10 MPa.
+- `close`, p_cmd = 20 MPa stepping down to 4 MPa at 0.5 s: the inlet is open first, so the
+  caliper fills to 10 MPa and the held pressure follows the master-cylinder side with
+  T_open = 1 ms, reaching 10 MPa to within e^-500. At the step the valve closes and the held
+  pressure relaxes from 10 MPa to the command with T_v, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03),
+  so at 0.53 s it is 4e6 + 6e6 e^-1 = 6207276.6 Pa. The caliper then dumps into the valve and,
+  with `return_dump` = 0, the dumped fluid leaves the model: the master-cylinder side passes no
+  fluid, port_a.m_flow = 0.
+- `close_return`, the same with `return_dump` = 1: all the dumped fluid re-enters at `port_a`, so
+  port_a.m_flow = -port_b.m_flow and m_dump = 0, and the held pressure is the same 6207276.6 Pa.
+- `reopen`, p_cmd = 4 MPa stepping up to 20 MPa at 0.5 s: the caliper first fills to 4 MPa; at
+  the step the inlet opens, the caliper refills to 10 MPa, V = 2.99499e-6 m³, by 1.5 s, and the
+  held pressure follows the master-cylinder side to 10 MPa.
 """
 test component ABSValve
   "Master-cylinder side, absolute"
@@ -26,7 +39,7 @@ test component ABSValve
     "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
   }
   "Allowed wheel-circuit pressure, gauge, overridden per case"
-  command = BlockComponents.Sources.Constant(k = 4.0e6) {
+  command = BlockComponents.Sources.Step(height = 0.0, offset = 4.0e6, start_time = 0.5) {
     "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 450, "y2": 550}}}
   }
   valve = VehicleComponents.Chassis.Brakes.ABSValve() {
@@ -77,7 +90,7 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-10,
         "reltol": 1e-8,
-        "params": {"command.k": 2.0e7},
+        "params": {"command.offset": 2.0e7},
         "atol": {"caliper.p": 1.0, "caliper.V": 1e-11},
         "expect": {"final": {"caliper.p": 1.0e7, "caliper.V": 2.99499e-6}}
       },
@@ -100,6 +113,33 @@ metadata {
         "initial": {"caliper.V": 2.99499e-6, "valve.p_hold": 1.0e7},
         "atol": {"caliper.p": 1.0, "caliper.V": 1e-11, "valve.p_a": 1.0},
         "expect": {"final": {"caliper.p": 4.0e6, "caliper.V": 2.178818e-6, "valve.p_a": 1.0e7}}
+      },
+      "close": {
+        "stop": 0.53,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"command.offset": 2.0e7, "command.height": -1.6e7},
+        "atol": {"valve.p_hold": 100.0, "valve.port_a.m_flow": 1e-12},
+        "expect": {"final": {"valve.p_hold": 6207276.6, "valve.port_a.m_flow": 0.0}}
+      },
+      "close_return": {
+        "stop": 0.53,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"command.offset": 2.0e7, "command.height": -1.6e7, "valve.return_dump": 1.0},
+        "atol": {"valve.p_hold": 100.0, "valve.m_dump": 1e-12},
+        "expect": {"final": {"valve.p_hold": 6207276.6, "valve.m_dump": 0.0}}
+      },
+      "reopen": {
+        "stop": 1.5,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"command.height": 1.6e7},
+        "atol": {"caliper.p": 1.0, "caliper.V": 1e-11, "valve.p_hold": 1.0},
+        "expect": {"final": {"caliper.p": 1.0e7, "caliper.V": 2.99499e-6, "valve.p_hold": 1.0e7}}
       }
     }
   }

@@ -1,17 +1,26 @@
 """
 A `VacuumSourceSelector` joining a default `VacuumBooster` at rest to a manifold held at 30 kPa
 and a pump held at 20 kPa, both absolute `Interfaces.GasPressureSource`s. The booster's output rod
-is held at its rest position, so its chamber volumes do not change; the chambers start at 33 kPa.
-`use_pump` is set per case.
+is held still, so its chamber volumes do not change; the chambers start at 33 kPa. `use_pump` is
+set per case. The rig also covers `Interfaces.GasPressureSource` and `Interfaces.GasPort`: the
+chosen source must hold its pressure and take, through the hose, exactly the air the booster
+gives up.
 
-At rest the booster's chambers settle where the leak in balances the check valve's flow out (see
-the `Interfaces.GasPressureSource` rig): p_f = (C_vm p_s + C_leak p_atm)/(C_vm + C_leak) with p_s
-the chosen source's pressure, and the chosen source takes C_vm (p_f - p_s). The other source sees
-no flow. Both chosen pressures lie below the chambers' 33 kPa start, so the check valve opens at
-once, and with a time constant near 0.26 s the chambers settle by 5 s.
+At rest the input force is 0, below the 40 N cut-in, so the booster's vacuum valve is fully open
+and joins the rear chamber to the front one; the atmospheric valve is shut. Air leaks into the
+front chamber, C_leak (p_atm - p_f), and leaves through the check valve, C_vm (p_f - p_s), with
+p_s the chosen source's pressure, so the chambers settle where the two balance:
 
-- `manifold`, use_pump = 0, p_s = 30000 Pa: p_f = 30079.162 Pa, and the manifold takes
-  1.26e-7 · 79.162 = 9.97442e-6 kg/s.
+    p_f = (C_vm p_s + C_leak p_atm)/(C_vm + C_leak)
+
+and the rear chamber, with no flow left between them, at the same pressure. The chosen source
+takes C_vm (p_f - p_s), the air the leak lets in; the other source sees no flow. Both chosen
+pressures lie below the chambers' 33 kPa start, so the check valve opens at once. The chambers
+drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 · 298.15 ·
+1.26e-7) = 0.26 s, so by 5 s they are within e^-19 of the balance.
+
+- `manifold`, use_pump = 0, p_s = 30000 Pa: p_f = (1.26e-7 · 30000 + 1.4e-10 · 101325)/(1.26e-7
+  + 1.4e-10) = 30079.162 Pa, and the manifold takes 1.26e-7 · 79.162 = 9.97442e-6 kg/s.
 - `pump`, use_pump = 1, p_s = 20000 Pa: p_f = (1.26e-7 · 20000 + 1.4e-10 · 101325)/(1.26e-7 +
   1.4e-10) = 20090.261 Pa, and the pump takes 1.26e-7 · 90.261 = 1.137286e-5 kg/s.
 """
@@ -37,8 +46,8 @@ test component VacuumSourceSelector
   booster = VehicleComponents.Chassis.Brakes.VacuumBooster() {
     "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 650, "y2": 750}}}
   }
-  "Output rod held at its rest position"
-  rod = TranslationalComponents.Components.Fixed(s0 = 2.5e-3) {
+  "Output rod held still"
+  rod = TranslationalComponents.Components.Fixed() {
     "Dyad": {
       "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 650, "y2": 750, "rot": 270}}
     }

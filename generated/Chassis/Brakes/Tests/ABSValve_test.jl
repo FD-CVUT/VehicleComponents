@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-10,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("command.k" => 20000000.0),
+  params=Dict{String, Any}("command.offset" => 20000000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -65,6 +65,67 @@ __dyad_run_test_case!(
     (m -> m.caliper.p, "caliper.p", 4000000, 1, 1e-7),
     (m -> m.caliper.V, "caliper.V", 0.000002178818, 1e-11, 1e-7),
     (m -> m.valve.p_a, "valve.p_a", 10000000, 1, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "close for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="close",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=5.3e-1,
+  abstol=1e-10,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.offset" => 20000000.0, "command.height" => -16000000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.valve.p_hold, "valve.p_hold", 6207276.6, 100, 1e-7),
+    (m -> m.valve.port_a.m_flow, "valve.port_a.m_flow", 0, 1e-12, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "close_return for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="close_return",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=5.3e-1,
+  abstol=1e-10,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.offset" => 20000000.0, "command.height" => -16000000.0, "valve.return_dump" => 1.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.valve.p_hold, "valve.p_hold", 6207276.6, 100, 1e-7),
+    (m -> m.valve.m_dump, "valve.m_dump", 0, 1e-12, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "reopen for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="reopen",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=1.5e+0,
+  abstol=1e-10,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.height" => 16000000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.caliper.p, "caliper.p", 10000000, 1, 1e-7),
+    (m -> m.caliper.V, "caliper.V", 0.00000299499, 1e-11, 1e-7),
+    (m -> m.valve.p_hold, "valve.p_hold", 10000000, 1, 1e-7),
   ],
   signals=Tuple[],
 )

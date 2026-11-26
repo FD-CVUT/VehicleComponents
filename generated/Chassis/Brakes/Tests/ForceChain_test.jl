@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Chassis.Brakes.Tests.ForceChain,
-  "cut_in for VehicleComponents.Chassis.Brakes.Tests.ForceChain";
-  case_name="cut_in",
+  "below_cut_in for VehicleComponents.Chassis.Brakes.Tests.ForceChain";
+  case_name="below_cut_in",
   component_stem="ForceChain",
   module_path=String["Chassis", "Brakes", "Tests"],
   start=0e+0,
@@ -65,6 +65,69 @@ __dyad_run_test_case!(
     (m -> m.master.p_mc, "master.p_mc", 10342214.15, 0.01, 1e-9),
     (m -> m.master.x_rod, "master.x_rod", 0.0025, 1e-12, 1e-9),
     (m -> m.pedal.x_ped, "pedal.x_ped", 0.00875, 1e-12, 1e-9),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ForceChain,
+  "cut_in for VehicleComponents.Chassis.Brakes.Tests.ForceChain";
+  case_name="cut_in",
+  component_stem="ForceChain",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-10,
+  reltol=1e-10,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.k" => 0.022857142857142857),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.pedal.F_rod, "pedal.F_rod", 40, 1e-9, 1e-9),
+    (m -> m.booster.F_out, "booster.F_out", 500, 1e-9, 1e-9),
+    (m -> m.master.p_mc, "master.p_mc", 574485.68, 0.01, 1e-9),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ForceChain,
+  "negative_command for VehicleComponents.Chassis.Brakes.Tests.ForceChain";
+  case_name="negative_command",
+  component_stem="ForceChain",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-10,
+  reltol=1e-10,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.k" => -0.5),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.pedal.F_ped, "pedal.F_ped", 0, 1e-9, 1e-9),
+    (m -> m.pedal.F_rod, "pedal.F_rod", 0, 1e-9, 1e-9),
+    (m -> m.master.p_mc, "master.p_mc", 0, 0.001, 1e-9),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ForceChain,
+  "over_command for VehicleComponents.Chassis.Brakes.Tests.ForceChain";
+  case_name="over_command",
+  component_stem="ForceChain",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-10,
+  reltol=1e-10,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.k" => 1.5),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.pedal.F_ped, "pedal.F_ped", 500, 1e-9, 1e-9),
+    (m -> m.pedal.F_rod, "pedal.F_rod", 1750, 0.000001, 1e-9),
+    (m -> m.booster.F_out, "booster.F_out", 5294.7225, 0.000001, 1e-9),
   ],
   signals=Tuple[],
 )

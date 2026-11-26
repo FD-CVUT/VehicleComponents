@@ -8,7 +8,7 @@
    ElectricVacuumPump(; name, Q, p_min, p_on, p_off, V_h, T_latch, T, R, __overrides)
 
 Electric vane vacuum pump with its suction hose, for a booster with no manifold vacuum: a diesel,
-an unthrottled petrol engine, a hybrid or an EV.
+an unthrottled gasoline engine, a hybrid or an EV.
 
 Ports: `vacuum` the hose from the booster's check valve; `p_sense` the booster's vacuum-sensor
 pressure, absolute, which switches the pump; `running` the pump's on/off state, 0 to 1.

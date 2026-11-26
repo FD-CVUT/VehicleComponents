@@ -9,7 +9,8 @@
 
 One default `ABSValve` (T_v = 0.03 s) between a master-cylinder side held at 10 MPa gauge
 (10100325 Pa absolute, p_amb = 100325 Pa) and a default `Caliper` behind a default `Line`. The
-disc and the caliper housing are fixed. The allowed pressure p_cmd is constant, set per case.
+disc and the caliper housing are fixed. The allowed pressure p_cmd steps at 0.5 s; its level
+before and after the step is set per case, and is the same in the cases that do not cross.
 
 The caliper's pressure-volume law is the `Caliper` rig's: at 10 MPa it holds V = 2.99499e-6 m³.
 At 4 MPa, p - p0 = 3.95e6 = 1e12 u + 4.8e23 u³, and bisection on [0, 1e-4] gives
@@ -24,6 +25,18 @@ by 1 s.
 - `dump`, p_cmd = 4 MPa, the caliper starting full at 10 MPa (V = 2.99499e-6 m³, the valve
   holding 10 MPa): the valve dumps the caliper down to 4 MPa, V = 2.178818e-6 m³, with the
   master-cylinder side still at 10 MPa.
+- `close`, p_cmd = 20 MPa stepping down to 4 MPa at 0.5 s: the inlet is open first, so the
+  caliper fills to 10 MPa and the held pressure follows the master-cylinder side with
+  T_open = 1 ms, reaching 10 MPa to within e^-500. At the step the valve closes and the held
+  pressure relaxes from 10 MPa to the command with T_v, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03),
+  so at 0.53 s it is 4e6 + 6e6 e^-1 = 6207276.6 Pa. The caliper then dumps into the valve and,
+  with `return_dump` = 0, the dumped fluid leaves the model: the master-cylinder side passes no
+  fluid, port_a.m_flow = 0.
+- `close_return`, the same with `return_dump` = 1: all the dumped fluid re-enters at `port_a`, so
+  port_a.m_flow = -port_b.m_flow and m_dump = 0, and the held pressure is the same 6207276.6 Pa.
+- `reopen`, p_cmd = 4 MPa stepping up to 20 MPa at 0.5 s: the caliper first fills to 4 MPa; at
+  the step the inlet opens, the caliper refills to 10 MPa, V = 2.99499e-6 m³, by 1.5 s, and the
+  held pressure follows the master-cylinder side to 10 MPa.
 """
 @component function ABSValve(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -79,9 +92,9 @@ by 1 s.
   # Subcomponent supply of type HydraulicComponents.Sources.BoundaryPressure
   supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
   push!(__systems, @named supply = HydraulicComponents.Sources.BoundaryPressure(; continuity__graph0=medium, __overrides = supply_overrides))
-  # Subcomponent command of type BlockComponents.Sources.Constant
+  # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=Float64(4000000.0), __overrides = command_overrides))
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=Float64(0.0), offset=Float64(4000000.0), start_time=0.5, __overrides = command_overrides))
   # Subcomponent valve of type VehicleComponents.Chassis.Brakes.ABSValve
   valve_overrides = __pop_subcomponent_overrides!(__overrides, "valve")
   push!(__systems, @named valve = VehicleComponents.Chassis.Brakes.ABSValve(; continuity__graph0=medium, __overrides = valve_overrides))

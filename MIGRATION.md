@@ -34,6 +34,7 @@ not listed has not moved yet.
 | `Vehicle.Brake.VacuumSourceSelector` | `Chassis.Brakes.VacuumSourceSelector` | |
 | `Vehicle.GasPort` | `Interfaces.GasPort` | |
 | `Vehicle.GasPressureSource` | `Interfaces.GasPressureSource` | |
+| `Vehicle.Brake.TestBrakeVacuum` | not yet in the library | The booster on the engine's air path needs `Powertrain.Engine`'s `AirPath`; FD-CVUT/VehicleComponents#11. |
 | `Vehicle.BrakeSplit` | `Chassis.Brakes.Split` | The `input` mode and the `BrakeInput` enum are gone, and with them the conditional `brake` and `ratio` inputs: `u` is always a magnitude, max(u, 0) `gain`. For `SignedDriver` and `FixedEngine`, feed `u` through a `BlockComponents.Math.Gain(k = -1.0)`. For `FixedElectric`, feed `u` the product of brake and ratio from a `BlockComponents.Math.Product` and set `gain = 2.0`. |
 | `Driver` | `Driver.Interface` | |
 | `ClockedDriver` | not yet in the library | Needs `DiscreteComponents`; FD-CVUT/VehicleComponents#29. |

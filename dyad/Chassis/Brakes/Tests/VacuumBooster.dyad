@@ -9,7 +9,7 @@ rises from 0 to 1 over 0.5 to 1.5 s and falls back to 0 over 1 s from 2.5 s, the
 
 In every steady state the front chamber settles where the leak in balances the check valve's flow
 out, p_f = (1.26e-7 · 33000 + 1.4e-10 · 101325)/(1.26e-7 + 1.4e-10) = 33075.832 Pa (the
-`Interfaces.GasPressureSource` rig has the balance).
+`VacuumSourceSelector` rig has the balance).
 
 - `run_out`, 1200 N held: the fall is moved past the end of the run. With the atmospheric valve
   open the rear chamber fills to p_atm = 101325 Pa. The output force is then
@@ -23,6 +23,17 @@ out, p_f = (1.26e-7 · 33000 + 1.4e-10 · 101325)/(1.26e-7 + 1.4e-10) = 33075.83
   the calipers', so x_p may fall short by up to 4.17e-6 · 9.17e6/1.4e9/4.91e-4 = 5.6e-5 m, which
   moves F_out by 0.14 N and p_mc by 275 Pa. The chambers settle with time constants near 0.2 s,
   so by 5 s, 3.5 s after the ramp, they are within e^-15.
+- `servo`, 300 N held, in the boosted range: the valve closes once the reaction-disc force
+  balances the input, so it holds the output wherever the force error e = F_in - F_cut - F_r
+  comes to rest inside its dead band, -F_rel <= e <= F_app, with F_r = (F_out - F_jump)/SR. While
+  the force rises, the atmospheric valve opens only above e = F_app = 10 N, so the output reaches
+  F_jump + SR (F_in - F_cut - F_app) = 500 + 5 (300 - 40 - 10) = 1750 N. Once the force holds,
+  the front chamber, compressed by the piston's travel, drains back to the leak balance, which
+  raises the pressure difference across the diaphragm and with it F_out, until either the drain
+  ends or e reaches -F_rel and the vacuum valve opens, at 500 + 5 (300 - 40 + 10) = 1850 N. So
+  F_out ends in [1750, 1850] N and e in [-10, 10] N; a wrong SR, F_jump, F_cut, F_app or sign of
+  F_r moves the band. Where in it F_out stops depends on how fast the force rose, so the case
+  checks the band and nothing finer.
 - `released`, 1200 N applied and let go: by 3.5 s the force is back to 0, below cut-in, so the
   vacuum valve joins the chambers and both drain to p_f = 33075.832 Pa. With no pushrod force
   F_out = 0, the master cylinder's pressure is 0 and the calipers empty back to V = 0, the
@@ -232,6 +243,15 @@ metadata {
             "caliper_r.V": 1.263699e-6
           }
         }
+      },
+      "servo": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"pedal.F_max": 300.0, "fall.start_time": 100.0},
+        "atol": {"booster.F_out": 50.0, "booster.e": 10.0},
+        "expect": {"final": {"booster.F_out": 1800.0, "booster.e": 0.0}}
       },
       "released": {
         "stop": 8,

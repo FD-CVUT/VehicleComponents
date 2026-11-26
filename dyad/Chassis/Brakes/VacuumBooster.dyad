@@ -12,7 +12,7 @@ compares the input force F_in with the reaction-disc force F_r: above the apply 
 atmosphere into the rear chamber p_r, below the release threshold it joins the rear chamber to the
 front one, and in between it holds. Below cut-in the plunger spring holds the plunger on its stop,
 which keeps the rear chamber joined to the front one. Both chambers' volumes trade with the piston
-travel x_p, the output rod's travel beyond its rest position `s_rest`.
+travel x_p, the output rod's travel relative to the housing since the start of the run.
 
     F_out = max(0, F_in + A_d (p_r - p_f) - F_rs0 - K_rs x_p)
     e     = F_in - F_cut - max(0, F_out - F_jump)/SR
@@ -23,7 +23,9 @@ travel x_p, the output rod's travel beyond its rest position `s_rest`.
 The valve openings ramp linearly over `F_w` beyond each threshold. All pressures are absolute.
 
 Assumptions: the chamber air is an ideal gas at the fixed temperature `T`, isothermal at the
-default `n` = 1; the rods are one rigid piece; the valves have no dynamics of their own. Both
+default `n` = 1; the rods are one rigid piece; the valves have no dynamics of their own. The run
+starts with the rods at rest, where the chambers hold `V_f0` and `V_r0`, whatever the master
+cylinder's dead stroke puts that position at. Both
 chambers start at 33 kPa, a booster at idle manifold vacuum; give another start at the
 declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial 101325.0)`.
 
@@ -32,7 +34,7 @@ kg/(s Pa) give a rear-chamber time constant near 0.2 ms, a thousand times faster
 traces. Read per kPa they give 0.1 to 0.2 s, which matches, so the defaults are PATH's numbers
 divided by 1000 Pa/kPa. `A_d`, `F_rs0`, `K_rs`, `V_f0`, `V_r0` are PATH's; `T` MathWorks'; `F_app`
 and `F_rel` are assumed at 10 N where PATH gives 50 N, which would put the apply branch 250 N
-under `StaticBooster`'s; `SR`, `F_cut`, `F_jump`, `F_w` and `s_rest` are assumed.
+under `StaticBooster`'s; `SR`, `F_cut`, `F_jump` and `F_w` are assumed.
 """
 component VacuumBooster
   "Input rod from the pedal"
@@ -77,8 +79,6 @@ component VacuumBooster
   parameter C_leak::Real = 1.4e-10
   "Polytropic exponent of the chamber air, 1 for isothermal"
   parameter n::Real = 1.0
-  "Output-rod position at rest, the master cylinder's dead stroke"
-  parameter s_rest::Length = 2.5e-3
   "Chamber air temperature"
   parameter T::Temperature = 298.15
   "Gas constant of air [J/(kg K)]"
@@ -89,8 +89,8 @@ component VacuumBooster
   variable p_f::Pressure = initial 33e3
   "Rear (working) chamber absolute pressure"
   variable p_r::Pressure = initial 33e3
-  "Piston travel from rest"
-  variable x_p::Length
+  "Piston travel since the start of the run"
+  variable x_p::Length = initial 0.0
   "Front-chamber volume"
   variable V_f::Volume
   "Rear-chamber volume"
@@ -122,7 +122,7 @@ relations
   F_in = -input.f
   F_out = rod_out.f
   input.f + rod_out.f + support.f = 0.0
-  x_p = rod_out.s - support.s - s_rest
+  der(x_p) = der(rod_out.s) - der(support.s)
   V_f = V_f0 - A_d * x_p
   V_r = V_r0 + A_d * x_p
   F_out = max(0.0, F_in + A_d * (p_r - p_f) - F_rs0 - K_rs * x_p)

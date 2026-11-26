@@ -17,6 +17,12 @@ manifold; `pump` the hose to the electric vacuum pump.
     manifold.mdot = use_pump ? 0 : -booster.mdot
     pump.mdot     = use_pump ? -booster.mdot : 0
 
+Both source ports must be connected: an open port already carries no flow, and the selector's own
+zero-flow equation for the source not chosen then leaves its pressure undetermined, which the
+compiler resolves into a wrong circuit without an error. A car with only one source wires a
+`VehicleComponents.Interfaces.GasPressureSource` at ambient, 101325 Pa, to the other port, as
+an EV does on `manifold`.
+
 Assumptions: an ideal junction with no volume and no restriction; the choice holds for the whole
 run.
 

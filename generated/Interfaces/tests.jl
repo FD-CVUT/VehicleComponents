@@ -18,4 +18,3 @@ end
 @testset "`VehicleComponents.Interfaces`" begin
 include("GasPressureSource_test.jl")
 end
-include("Tests/tests.jl")

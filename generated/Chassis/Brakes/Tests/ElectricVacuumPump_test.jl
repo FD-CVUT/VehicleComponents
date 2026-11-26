@@ -70,3 +70,26 @@ __dyad_run_test_case!(
   ],
   signals=Tuple[],
 )
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ElectricVacuumPump,
+  "switches_off for VehicleComponents.Chassis.Brakes.Tests.ElectricVacuumPump";
+  case_name="switches_off",
+  component_stem="ElectricVacuumPump",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=3e+0,
+  abstol=1e-8,
+  reltol=1e-10,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("sensor.k" => 10000.0),
+  initial_conditions=Tuple[
+    (m -> m.pump.p_h, 14000.0),
+    (m -> m.pump.y, 1.0),
+  ],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.pump.p_h, "pump.p_h", 14000, 0.01, 1e-9),
+    (m -> m.pump.running, "pump.running", 0, 1e-8, 1e-9),
+  ],
+  signals=Tuple[],
+)
