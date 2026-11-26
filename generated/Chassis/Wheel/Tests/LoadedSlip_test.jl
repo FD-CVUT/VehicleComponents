@@ -17,12 +17,16 @@ __dyad_run_test_case!(
   solver=ODEAlg.Auto(),
   params=Dict{String, Any}("road.k" => 0.2),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[(m -> m.wheel.F_n, "wheel.F_n", 7551.1205, 0.001, 1e-7)],
+  expected_initial=Tuple[
+    (m -> m.wheel_left.F_n, "wheel_left.F_n", 3775.5603, 0.001, 1e-7),
+    (m -> m.wheel_right.F_n, "wheel_right.F_n", 3775.5603, 0.001, 1e-7),
+  ],
   expected_final=Tuple[
     (m -> m.axle.F_z, "axle.F_z", 7735.2187, 0.001, 1e-7),
-    (m -> m.wheel.F_n, "wheel.F_n", 7735.2187, 0.001, 1e-7),
+    (m -> m.wheel_left.F_n, "wheel_left.F_n", 3867.6094, 0.001, 1e-7),
+    (m -> m.wheel_right.F_n, "wheel_right.F_n", 3867.6094, 0.001, 1e-7),
     (m -> m.body.a, "body.a", 0.773522, 0.000001, 1e-7),
-    (m -> m.inertia.a, "inertia.a", 264.29151, 0.0001, 1e-7),
+    (m -> m.inertia_left.a, "inertia_left.a", 264.29151, 0.0001, 1e-7),
   ],
   signals=Tuple[],
 )
@@ -41,31 +45,10 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.wheel.kappa, "wheel.kappa", 0.006562, 0.000001, 1e-7),
-    (m -> m.wheel.F_n, "wheel.F_n", 7877.709, 0.001, 1e-7),
+    (m -> m.wheel_left.kappa, "wheel_left.kappa", 0.006562, 0.000001, 1e-7),
+    (m -> m.wheel_left.F_n, "wheel_left.F_n", 3938.8547, 0.001, 1e-7),
+    (m -> m.wheel_right.F_n, "wheel_right.F_n", 3938.8547, 0.001, 1e-7),
     (m -> m.body.a, "body.a", 1.372222, 0.00001, 1e-7),
-  ],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Chassis.Wheel.Tests.LoadedSlip,
-  "lifted for VehicleComponents.Chassis.Wheel.Tests.LoadedSlip";
-  case_name="lifted",
-  component_stem="LoadedSlip",
-  module_path=String["Chassis", "Wheel", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-8,
-  reltol=1e-8,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("lift.f_constant" => -20000.0),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.axle.F_z, "axle.F_z", -3448.8795, 0.001, 1e-7),
-    (m -> m.wheel.F_x, "wheel.F_x", 0, 0.000001, 1e-7),
-    (m -> m.body.a, "body.a", 0, 0.000001, 1e-7),
-    (m -> m.inertia.a, "inertia.a", 600, 0.0001, 1e-7),
   ],
   signals=Tuple[],
 )

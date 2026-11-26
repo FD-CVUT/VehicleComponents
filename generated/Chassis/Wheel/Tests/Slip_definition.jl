@@ -8,7 +8,8 @@
    Slip(; name, __overrides)
 
 A launch from rest: 600 N m drives a J = 1 kg m² wheel inertia, whose default `Slip` tire
-(r = 0.31 m, F_z = 6864.655 N) pushes a 1400 kg mass. The road multiplier is set per case.
+(r = 0.31 m, F_z = 6864.655 N) pushes a 1400 kg mass. The road multiplier is set per case, and
+`lifted` also sets the tire's load.
 
 `wheelspin`, mu_scale = 0.2: the tire can pass at most r mu_A mu_scale F_z = 0.31 · 0.2 ·
 6864.655 = 425.6 N m, less than the 600 N m applied, so the wheel spins up past sSlide and the
@@ -25,6 +26,11 @@ two from kappa = 0 settles at kappa = 0.0075525, F_x = 1921.097 N (mu = 0.279853
 accelerates at 1921.097/1400 = 1.372212 m/s². The slip relaxes to that point at a rate of
 (r²/J + 1/m) F_z mu'(kappa)/max(v, v_eps) = 0.096814 · 6864.655 · 36.16/max(v, 0.5) =
 24000/max(v, 0.5) 1/s, at least 17000 1/s while v stays below 1.4 m/s, so by 1 s it is there.
+
+`lifted`, a negative normal load F_z = -3000 N on a dry road: the tire is off the road and passes
+no force, so the mass stays at rest and the whole 600 N m spins up the wheel at 600/1 = 600 rad/s².
+A tire that passed mu F_n with the negative load would instead slide at mu_S and pull the mass
+backward at 0.7 · 3000/1400 = 1.5 m/s².
 """
 @component function Slip(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

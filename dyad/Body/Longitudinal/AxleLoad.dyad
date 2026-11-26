@@ -1,5 +1,6 @@
 """
-Normal load on the driven axle during straight-line acceleration.
+Normal load on the driven axle during straight-line acceleration, split evenly between its left
+and right wheels.
 
 The driven axle carries `share` of the weight and of the downforce at rest. Acceleration `a`
 moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with `h_over_L = 0`: weight
@@ -9,20 +10,27 @@ transfer only moves load between driven wheels. A front-wheel-drive car needs a 
 Ports, with the sign convention of the planar wheels' `load` flange (positive force presses the
 tire onto the road):
 - `flange` attaches to the vehicle body to measure its motion and takes no force.
-- `load` pushes the normal load `F_z` onto the driven wheels, which hold it at zero travel. It
-  must be connected, to a wheel's load flange or to a `Fixed`.
-- `downforce` takes a force pushing the car onto the road and moves with `load`. It may stay
+- `load_left` and `load_right` each push half of the normal load, `F_z/2`, onto one wheel of the
+  axle. The axle sets the forces and the wheels hold the flanges at zero travel, so each must be
+  connected to a wheel's load flange or to a `Fixed`. Wire each to its own wheel, or both to one
+  wheel that stands for the whole axle.
+- `downforce` takes a force pushing the car onto the road and moves with the wheels. It may stay
   open: an open `downforce` means zero downforce.
 
 Assumptions: the transfer follows the acceleration through a first-order lag of `T_pitch`, the
 time the suspension takes to pitch the body. The lag also keeps the solver from solving the load
-equation for the acceleration, which would divide by `h_over_L`. Default values are assumed.
+equation for the acceleration, which would divide by `h_over_L`. The axle cannot pull on the road:
+once lift or weight transfer takes more than the static load, `F_z` stays at zero and the wheels
+are off the road. Both wheels carry the same load, with no lateral transfer. Default values are
+assumed.
 """
 component AxleLoad
   "Connection to the vehicle body, used to measure its acceleration"
   flange = Flange() {^flange}
-  "Normal load pushed onto the driven wheels"
-  load = Flange() {^load}
+  "Half the normal load, pushed onto the left wheel"
+  load_left = Flange() {^load_left}
+  "Half the normal load, pushed onto the right wheel"
+  load_right = Flange() {^load_right}
   "Downforce pushing the car onto the road"
   downforce = Flange() {^downforce}
   "Vehicle mass"
@@ -35,7 +43,7 @@ component AxleLoad
   parameter T_pitch::Time = 0.1
   "Gravitational acceleration, standard gravity"
   parameter g::Acceleration = 9.80665
-  "Normal load on the driven axle"
+  "Normal load on the driven axle, both wheels together; never negative"
   variable F_z::Force
   "Vehicle speed"
   variable v::Velocity
@@ -48,9 +56,10 @@ relations
   a = der(v)
   flange.f = 0
   T_pitch * der(a_pitch) = a - a_pitch
-  F_z = share * (m * g + downforce.f) + m * a_pitch * h_over_L
-  load.f = -F_z
-  downforce.s = load.s
+  F_z = max(share * (m * g + downforce.f) + m * a_pitch * h_over_L, 0.0)
+  load_left.f = -F_z / 2
+  load_right.f = -F_z / 2
+  downforce.s = (load_left.s + load_right.s) / 2
 metadata {
   "Dyad": {
     "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/AxleLoad.svg"}
@@ -58,7 +67,8 @@ metadata {
   "_links": {
     "downforce": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}}}},
     "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
-    "load": {"Dyad": {"placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050}}}}
+    "load_left": {"Dyad": {"placement": {"icon": {"x1": 200, "x2": 300, "y1": 950, "y2": 1050}}}},
+    "load_right": {"Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": 950, "y2": 1050}}}}
   }
 }
 end

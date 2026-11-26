@@ -45,3 +45,24 @@ __dyad_run_test_case!(
   ],
   signals=Tuple[],
 )
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Wheel.Tests.Slip,
+  "lifted for VehicleComponents.Chassis.Wheel.Tests.Slip";
+  case_name="lifted",
+  component_stem="Slip",
+  module_path=String["Chassis", "Wheel", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-8,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("wheel.F_z" => -3000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.wheel.F_x, "wheel.F_x", 0, 0.000001, 1e-7),
+    (m -> m.body.a, "body.a", 0, 0.000001, 1e-7),
+    (m -> m.inertia.a, "inertia.a", 600, 0.0001, 1e-7),
+  ],
+  signals=Tuple[],
+)
