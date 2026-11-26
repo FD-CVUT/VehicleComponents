@@ -14,19 +14,14 @@ component Vehicle
   extends VehicleComponents.Body.Longitudinal.RoadLoad
   mass = TranslationalComponents.Components.Mass(m = m, s = initial 0.0, v = initial 0.0) {^mass}
 relations
-  connect(flange, mass.flange_a) {^id2}
+  connect(flange, mass.flange_b) {^id2}
 metadata {
   "Dyad": {
     "icons": {"default": "dyad://VehicleComponents/Body/Longitudinal/Vehicle.svg"}
   },
   "_links": {
-    "mass": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 250, "y2": 350}}}},
-    "id2": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 900, "y": 500}, {"x": 900, "y": 380}, {"x": 700, "y": 380}, {"x": 700, "y": 300}], "E": 2}],
-        "path": {}
-      }
-    }
+    "mass": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 100, "y2": 200}}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 500}, {"x": 950, "y": 150}], "E": 2}]}}
   }
 }
 end

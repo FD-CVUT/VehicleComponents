@@ -21,6 +21,9 @@ __dyad_run_test_case!(
     (m -> m.accelerometer.a, "accelerometer.a", 2, 0.001, 1e-5),
     (m -> m.speedometer.v, "speedometer.v", 0, 0.001, 1e-5),
   ],
-  expected_final=Tuple[(m -> m.speedometer.v, "speedometer.v", 6.6229077, 0.001, 1e-5)],
+  expected_final=Tuple[
+    (m -> m.accelerometer.a, "accelerometer.a", -4.1287, 0.001, 1e-5),
+    (m -> m.speedometer.v, "speedometer.v", 6.6231, 0.001, 1e-5),
+  ],
   signals=Tuple[(m -> m.speedometer.v, "speedometer.v", 0.001, 1e-5)],
 )

@@ -6,6 +6,22 @@ It has no ports.
 At rest the start acceleration is F_drive / m = 3000/1500 = 2 m/s², since drag is zero and rolling
 resistance is regularized to zero at standstill.
 
+The end values follow by hand. Rolling resistance is F_r = 0.012 m g = 0.012 * 1500 * 9.80665 =
+176.5197 N and drag is c v² with c = 1/2 rho CdA = 0.5 * 1.2 * 0.63 = 0.378 kg/m. Each phase solves
+m dv/dt = F - c v² in closed form, with t counted from the phase's start and v0 its start speed:
+
+- 0 to 9 s, full throttle, F = 3000 - F_r = 2823.4803 N: v = V tanh(c V t / m) with
+  V = sqrt(F / c) = 86.4264 m/s, so v(9) = 86.4264 tanh(0.196015) = 16.7272 m/s.
+- 9 to 19 s, coasting, F = -F_r: v = W tan(atan(v0 / W) - c W t / m) with W = sqrt(F_r / c) =
+  21.6098 m/s, so v(19) = 21.6098 tan(0.658720 - 0.054457) = 14.9197 m/s.
+- 19 to 21 s, full brake, F = -(6000 + F_r) = -6176.5197 N: the same form with
+  W = sqrt((6000 + F_r) / c) = 127.8280 m/s
+  gives v(21) = 127.8280 tan(0.116191 - 0.064425) = 6.6231 m/s.
+
+At 21 s the net force is -(6176.5197 + 0.378 * 6.6231²) = -6193.1008 N, so the acceleration is
+-6193.1008 / 1500 = -4.1287 m/s². The closed forms skip the rolling-resistance ramp of the first
+few milliseconds, which moves the end speed by about 1e-4 m/s, inside the 1e-3 tolerance.
+
 Assumptions: the platform's brake is an ideal force, so the run ends at 21 s, while the car still
 moves.
 """
@@ -14,8 +30,7 @@ test component HardStop
   speedometer = TranslationalComponents.Sensors.VelocitySensor() {^speedometer}
   accelerometer = TranslationalComponents.Sensors.AccelerationSensor() {^accelerometer}
 relations
-  connect(body.flange, speedometer.flange) {^w8}
-  connect(body.flange, accelerometer.flange) {^w9}
+  connect(body.flange, accelerometer.flange, speedometer.flange) {^w8}
 metadata {
   "Dyad": {
     "tests": {
@@ -27,17 +42,25 @@ metadata {
         "atol": {"accelerometer.a": 0.001, "speedometer.v": 0.001},
         "expect": {
           "initial": {"accelerometer.a": 2.0, "speedometer.v": 0},
-          "final": {"speedometer.v": 6.6229077},
+          "final": {"accelerometer.a": -4.1287, "speedometer.v": 6.6231},
           "signals": ["speedometer.v"]
         }
       }
     }
   },
   "_links": {
-    "speedometer": {"Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 280, "y2": 380}}}},
-    "accelerometer": {"Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 430, "y2": 530}}}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1170, "y": 330}, {"x": 1170, "y": 480}], "E": 2}]}}
+    "speedometer": {"Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 50, "y2": 150}}}},
+    "accelerometer": {"Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 180, "y2": 280}}}},
+    "w8": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 650, "y": 300}, {"x": 650, "y": 230}], "E": -1},
+          {"S": -1, "M": [], "E": 2},
+          {"S": -1, "M": [{"x": 800, "y": 100}], "E": 3}
+        ],
+        "junctions": [{"x": 800, "y": 230}]
+      }
+    }
   }
 }
 end

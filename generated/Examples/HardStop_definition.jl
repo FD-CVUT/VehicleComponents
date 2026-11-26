@@ -14,6 +14,22 @@ It has no ports.
 At rest the start acceleration is F_drive / m = 3000/1500 = 2 m/s², since drag is zero and rolling
 resistance is regularized to zero at standstill.
 
+The end values follow by hand. Rolling resistance is F_r = 0.012 m g = 0.012 * 1500 * 9.80665 =
+176.5197 N and drag is c v² with c = 1/2 rho CdA = 0.5 * 1.2 * 0.63 = 0.378 kg/m. Each phase solves
+m dv/dt = F - c v² in closed form, with t counted from the phase's start and v0 its start speed:
+
+- 0 to 9 s, full throttle, F = 3000 - F_r = 2823.4803 N: v = V tanh(c V t / m) with
+  V = sqrt(F / c) = 86.4264 m/s, so v(9) = 86.4264 tanh(0.196015) = 16.7272 m/s.
+- 9 to 19 s, coasting, F = -F_r: v = W tan(atan(v0 / W) - c W t / m) with W = sqrt(F_r / c) =
+  21.6098 m/s, so v(19) = 21.6098 tan(0.658720 - 0.054457) = 14.9197 m/s.
+- 19 to 21 s, full brake, F = -(6000 + F_r) = -6176.5197 N: the same form with
+  W = sqrt((6000 + F_r) / c) = 127.8280 m/s
+  gives v(21) = 127.8280 tan(0.116191 - 0.064425) = 6.6231 m/s.
+
+At 21 s the net force is -(6176.5197 + 0.378 * 6.6231²) = -6193.1008 N, so the acceleration is
+-6193.1008 / 1500 = -4.1287 m/s². The closed forms skip the rolling-resistance ramp of the first
+few milliseconds, which moves the end speed by about 1e-4 m/s, inside the 1e-3 tolerance.
+
 Assumptions: the platform's brake is an ideal force, so the run ends at 21 s, while the car still
 moves.
 
@@ -124,8 +140,7 @@ moves.
   push!(__eqs, connect(motor.flange_b, body.flange))
   push!(__eqs, connect(tire.y, body.f_r))
   push!(__eqs, connect(level.y, body.grade))
-  push!(__eqs, connect(body.flange, speedometer.flange))
-  push!(__eqs, connect(body.flange, accelerometer.flange))
+  push!(__eqs, connect(body.flange, accelerometer.flange, speedometer.flange))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
