@@ -10,7 +10,7 @@ rolling resistance and along-slope weight. From v0 it approaches v_inf = sqrt(F/
 the start acceleration is 500/1400 = 0.357143 m/s². F = 500 - 0.012 · 13729.31 =
 335.24828 N gives v_inf = sqrt(335.24828/0.378) = 29.78087 m/s and k v_inf/m = 0.00804083 1/s.
 At 100 s, k v_inf t/m = 0.804083 and v = 29.78087 · tanh(0.804083) = 19.84340 m/s; the
-standstill regularization (see `RoadLoad`) shifts it by under 3e-4 m/s, inside atol.
+standstill regularization (see `RoadLoad`) shifts it by about 3e-4 m/s, inside atol.
 `flat_settled` runs to 800 s, where k v_inf t/m = 6.43 and v is within 2e-4 m/s of v_inf.
 
 `climb` starts at 10 m/s on a 2 % grade. Rolling resistance is 0.012 · 13729.31 · cos(atan(0.02))
