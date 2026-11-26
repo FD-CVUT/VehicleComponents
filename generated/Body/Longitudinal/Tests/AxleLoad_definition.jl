@@ -7,9 +7,10 @@
 @doc Markdown.doc"""
    AxleLoad(; name, __overrides)
 
-One axle load on a 1400 kg mass that 2800 N of traction accelerates at 2800/1400 = 2 m/s², its
-`load` flange on a fixed road. `downforce` pushes the downforce flange with its `f_constant`:
-1000 N in `launch_with_downforce`, 0 N in the other cases.
+One axle load on a 1400 kg mass that 2800 N of traction accelerates at 2800/1400 = 2 m/s², both
+its load flanges on one fixed road, so the road takes the whole axle's load. `downforce` pushes the
+downforce flange with its `f_constant`: 1000 N in `launch_with_downforce`, -20000 N of lift in
+`lifted`, 0 N in the other cases.
 
 `a_pitch` starts at 0, so the axle starts at its static share, 0.55 m g = 0.55 · 1400 · 9.80665 =
 7551.1205 N. The transfer m a h/L = 1400 · 2 · 0.17 = 476 N follows a first-order lag of
@@ -21,6 +22,10 @@ T_pitch = 0.1 s, F_z(t) = 7551.1205 + 476 (1 - e^(-t/0.1)):
   transfer: 8101.1205 N at the start and 7852.0099 + 550 = 8402.0099 N at 0.1 s.
 - `settled` runs 2 s, 20 time constants, so the lag is complete to within 476 e^-20 = 1e-6 N: the
   axle ends at 8027.1205 N, all of it taken by the road.
+- `lifted` takes 0.55 · 20000 = 11000 N off the static share, leaving
+  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N. The transfer adds at most 476 N, so the unfloored
+  load stays below -2972.8795 N for the whole run: the axle cannot pull on the road, and `F_z`
+  and the road's force stay at 0 from start to end.
 """
 @component function AxleLoad(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -103,7 +108,8 @@ T_pitch = 0.1 s, F_z(t) = 7551.1205 + 476 (1 - e^(-t/0.1)):
   push!(__eqs, connect(traction.flange, mass.flange_a))
   push!(__eqs, connect(traction.flange, axle.flange))
   push!(__eqs, connect(traction.support, fixed.flange))
-  push!(__eqs, connect(axle.load, road.flange))
+  push!(__eqs, connect(axle.load_left, road.flange))
+  push!(__eqs, connect(axle.load_right, road.flange))
   push!(__eqs, connect(downforce.flange, axle.downforce))
   push!(__eqs, connect(downforce.support, fixed.flange))
 

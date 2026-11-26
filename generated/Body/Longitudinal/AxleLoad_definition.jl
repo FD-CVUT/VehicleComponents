@@ -7,7 +7,8 @@
 @doc Markdown.doc"""
    AxleLoad(; name, m, share, h_over_L, T_pitch, g, __overrides)
 
-Normal load on the driven axle during straight-line acceleration.
+Normal load on the driven axle during straight-line acceleration, split evenly between its left
+and right wheels.
 
 The driven axle carries `share` of the weight and of the downforce at rest. Acceleration `a`
 moves m a h/L onto the rear axle. All-wheel drive is `share = 1` with `h_over_L = 0`: weight
@@ -17,14 +18,19 @@ transfer only moves load between driven wheels. A front-wheel-drive car needs a 
 Ports, with the sign convention of the planar wheels' `load` flange (positive force presses the
 tire onto the road):
 - `flange` attaches to the vehicle body to measure its motion and takes no force.
-- `load` pushes the normal load `F_z` onto the driven wheels, which hold it at zero travel. It
-  must be connected, to a wheel's load flange or to a `Fixed`.
-- `downforce` takes a force pushing the car onto the road and moves with `load`. It may stay
+- `load_left` and `load_right` each push half of the normal load, `F_z/2`, onto one wheel of the
+  axle. The axle sets the forces and the wheels hold the flanges at zero travel, so each must be
+  connected to a wheel's load flange or to a `Fixed`. Wire each to its own wheel, or both to one
+  wheel that stands for the whole axle.
+- `downforce` takes a force pushing the car onto the road and moves with the wheels. It may stay
   open: an open `downforce` means zero downforce.
 
 Assumptions: the transfer follows the acceleration through a first-order lag of `T_pitch`, the
 time the suspension takes to pitch the body. The lag also keeps the solver from solving the load
-equation for the acceleration, which would divide by `h_over_L`. Default values are assumed.
+equation for the acceleration, which would divide by `h_over_L`. The axle cannot pull on the road:
+once lift or weight transfer takes more than the static load, `F_z` stays at zero and the wheels
+are off the road. Both wheels carry the same load, with no lateral transfer. Default values are
+assumed.
 
 ## Parameters:
 
@@ -39,14 +45,15 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
 ## Connectors
 
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
- * `load` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
+ * `load_left` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
+ * `load_right` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `downforce` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `F_z`         | Normal load on the driven axle                         | N  |
+| `F_z`         | Normal load on the driven axle, both wheels together; never negative                         | N  |
 | `v`         | Vehicle speed                         | m/s  |
 | `a`         | Vehicle acceleration                         | m/s2  |
 | `a_pitch`         | Acceleration seen by the suspension                         | m/s2  |
@@ -110,7 +117,7 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (F_z(t)::Real), [description = "Normal load on the driven axle"])
+  append!(__vars, @variables (F_z(t)::Real), [description = "Normal load on the driven axle, both wheels together; never negative"])
   append!(__vars, @variables (v(t)::Real), [description = "Vehicle speed"])
   append!(__vars, @variables (a(t)::Real), [description = "Vehicle acceleration"])
   append!(__vars, @variables (a_pitch(t)::Real), [description = "Acceleration seen by the suspension"])
@@ -135,7 +142,8 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
 
   ### Components
   push!(__systems, @named flange = __Dyad__Flange())
-  push!(__systems, @named load = __Dyad__Flange())
+  push!(__systems, @named load_left = __Dyad__Flange())
+  push!(__systems, @named load_right = __Dyad__Flange())
   push!(__systems, @named downforce = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
@@ -157,9 +165,10 @@ equation for the acceleration, which would divide by `h_over_L`. Default values 
   push!(__eqs, a ~ ModelingToolkit.D_nounits(v))
   push!(__eqs, flange.f ~ 0)
   push!(__eqs, T_pitch * ModelingToolkit.D_nounits(a_pitch) ~ a - a_pitch)
-  push!(__eqs, F_z ~ share * (m * g + downforce.f) + m * a_pitch * h_over_L)
-  push!(__eqs, load.f ~ -F_z)
-  push!(__eqs, downforce.s ~ load.s)
+  push!(__eqs, F_z ~ max(share * (m * g + downforce.f) + m * a_pitch * h_over_L, 0.0))
+  push!(__eqs, load_left.f ~ -F_z / 2)
+  push!(__eqs, load_right.f ~ -F_z / 2)
+  push!(__eqs, downforce.s ~ (load_left.s + load_right.s) / 2)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

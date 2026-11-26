@@ -58,3 +58,23 @@ __dyad_run_test_case!(
   ],
   signals=Tuple[],
 )
+__dyad_run_test_case!(
+  VehicleComponents.Body.Longitudinal.Tests.AxleLoad,
+  "lifted for VehicleComponents.Body.Longitudinal.Tests.AxleLoad";
+  case_name="lifted",
+  component_stem="AxleLoad",
+  module_path=String["Body", "Longitudinal", "Tests"],
+  start=0e+0,
+  stop=5e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("downforce.f_constant" => -20000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5)],
+  expected_final=Tuple[
+    (m -> m.axle.F_z, "axle.F_z", 0, 0.01, 1e-5),
+    (m -> m.road.flange.f, "road.flange.f", 0, 0.01, 1e-5),
+  ],
+  signals=Tuple[],
+)

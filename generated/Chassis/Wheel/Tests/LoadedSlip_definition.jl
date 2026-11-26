@@ -7,32 +7,36 @@
 @doc Markdown.doc"""
    LoadedSlip(; name, __overrides)
 
-The `Slip` launch with the normal load from a `Body.Longitudinal.AxleLoad` (m = 1400 kg,
-share = 0.55, h/L = 0.17) wired straight to the tire's `load` flange: 600 N m drives a
-J = 1 kg m² wheel inertia, and the tire pushes a 1400 kg mass that the axle load also follows.
-The road multiplier is set per case, and so is the force `lift` pushes on the axle's
-`downforce` flange: none but in `lifted`.
+The `Slip` launch on both wheels of one axle, with the normal load from a
+`Body.Longitudinal.AxleLoad` (m = 1400 kg, share = 0.55, h/L = 0.17) whose `load_left` and
+`load_right` flanges wire straight to the two tires' `load` flanges. Each wheel is half the `Slip`
+launch: 300 N m drives a J = 0.5 kg m² wheel inertia, and both tires push one 1400 kg mass that the
+axle load also follows. One road multiplier feeds both tires and is set per case, and so is the
+force `lift` pushes on the axle's `downforce` flange: none but in `lifted`.
 
-Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
+The two wheels are identical, so each carries half the axle's load and passes half its tire
+force, F_n = F_z/2 and F_x,wheel = F_x/2, with F_x the axle's total. Each wheel then accelerates at
+(300 - r F_x/2)/0.5 = 600 - r F_x, the single-wheel `Slip` launch's value. Once the 0.1 s pitch
+lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
 
-- `wheelspin`, mu_scale = 0.2: the tire slides, F_x = 0.2 · 0.7 F_z = 0.14 F_z, so
-  F_z = 0.55 · 1400 · 9.80665 + 0.14 · 0.17 F_z, F_z = 7551.1205/0.9762 = 7735.2187 N. Then
-  F_x = 1082.9306 N, a = 0.773522 m/s², and the wheel accelerates at
-  600 - 0.31 · 1082.9306 = 264.29151 rad/s². The grip ceiling, 0.31 · 0.2 · 7735.2 = 479.6 N m,
-  stays below 600 N m, so the slide holds. The lag settles at a rate of (1 - 0.0238)/0.1 = 9.76
-  1/s, so by 2 s it is complete to within e^-19.5.
+- `wheelspin`, mu_scale = 0.2: the tires slide, F_x = 0.2 · 0.7 F_z = 0.14 F_z, so
+  F_z = 0.55 · 1400 · 9.80665 + 0.14 · 0.17 F_z, F_z = 7551.1205/0.9762 = 7735.2187 N, and each
+  wheel carries 3867.6094 N; at the start, before any transfer, 7551.1205/2 = 3775.5603 N. Then
+  F_x = 1082.9306 N, a = 0.773522 m/s², and each wheel accelerates at
+  600 - 0.31 · 1082.9306 = 264.29151 rad/s². Each tire's grip ceiling,
+  0.31 · 0.2 · 3867.6 = 239.8 N m, stays below its 300 N m, so the slide holds. The lag settles
+  at a rate of (1 - 0.0238)/0.1 = 9.76 1/s, so by 2 s it is complete to within e^-19.5.
 - `grip`, mu_scale = 1: as in the `Slip` rig, steady slip gives
-  F_x = (tau r/J)/(r²/J + (1 + kappa)/m), now with mu(kappa) = F_x/F_z and
-  F_z = 0.55 m g + F_x h/L. Iterating from kappa = 0 settles at kappa = 0.0065620,
-  F_x = 1921.111 N and F_z = 7877.709 N, so a = 1.372222 m/s². The slip settles within
-  milliseconds, as in the `Slip` rig; the weight transfer of 1400 · 1.372 · 0.17 = 326.6 N
-  follows the 0.1 s lag, so by 2 s it is within 326.6 e^-20 = 7e-7 N.
-- `lifted`, 20000 N of lift on a dry road: the axle's static share alone is
-  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the tire is off the road and passes no force.
-  The mass stays at rest, a = 0, so no weight transfers and F_z stays -3448.8795 N, while the
-  whole 600 N m spins up the wheel at 600 rad/s². A tire that passed mu F_n with the negative load
-  would instead pull the mass backward, at more than 0.7 · 3448.9/1400 = 1.7 m/s² once the
-  backward acceleration moves still more load off the axle.
+  F_x = (tau r/J)/(r²/J + (1 + kappa)/m) for the axle's 600 N m on its 1 kg m², now with
+  mu(kappa) = F_x/F_z and F_z = 0.55 m g + F_x h/L. Iterating from kappa = 0 settles at
+  kappa = 0.0065620, F_x = 1921.111 N and F_z = 7877.709 N, 3938.8545 N per wheel, so
+  a = 1.372222 m/s². The slip settles within milliseconds, as in the `Slip` rig; the weight
+  transfer of 1400 · 1.372 · 0.17 = 326.6 N follows the 0.1 s lag, so by 2 s it is within
+  326.6 e^-20 = 7e-7 N.
+- `lifted`, 20000 N of lift on a dry road: the axle's static share alone would be
+  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the axle is off the road and `F_z` stays at 0.
+  The tires pass no force, the mass stays at rest, a = 0, so no weight transfers, while each
+  wheel's whole 300 N m spins it up at 300/0.5 = 600 rad/s².
 """
 @component function LoadedSlip(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -78,22 +82,38 @@ Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L 
   __constants = Any[]
 
   ### Components
-  # Subcomponent drive of type RotationalComponents.Sources.ConstantTorque
-  drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(600.0), __overrides = drive_overrides))
-  # Subcomponent housing of type RotationalComponents.Components.Fixed
-  housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
-  # Subcomponent inertia of type RotationalComponents.Components.Inertia
-  inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
-  inertia_dict = Dict{String, Any}()
-  inertia_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
-  inertia_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
-  merge!(inertia_dict, inertia_overrides)
-  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=Float64(1.0), __overrides = inertia_dict))
-  # Subcomponent wheel of type VehicleComponents.Chassis.Wheel.LoadedSlip
-  wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleComponents.Chassis.Wheel.LoadedSlip(; __overrides = wheel_overrides))
+  # Subcomponent drive_left of type RotationalComponents.Sources.ConstantTorque
+  drive_left_overrides = __pop_subcomponent_overrides!(__overrides, "drive_left")
+  push!(__systems, @named drive_left = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(300.0), __overrides = drive_left_overrides))
+  # Subcomponent housing_left of type RotationalComponents.Components.Fixed
+  housing_left_overrides = __pop_subcomponent_overrides!(__overrides, "housing_left")
+  push!(__systems, @named housing_left = RotationalComponents.Components.Fixed(; __overrides = housing_left_overrides))
+  # Subcomponent inertia_left of type RotationalComponents.Components.Inertia
+  inertia_left_overrides = __pop_subcomponent_overrides!(__overrides, "inertia_left")
+  inertia_left_dict = Dict{String, Any}()
+  inertia_left_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  inertia_left_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(inertia_left_dict, inertia_left_overrides)
+  push!(__systems, @named inertia_left = RotationalComponents.Components.Inertia(; J=0.5, __overrides = inertia_left_dict))
+  # Subcomponent wheel_left of type VehicleComponents.Chassis.Wheel.LoadedSlip
+  wheel_left_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_left")
+  push!(__systems, @named wheel_left = VehicleComponents.Chassis.Wheel.LoadedSlip(; __overrides = wheel_left_overrides))
+  # Subcomponent drive_right of type RotationalComponents.Sources.ConstantTorque
+  drive_right_overrides = __pop_subcomponent_overrides!(__overrides, "drive_right")
+  push!(__systems, @named drive_right = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(300.0), __overrides = drive_right_overrides))
+  # Subcomponent housing_right of type RotationalComponents.Components.Fixed
+  housing_right_overrides = __pop_subcomponent_overrides!(__overrides, "housing_right")
+  push!(__systems, @named housing_right = RotationalComponents.Components.Fixed(; __overrides = housing_right_overrides))
+  # Subcomponent inertia_right of type RotationalComponents.Components.Inertia
+  inertia_right_overrides = __pop_subcomponent_overrides!(__overrides, "inertia_right")
+  inertia_right_dict = Dict{String, Any}()
+  inertia_right_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  inertia_right_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(inertia_right_dict, inertia_right_overrides)
+  push!(__systems, @named inertia_right = RotationalComponents.Components.Inertia(; J=0.5, __overrides = inertia_right_dict))
+  # Subcomponent wheel_right of type VehicleComponents.Chassis.Wheel.LoadedSlip
+  wheel_right_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_right")
+  push!(__systems, @named wheel_right = VehicleComponents.Chassis.Wheel.LoadedSlip(; __overrides = wheel_right_overrides))
   # Subcomponent body of type TranslationalComponents.Components.Mass
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   body_dict = Dict{String, Any}()
@@ -125,15 +145,21 @@ Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L 
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(drive.spline, inertia.spline_a))
-  push!(__eqs, connect(drive.support, housing.spline))
-  push!(__eqs, connect(inertia.spline_b, wheel.spline))
-  push!(__eqs, connect(wheel.flange, body.flange_a))
-  push!(__eqs, connect(body.flange_b, axle.flange))
-  push!(__eqs, connect(axle.load, wheel.load))
+  push!(__eqs, connect(drive_left.spline, inertia_left.spline_a))
+  push!(__eqs, connect(drive_left.support, housing_left.spline))
+  push!(__eqs, connect(inertia_left.spline_b, wheel_left.spline))
+  push!(__eqs, connect(wheel_left.flange, body.flange_a))
+  push!(__eqs, connect(drive_right.spline, inertia_right.spline_a))
+  push!(__eqs, connect(drive_right.support, housing_right.spline))
+  push!(__eqs, connect(inertia_right.spline_b, wheel_right.spline))
+  push!(__eqs, connect(wheel_right.flange, body.flange_b))
+  push!(__eqs, connect(axle.flange, body.flange_b))
+  push!(__eqs, connect(axle.load_left, wheel_left.load))
+  push!(__eqs, connect(axle.load_right, wheel_right.load))
   push!(__eqs, connect(lift.flange, axle.downforce))
   push!(__eqs, connect(lift.support, ground.flange))
-  push!(__eqs, connect(road.y, wheel.mu_scale))
+  push!(__eqs, connect(road.y, wheel_left.mu_scale))
+  push!(__eqs, connect(road.y, wheel_right.mu_scale))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
