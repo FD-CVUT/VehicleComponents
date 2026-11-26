@@ -1,50 +1,23 @@
 """
 In-line wheel brake: Coulomb friction of a commanded magnitude, with a first-order actuator lag.
 
-The brake sits in the shaft line between `spline_a` and `spline_b` and passes its reaction to the
-`support` housing. The disc is rigid with the shaft, so both splines share one angle and the brake
-adds no rotation state; `spline_b.tau` is the torque passed on downstream.
+The friction, its sine ramp below `w0` and the ports are `Chassis.Brakes.PartialFrictionBrake`'s;
+`support` must be connected. `tau_cmd` is the requested brake torque. The request is clamped to
+[0, `tau_max`] and lags through the actuator time constant `T` to the applied magnitude `tau`.
 
-Ports: `spline_a`, `spline_b` the shaft ends; `tau_cmd` the requested brake torque; `support` the
-housing, which takes the brake reaction. `support` must be connected, to the hub carrier or a
-`Fixed`: an open housing takes no torque, so the brake would apply none.
-
-The request is clamped to [0, `tau_max`] and lags through the actuator time constant `T` to the
-applied magnitude `tau_actual`, which acts against the shaft's rotation, so the brake decelerates
-in both directions and never spins the shaft up.
-
-Assumptions: below `w0` the direction sign(w) is replaced by the sine ramp sin(pi/2 w/w0), which is
-continuously differentiable at ±w0. That is not stiction: the brake holds no torque at exact
-standstill, so a braked wheel on a grade creeps. For ABS studies, where the wheel approaches but
-does not dwell at standstill, this fidelity is enough. `RotationalComponents.Sources.SignTorque`
-has the same ramp but takes its torque as a parameter, so it cannot follow a command. Defaults are
-one wheel's hydraulic disc brake (assumed).
+Assumptions: those of `PartialFrictionBrake`; the brake starts released, tau = 0. Defaults are one
+wheel's hydraulic disc brake (assumed).
 """
 component BrakeActuator
-  extends RotationalComponents.Interfaces.PartialElementaryTwoSplinesAndSupport
+  extends VehicleComponents.Chassis.Brakes.PartialFrictionBrake(w0 = 1.0, tau = initial 0.0)
   "Requested brake torque"
   tau_cmd = RealInput() {^tau_cmd}
   "Actuator time constant"
   parameter T::Time = 0.03
   "Maximum brake torque"
   parameter tau_max::Torque = 2000.0
-  "Shaft speed below which the friction direction is ramped"
-  parameter w0::AngularVelocity(min = eps(Float64)) = 1.0
-  "Applied brake-torque magnitude, never negative"
-  variable tau_actual::Torque = initial 0.0
-  "Shaft angle relative to the support"
-  variable phi::Angle
-  "Shaft speed relative to the support"
-  variable w::AngularVelocity
-  "Friction torque removed from the shaft line, with the sign of w"
-  variable tau_friction::Torque
 relations
-  phi = spline_a.phi - phi_support
-  w = der(phi)
-  spline_b.phi = spline_a.phi
-  T * der(tau_actual) = min(max(tau_cmd, 0.0), tau_max) - tau_actual
-  tau_friction = tau_actual * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0))
-  spline_a.tau + spline_b.tau = tau_friction
+  T * der(tau) = min(max(tau_cmd, 0.0), tau_max) - tau
 metadata {
   "Dyad": {"icons": {"default": "dyad://RotationalComponents/Brake.svg"}},
   "_links": {

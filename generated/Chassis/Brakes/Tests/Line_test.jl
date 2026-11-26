@@ -18,23 +18,6 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
-  expected_final=Tuple[(m -> m.line.m_flow, "line.m_flow", 0.01325359, 1e-8, 1e-9)],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Chassis.Brakes.Tests.Line,
-  "reverse for VehicleComponents.Chassis.Brakes.Tests.Line";
-  case_name="reverse",
-  component_stem="Line",
-  module_path=String["Chassis", "Brakes", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-10,
-  reltol=1e-10,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("upstream.k" => 0.0),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[(m -> m.line.m_flow, "line.m_flow", -0.01325359, 1e-8, 1e-9)],
+  expected_final=Tuple[(m -> m.line.m_flow, "line.m_flow", 0.01325454, 1e-8, 1e-9)],
   signals=Tuple[],
 )

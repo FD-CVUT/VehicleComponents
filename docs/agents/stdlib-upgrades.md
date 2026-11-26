@@ -15,3 +15,15 @@ stand-in, and is not listed.
 
 | Component | Computes |
 |---|---|
+
+## Flow restrictions → HydraulicComponents `TubeBase`
+
+HydraulicComponents 3.0.0 registers the derivative of `friction_factor` with respect to `m_flow`
+as 0 (`src/utils.jl`), so a `Pipes.TubeBase` without fluid inertia has a singular Jacobian at zero
+flow and cannot start a circuit at rest; with fluid inertia it rings for seconds against a stiff
+caliper. A HydraulicComponents release whose `TubeBase` starts from zero flow replaces each
+component listed here.
+
+| Component | Computes |
+|---|---|
+| `Chassis.Brakes.Line` | Laminar Hagen-Poiseuille pressure drop of a brake line |

@@ -48,6 +48,8 @@ Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no f
 | `mu_ref`         | Friction coefficient for the reference road, with the sign of the slip                         | --  |
 | `s_abs`         | Slip magnitude                         | --  |
 | `mu_abs`         | Friction magnitude                         | --  |
+| `x_A`         | Slip magnitude on the rising segment's scale, 1 at the adhesion peak                         | --  |
+| `x_S`         | Slip magnitude on the falling segment's scale, -1 at the peak and 1 at the sliding plateau                         | --  |
 | `omega`         | Wheel angular speed                         | rad/s  |
 | `v`         | Vehicle speed                         | m/s  |
 | `mu`         | Friction coefficient after road scaling                         | --  |
@@ -123,6 +125,8 @@ Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no f
   append!(__vars, @variables (mu_ref(t)::Real), [description = "Friction coefficient for the reference road, with the sign of the slip"])
   append!(__vars, @variables (s_abs(t)::Real), [description = "Slip magnitude"])
   append!(__vars, @variables (mu_abs(t)::Real), [description = "Friction magnitude"])
+  append!(__vars, @variables (x_A(t)::Real), [description = "Slip magnitude on the rising segment's scale, 1 at the adhesion peak"])
+  append!(__vars, @variables (x_S(t)::Real), [description = "Slip magnitude on the falling segment's scale, -1 at the peak and 1 at the sliding plateau"])
   append!(__vars, @variables (omega(t)::Real), [description = "Wheel angular speed"])
   append!(__vars, @variables (v(t)::Real), [description = "Vehicle speed"])
   append!(__vars, @variables (mu(t)::Real), [description = "Friction coefficient after road scaling"])
@@ -142,6 +146,12 @@ Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no f
   __ovr_mu_abs = pop!(__overrides, "mu_abs", nothing); isnothing(__ovr_mu_abs) || push!(__eqs, mu_abs ~ __ovr_mu_abs)
   __ovr_mu_abs__initial = pop!(__overrides, "mu_abs.initial", nothing); isnothing(__ovr_mu_abs__initial) || (__initial_conditions[mu_abs] = __ovr_mu_abs__initial)
   __ovr_mu_abs__guess = pop!(__overrides, "mu_abs.guess", nothing)
+  __ovr_x_A = pop!(__overrides, "x_A", nothing); isnothing(__ovr_x_A) || push!(__eqs, x_A ~ __ovr_x_A)
+  __ovr_x_A__initial = pop!(__overrides, "x_A.initial", nothing); isnothing(__ovr_x_A__initial) || (__initial_conditions[x_A] = __ovr_x_A__initial)
+  __ovr_x_A__guess = pop!(__overrides, "x_A.guess", nothing)
+  __ovr_x_S = pop!(__overrides, "x_S", nothing); isnothing(__ovr_x_S) || push!(__eqs, x_S ~ __ovr_x_S)
+  __ovr_x_S__initial = pop!(__overrides, "x_S.initial", nothing); isnothing(__ovr_x_S__initial) || (__initial_conditions[x_S] = __ovr_x_S__initial)
+  __ovr_x_S__guess = pop!(__overrides, "x_S.guess", nothing)
   __ovr_omega = pop!(__overrides, "omega", nothing); isnothing(__ovr_omega) || push!(__eqs, omega ~ __ovr_omega)
   __ovr_omega__initial = pop!(__overrides, "omega.initial", nothing); isnothing(__ovr_omega__initial) || (__initial_conditions[omega] = __ovr_omega__initial)
   __ovr_omega__guess = pop!(__overrides, "omega.guess", nothing)
@@ -174,6 +184,8 @@ Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no f
   isnothing(__ovr_mu_ref__guess) || (__guesses[mu_ref] = __ovr_mu_ref__guess)
   isnothing(__ovr_s_abs__guess) || (__guesses[s_abs] = __ovr_s_abs__guess)
   isnothing(__ovr_mu_abs__guess) || (__guesses[mu_abs] = __ovr_mu_abs__guess)
+  isnothing(__ovr_x_A__guess) || (__guesses[x_A] = __ovr_x_A__guess)
+  isnothing(__ovr_x_S__guess) || (__guesses[x_S] = __ovr_x_S__guess)
   isnothing(__ovr_omega__guess) || (__guesses[omega] = __ovr_omega__guess)
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
   isnothing(__ovr_mu__guess) || (__guesses[mu] = __ovr_mu__guess)
@@ -187,7 +199,9 @@ Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no f
 
   ### Equations
   push!(__eqs, s_abs ~ abs(s))
-  push!(__eqs, mu_abs ~ ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * (s_abs / sAdhesion) ^ 3 + 1.5 * (s_abs / sAdhesion)), ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((s_abs - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((s_abs - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion))))))
+  push!(__eqs, x_A ~ s_abs / sAdhesion)
+  push!(__eqs, x_S ~ (2 * s_abs - sAdhesion - sSlide) / (sSlide - sAdhesion))
+  push!(__eqs, mu_abs ~ ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * x_A ^ 3 + 1.5 * x_A), ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * x_S ^ 3 + 1.5 * x_S))))
   push!(__eqs, mu_ref ~ sign(s) * mu_abs)
   push!(__eqs, omega ~ ModelingToolkit.D_nounits(spline.phi))
   push!(__eqs, v ~ ModelingToolkit.D_nounits(flange.s))

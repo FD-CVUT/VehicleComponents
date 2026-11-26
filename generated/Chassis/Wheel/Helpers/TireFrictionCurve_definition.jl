@@ -38,6 +38,8 @@ the `Slip` tire.
 | `mu_ref`         | Friction coefficient for the reference road, with the sign of the slip                         | --  |
 | `s_abs`         | Slip magnitude                         | --  |
 | `mu_abs`         | Friction magnitude                         | --  |
+| `x_A`         | Slip magnitude on the rising segment's scale, 1 at the adhesion peak                         | --  |
+| `x_S`         | Slip magnitude on the falling segment's scale, -1 at the peak and 1 at the sliding plateau                         | --  |
 """
 @component function TireFrictionCurve(; name = nothing, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -100,6 +102,8 @@ the `Slip` tire.
   append!(__vars, @variables (mu_ref(t)::Real), [description = "Friction coefficient for the reference road, with the sign of the slip"])
   append!(__vars, @variables (s_abs(t)::Real), [description = "Slip magnitude"])
   append!(__vars, @variables (mu_abs(t)::Real), [description = "Friction magnitude"])
+  append!(__vars, @variables (x_A(t)::Real), [description = "Slip magnitude on the rising segment's scale, 1 at the adhesion peak"])
+  append!(__vars, @variables (x_S(t)::Real), [description = "Slip magnitude on the falling segment's scale, -1 at the peak and 1 at the sliding plateau"])
 
   ### Variables (assignments)
   __ovr_s = pop!(__overrides, "s", nothing); isnothing(__ovr_s) || push!(__eqs, s ~ __ovr_s)
@@ -114,6 +118,12 @@ the `Slip` tire.
   __ovr_mu_abs = pop!(__overrides, "mu_abs", nothing); isnothing(__ovr_mu_abs) || push!(__eqs, mu_abs ~ __ovr_mu_abs)
   __ovr_mu_abs__initial = pop!(__overrides, "mu_abs.initial", nothing); isnothing(__ovr_mu_abs__initial) || (__initial_conditions[mu_abs] = __ovr_mu_abs__initial)
   __ovr_mu_abs__guess = pop!(__overrides, "mu_abs.guess", nothing)
+  __ovr_x_A = pop!(__overrides, "x_A", nothing); isnothing(__ovr_x_A) || push!(__eqs, x_A ~ __ovr_x_A)
+  __ovr_x_A__initial = pop!(__overrides, "x_A.initial", nothing); isnothing(__ovr_x_A__initial) || (__initial_conditions[x_A] = __ovr_x_A__initial)
+  __ovr_x_A__guess = pop!(__overrides, "x_A.guess", nothing)
+  __ovr_x_S = pop!(__overrides, "x_S", nothing); isnothing(__ovr_x_S) || push!(__eqs, x_S ~ __ovr_x_S)
+  __ovr_x_S__initial = pop!(__overrides, "x_S.initial", nothing); isnothing(__ovr_x_S__initial) || (__initial_conditions[x_S] = __ovr_x_S__initial)
+  __ovr_x_S__guess = pop!(__overrides, "x_S.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -128,6 +138,8 @@ the `Slip` tire.
   isnothing(__ovr_mu_ref__guess) || (__guesses[mu_ref] = __ovr_mu_ref__guess)
   isnothing(__ovr_s_abs__guess) || (__guesses[s_abs] = __ovr_s_abs__guess)
   isnothing(__ovr_mu_abs__guess) || (__guesses[mu_abs] = __ovr_mu_abs__guess)
+  isnothing(__ovr_x_A__guess) || (__guesses[x_A] = __ovr_x_A__guess)
+  isnothing(__ovr_x_S__guess) || (__guesses[x_S] = __ovr_x_S__guess)
 
   ### Initialization Equations
 
@@ -136,7 +148,9 @@ the `Slip` tire.
 
   ### Equations
   push!(__eqs, s_abs ~ VehicleComponents.abs(s))
-  push!(__eqs, mu_abs ~ VehicleComponents.ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * (s_abs / sAdhesion) ^ 3 + 1.5 * (s_abs / sAdhesion)), VehicleComponents.ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((s_abs - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((s_abs - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion))))))
+  push!(__eqs, x_A ~ s_abs / sAdhesion)
+  push!(__eqs, x_S ~ (2 * s_abs - sAdhesion - sSlide) / (sSlide - sAdhesion))
+  push!(__eqs, mu_abs ~ VehicleComponents.ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * x_A ^ 3 + 1.5 * x_A), VehicleComponents.ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * x_S ^ 3 + 1.5 * x_S))))
   push!(__eqs, mu_ref ~ VehicleComponents.sign(s) * mu_abs)
   push!(__eqs, s ~ u)
   push!(__eqs, y ~ mu_ref)

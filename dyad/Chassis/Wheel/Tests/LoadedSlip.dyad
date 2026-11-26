@@ -16,7 +16,9 @@ Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L 
 - `grip`, mu_scale = 1: as in the `Slip` rig, steady slip gives
   F_x = (tau r/J)/(r²/J + (1 + kappa)/m), now with mu(kappa) = F_x/F_z and
   F_z = 0.55 m g + F_x h/L. Iterating from kappa = 0 settles at kappa = 0.0065620,
-  F_x = 1921.111 N and F_z = 7877.709 N, so a = 1.372222 m/s².
+  F_x = 1921.111 N and F_z = 7877.709 N, so a = 1.372222 m/s². The slip settles within
+  milliseconds, as in the `Slip` rig; the weight transfer of 1400 · 1.372 · 0.17 = 326.6 N
+  follows the 0.1 s lag, so by 2 s it is within 326.6 e^-20 = 7e-7 N.
 - `lifted`, 20000 N of lift on a dry road: the axle's static share alone is
   0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the tire is off the road and passes no force.
   The mass stays at rest, a = 0, so no weight transfers and F_z stays -3448.8795 N, while the
@@ -112,7 +114,7 @@ metadata {
         }
       },
       "grip": {
-        "stop": 5,
+        "stop": 2,
         "solver": "Auto",
         "abstol": 1e-8,
         "reltol": 1e-8,

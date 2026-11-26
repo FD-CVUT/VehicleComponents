@@ -10,17 +10,17 @@
 One brake (T = 0.03 s, tau_max = 400 N m, w0 = 1 rad/s) on a J = 10 kg m² inertia spinning at
 20 rad/s, its housing fixed and its downstream shaft end open; the command is set per case.
 
-While the shaft turns faster than w0, J dw/dt = -tau_actual. A command at or above tau_max applies
-tau_actual(t) = 400 (1 - e^(-t/0.03)), so
+While the shaft turns faster than w0, J dw/dt = -tau. A command at or above tau_max applies
+tau(t) = 400 (1 - e^(-t/0.03)), so
 
     w(t) = 20 - 40 (t - 0.03 (1 - e^(-t/0.03)))
 
-- `decelerating`, 500 N m clamped to 400 N m, stops at 0.3 s = 10 T: tau_actual =
+- `decelerating`, 500 N m clamped to 400 N m, stops at 0.3 s = 10 T: tau =
   400 (1 - e^-10) = 399.98184 N m and w = 20 - 40 (0.3 - 0.0299986) = 9.19995 rad/s.
 - `stopped`, the same command over 1.5 s: w reaches w0 near 0.5 s, then the sine ramp gives
   dw/dt = -40 sin(pi/2 w), a decay at 40 pi/2 = 62.8 1/s that leaves w within 1e-20 rad/s of 0
-  by 1.5 s. The clamp holds tau_actual at 400 N m.
-- `released`, -100 N m: the clamp's lower bound keeps tau_actual at 0, so w stays 20 rad/s.
+  by 1.5 s. The clamp holds tau at 400 N m.
+- `released`, -100 N m: the clamp's lower bound keeps tau at 0, so w stays 20 rad/s.
 """
 @component function BrakeActuator(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

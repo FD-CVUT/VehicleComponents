@@ -7,14 +7,16 @@
 @doc Markdown.doc"""
    Line(; name, __overrides)
 
-One default line (D = 3 mm, L = 1.5 m, nu = 10e-6 m²/s) between two fixed pressures: 1 bar more
-at `port_a` than at `port_b` (set per case). The Hagen-Poiseuille resistance is
-128 nu L/(pi D⁴) = 128 · 10e-6 · 1.5/(pi · 8.1e-11) = 7.545123e6 Pa s/kg, so
+One default line (D = 3 mm, L = 1.5 m) of `VehicleComponents.DOT4` fluid (mu = 0.01045 Pa s,
+1045 kg/m³ at its reference pressure 100325 Pa, bulk modulus 1.4e9 Pa) between two fixed
+pressures, 2e5 Pa at `port_a` and 1e5 Pa at `port_b`.
 
-- `forward`, 1e5 Pa: m_flow = 1e5/7.545123e6 = 0.01325359 kg/s from `port_a` to `port_b`.
-- `reverse`, -1e5 Pa: the same flow the other way, -0.01325359 kg/s.
+At `port_a` the density is 1045 (1 + (2e5 - 100325)/1.4e9) = 1045.07440 kg/m³, so the
+Hagen-Poiseuille resistance is 128 mu L/(pi D⁴ rho) = 128 · 0.01045 · 1.5/(pi · 8.1e-11 ·
+1045.07440) = 7.544586e6 Pa s/kg, and `forward` passes m_flow = 1e5/7.544586e6 = 0.01325454 kg/s
+from `port_a` to `port_b`. The law is linear and odd in the flow, so one direction pins it.
 """
-@component function Line(; name = nothing, var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
+@component function Line(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

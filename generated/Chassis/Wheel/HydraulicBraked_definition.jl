@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   HydraulicBraked(; name, radius, J_w, F_z, w0, sAdhesion, sSlide, mu_A, mu_S, K_f, K_r, p0, V0_f, V0_r, K1_f, K1_r, K3_f, K3_r, __overrides)
+   HydraulicBraked(; name, __overrides)
 
 Braked road wheel with hydraulic disc brakes: rotating inertia, a front-axle and a rear-axle
 `Chassis.Brakes.Caliper` in the shaft line, and slip tire contact.
@@ -24,30 +24,9 @@ Ports:
 
 Assumptions: the wheel starts at rest and both calipers empty; give another start at the
 declaration, `HydraulicBraked(inertia(w = initial 80.0))`. Like `Braked`, the defaults lump the
-whole 1400 kg car onto one equivalent wheel. The caliper defaults are a compact car's front and rear
-axles (textbook).
-
-## Parameters:
-
-| Name         | Description                         | Units  |   Default value |
-| ------------ | ----------------------------------- | ------ | --------------- |
-| `radius`         | Rolling radius                         | m  |   0.31 |
-| `J_w`         | Rotating inertia; four road wheels                         | kg.m2  |   4.0 |
-| `F_z`         | Normal load; the full weight of a 1400 kg car                         | N  |   13729.31 |
-| `w0`         | Shaft speed below which the calipers' friction direction is ramped                         | rad/s  |   0.2 |
-| `sAdhesion`         | Slip ratio at peak adhesion                         | --  |   0.04 |
-| `sSlide`         | Slip ratio at the sliding plateau                         | --  |   0.12 |
-| `mu_A`         | Peak adhesion coefficient                         | --  |   1.0 |
-| `mu_S`         | Sliding friction coefficient                         | --  |   0.7 |
-| `K_f`         | Front-axle torque gain [N m/Pa]                         | --  |   49.0e-5 |
-| `K_r`         | Rear-axle torque gain [N m/Pa]                         | --  |   19.9e-5 |
-| `p0`         | Pad-contact pressure                         | Pa  |   0.5e5 |
-| `V0_f`         | Front clearance take-up volume                         | m3  |   0.5e-6 |
-| `V0_r`         | Rear clearance take-up volume                         | m3  |   0.3e-6 |
-| `K1_f`         | Front linear pressure-volume coefficient [Pa/m³]                         | --  |   1e12 |
-| `K1_r`         | Rear linear pressure-volume coefficient [Pa/m³]                         | --  |   2.5e12 |
-| `K3_f`         | Front cubic pressure-volume coefficient [Pa/m⁹]                         | --  |   4.8e23 |
-| `K3_r`         | Rear cubic pressure-volume coefficient [Pa/m⁹]                         | --  |   7.5e24 |
+whole 1400 kg car onto one equivalent wheel. `caliper_f` keeps the `Caliper` defaults, a compact
+car's front axle, and `caliper_r` takes its rear axle's (textbook). Change any of them on the
+part, `HydraulicBraked(caliper_r(K = 25e-5))`.
 
 ## Connectors
 
@@ -59,7 +38,7 @@ axles (textbook).
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function HydraulicBraked(; name = nothing, var"radius"=0.31, var"J_w"=Float64(4.0), var"F_z"=13729.31, var"w0"=0.2, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, var"K_f"=0.00049, var"K_r"=0.000199, var"p0"=Float64(50000.0), var"V0_f"=5e-7, var"V0_r"=3e-7, var"K1_f"=Float64(1000000000000.0), var"K1_r"=Float64(2500000000000.0), var"K3_f"=Float64(4.8e+23), var"K3_r"=Float64(7.5e+24), var"continuity__graph0", var"continuity__graph1", __overrides = Dict{String, Any}())
+@component function HydraulicBraked(; name = nothing, var"continuity__graph0", var"continuity__graph1", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -77,25 +56,6 @@ axles (textbook).
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
-  ### Keyword argument overrides
-  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
-  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
-  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
-  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
-  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
-  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
-  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
-  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
-  haskey(__overrides, "K_f") && (K_f = pop!(__overrides, "K_f"))
-  haskey(__overrides, "K_r") && (K_r = pop!(__overrides, "K_r"))
-  haskey(__overrides, "p0") && (p0 = pop!(__overrides, "p0"))
-  haskey(__overrides, "V0_f") && (V0_f = pop!(__overrides, "V0_f"))
-  haskey(__overrides, "V0_r") && (V0_r = pop!(__overrides, "V0_r"))
-  haskey(__overrides, "K1_f") && (K1_f = pop!(__overrides, "K1_f"))
-  haskey(__overrides, "K1_r") && (K1_r = pop!(__overrides, "K1_r"))
-  haskey(__overrides, "K3_f") && (K3_f = pop!(__overrides, "K3_f"))
-  haskey(__overrides, "K3_r") && (K3_r = pop!(__overrides, "K3_r"))
-
   ### Structural Parameters (functions)
 
   ### Structural Parameters (Final)
@@ -109,57 +69,6 @@ axles (textbook).
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Rolling radius"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
-  __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Rotating inertia; four road wheels"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
-  __local__F_z = F_z
-  append!(__params, @parameters (F_z::Real), [description = "Normal load; the full weight of a 1400 kg car"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
-  __local__w0 = w0
-  append!(__params, @parameters (w0::Real), [description = "Shaft speed below which the calipers' friction direction is ramped"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
-  __local__sAdhesion = sAdhesion
-  append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
-  __local__sSlide = sSlide
-  append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
-  __local__mu_A = mu_A
-  append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
-  __local__mu_S = mu_S
-  append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
-  __local__K_f = K_f
-  append!(__params, @parameters (K_f::Real), [description = "Front-axle torque gain [N m/Pa]"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, K_f, __local__K_f)
-  __local__K_r = K_r
-  append!(__params, @parameters (K_r::Real), [description = "Rear-axle torque gain [N m/Pa]"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, K_r, __local__K_r)
-  __local__p0 = p0
-  append!(__params, @parameters (p0::Real), [description = "Pad-contact pressure"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, p0, __local__p0)
-  __local__V0_f = V0_f
-  append!(__params, @parameters (V0_f::Real), [description = "Front clearance take-up volume"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, V0_f, __local__V0_f)
-  __local__V0_r = V0_r
-  append!(__params, @parameters (V0_r::Real), [description = "Rear clearance take-up volume"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, V0_r, __local__V0_r)
-  __local__K1_f = K1_f
-  append!(__params, @parameters (K1_f::Real), [description = "Front linear pressure-volume coefficient [Pa/m³]"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, K1_f, __local__K1_f)
-  __local__K1_r = K1_r
-  append!(__params, @parameters (K1_r::Real), [description = "Rear linear pressure-volume coefficient [Pa/m³]"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, K1_r, __local__K1_r)
-  __local__K3_f = K3_f
-  append!(__params, @parameters (K3_f::Real), [description = "Front cubic pressure-volume coefficient [Pa/m⁹]"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, K3_f, __local__K3_f)
-  __local__K3_r = K3_r
-  append!(__params, @parameters (K3_r::Real), [description = "Rear cubic pressure-volume coefficient [Pa/m⁹]"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, K3_r, __local__K3_r)
 
   ### Final Parameters (assignments)
 
@@ -188,16 +97,16 @@ axles (textbook).
   inertia_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   inertia_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(inertia_dict, inertia_overrides)
-  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J_w, __overrides = inertia_dict))
+  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=Float64(4.0), __overrides = inertia_dict))
   # Subcomponent caliper_f of type VehicleComponents.Chassis.Brakes.Caliper
   caliper_f_overrides = __pop_subcomponent_overrides!(__overrides, "caliper_f")
-  push!(__systems, @named caliper_f = VehicleComponents.Chassis.Brakes.Caliper(; K=K_f, p0=p0, V0=V0_f, K1=K1_f, K3=K3_f, w0=w0, continuity__graph0=continuity__graph0, __overrides = caliper_f_overrides))
+  push!(__systems, @named caliper_f = VehicleComponents.Chassis.Brakes.Caliper(; continuity__graph0=continuity__graph0, __overrides = caliper_f_overrides))
   # Subcomponent caliper_r of type VehicleComponents.Chassis.Brakes.Caliper
   caliper_r_overrides = __pop_subcomponent_overrides!(__overrides, "caliper_r")
-  push!(__systems, @named caliper_r = VehicleComponents.Chassis.Brakes.Caliper(; K=K_r, p0=p0, V0=V0_r, K1=K1_r, K3=K3_r, w0=w0, continuity__graph0=continuity__graph1, __overrides = caliper_r_overrides))
+  push!(__systems, @named caliper_r = VehicleComponents.Chassis.Brakes.Caliper(; K=0.000199, V0=3e-7, K1=Float64(2500000000000.0), K3=Float64(7.5e+24), continuity__graph0=continuity__graph1, __overrides = caliper_r_overrides))
   # Subcomponent tire of type VehicleComponents.Chassis.Wheel.Slip
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
-  push!(__systems, @named tire = VehicleComponents.Chassis.Wheel.Slip(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, __overrides = tire_overrides))
+  push!(__systems, @named tire = VehicleComponents.Chassis.Wheel.Slip(; F_z=13729.31, __overrides = tire_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

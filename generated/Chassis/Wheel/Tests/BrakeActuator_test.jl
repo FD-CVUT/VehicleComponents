@@ -18,11 +18,11 @@ __dyad_run_test_case!(
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
-    (m -> m.brake.tau_actual, "brake.tau_actual", 0, 0.001, 1e-7),
+    (m -> m.brake.tau, "brake.tau", 0, 0.001, 1e-7),
     (m -> m.wheel.w, "wheel.w", 20, 0.0001, 1e-7),
   ],
   expected_final=Tuple[
-    (m -> m.brake.tau_actual, "brake.tau_actual", 399.98184, 0.001, 1e-7),
+    (m -> m.brake.tau, "brake.tau", 399.98184, 0.001, 1e-7),
     (m -> m.wheel.w, "wheel.w", 9.19995, 0.0001, 1e-7),
   ],
   signals=Tuple[],
@@ -42,7 +42,7 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.brake.tau_actual, "brake.tau_actual", 400, 0.001, 1e-7),
+    (m -> m.brake.tau, "brake.tau", 400, 0.001, 1e-7),
     (m -> m.wheel.w, "wheel.w", 0, 0.0001, 1e-7),
   ],
   signals=Tuple[],
@@ -62,7 +62,7 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.brake.tau_actual, "brake.tau_actual", 0, 0.001, 1e-7),
+    (m -> m.brake.tau, "brake.tau", 0, 0.001, 1e-7),
     (m -> m.wheel.w, "wheel.w", 20, 0.0001, 1e-7),
   ],
   signals=Tuple[],

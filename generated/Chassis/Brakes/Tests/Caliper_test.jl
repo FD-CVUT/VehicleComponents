@@ -11,7 +11,7 @@ __dyad_run_test_case!(
   component_stem="Caliper",
   module_path=String["Chassis", "Brakes", "Tests"],
   start=0e+0,
-  stop=2e+0,
+  stop=1e+0,
   abstol=1e-10,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
@@ -42,7 +42,6 @@ __dyad_run_test_case!(
   expected_final=Tuple[
     (m -> m.caliper.p, "caliper.p", 10000000, 1, 1e-7),
     (m -> m.caliper.V, "caliper.V", 0.00000299499, 1e-11, 1e-7),
-    (m -> m.caliper.tau, "caliper.tau", 4875.5, 0.001, 1e-7),
     (m -> m.caliper.tau_friction, "caliper.tau_friction", 4875.5, 0.001, 1e-7),
   ],
   signals=Tuple[],

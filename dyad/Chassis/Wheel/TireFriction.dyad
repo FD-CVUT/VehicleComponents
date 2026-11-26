@@ -3,8 +3,10 @@ Tire friction law: the friction coefficient `mu_ref` against the longitudinal sl
 
 Triple-S shape, point-symmetric about zero slip. |mu_ref| rises from 0 to the adhesion peak `mu_A`
 at |s| = `sAdhesion`, falls to the sliding level `mu_S` at |s| = `sSlide`, and stays at `mu_S` up
-to the locked wheel (|s| = 1) and beyond. Each segment is the cubic -x³/2 + 3x/2, which maps
-[-1, 1] onto [-1, 1] with zero slope at both ends.
+to the locked wheel (|s| = 1) and beyond. Each segment uses the cubic c(x) = -x³/2 + 3x/2, which
+maps [-1, 1] onto [-1, 1] with zero slope at both ends: the rise is mu_A c(x_A) with
+x_A = |s|/sAdhesion, the fall (mu_A + mu_S)/2 + (mu_S - mu_A)/2 c(x_S) with
+x_S = (2|s| - sAdhesion - sSlide)/(sSlide - sAdhesion).
 
 An extending component binds `s` and reads `mu_ref`, the coefficient for the reference road, with
 the sign of the slip.
@@ -31,8 +33,14 @@ partial component TireFriction
   variable s_abs::Real
   "Friction magnitude"
   variable mu_abs::Real
+  "Slip magnitude on the rising segment's scale, 1 at the adhesion peak"
+  variable x_A::Real
+  "Slip magnitude on the falling segment's scale, -1 at the peak and 1 at the sliding plateau"
+  variable x_S::Real
 relations
   s_abs = abs(s)
-  mu_abs = ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * (s_abs / sAdhesion) ^ 3 + 1.5 * (s_abs / sAdhesion)), ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((s_abs - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((s_abs - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
+  x_A = s_abs / sAdhesion
+  x_S = (2 * s_abs - sAdhesion - sSlide) / (sSlide - sAdhesion)
+  mu_abs = ifelse(s_abs <= sAdhesion, mu_A * (-0.5 * x_A ^ 3 + 1.5 * x_A), ifelse(s_abs >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * x_S ^ 3 + 1.5 * x_S)))
   mu_ref = sign(s) * mu_abs
 end

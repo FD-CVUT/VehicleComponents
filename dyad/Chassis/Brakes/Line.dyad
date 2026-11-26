@@ -4,12 +4,14 @@ Brake line: laminar flow of brake fluid through a round pipe.
 Ports: `port_a`, `port_b` the two fluid connections. Mass flow from `port_a` to `port_b` drops the
 pressure by the Hagen-Poiseuille law,
 
-    port_a.p - port_b.p = 128 nu L m_flow / (pi D⁴)
+    port_a.p - port_b.p = 128 mu L m_flow / (pi D⁴ rho)
+
+with the dynamic viscosity mu and the density rho of the circuit's medium at `port_a`, as in
+`HydraulicComponents.Pipes.TubeBase`.
 
 Assumptions: the flow stays laminar and the fluid in the line has no inertia and no compliance;
-the volume it fills belongs to the caliper or master cylinder at its ends. Viscosity is a
-parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800e-6 m²/s at
--40 °C. Default dimensions are a passenger car's line to the front axle (assumed).
+the volume it fills belongs to the caliper or master cylinder at its ends. Default dimensions are
+a passenger car's line to the front axle (assumed).
 """
 component Line
   extends HydraulicComponents.Interfaces.TwoPorts
@@ -17,11 +19,15 @@ component Line
   parameter D::Length = 3e-3
   "Line length"
   parameter L::Length = 1.5
-  "Brake-fluid kinematic viscosity"
-  parameter nu::KinematicViscosity = 10e-6
+  "Fluid density at port_a"
+  variable rho::Density
+  "Fluid dynamic viscosity"
+  variable mu::DynamicViscosity
 relations
+  rho = HydraulicComponents.density(port_a.medium, port_a.p)
+  mu = HydraulicComponents.viscosity(port_a.medium)
   m_flow = port_a.m_flow
-  Δp = 128 * nu * L * m_flow / (π * D ^ 4)
+  Δp = 128 * mu * L * m_flow / (π * D ^ 4 * rho)
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/Line.svg"}},
   "_links": {

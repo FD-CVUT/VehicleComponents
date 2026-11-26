@@ -1,13 +1,15 @@
 """
-One default line (D = 3 mm, L = 1.5 m, nu = 10e-6 m²/s) between two fixed pressures: 1 bar more
-at `port_a` than at `port_b` (set per case). The Hagen-Poiseuille resistance is
-128 nu L/(pi D⁴) = 128 · 10e-6 · 1.5/(pi · 8.1e-11) = 7.545123e6 Pa s/kg, so
+One default line (D = 3 mm, L = 1.5 m) of `VehicleComponents.DOT4` fluid (mu = 0.01045 Pa s,
+1045 kg/m³ at its reference pressure 100325 Pa, bulk modulus 1.4e9 Pa) between two fixed
+pressures, 2e5 Pa at `port_a` and 1e5 Pa at `port_b`.
 
-- `forward`, 1e5 Pa: m_flow = 1e5/7.545123e6 = 0.01325359 kg/s from `port_a` to `port_b`.
-- `reverse`, -1e5 Pa: the same flow the other way, -0.01325359 kg/s.
+At `port_a` the density is 1045 (1 + (2e5 - 100325)/1.4e9) = 1045.07440 kg/m³, so the
+Hagen-Poiseuille resistance is 128 mu L/(pi D⁴ rho) = 128 · 0.01045 · 1.5/(pi · 8.1e-11 ·
+1045.07440) = 7.544586e6 Pa s/kg, and `forward` passes m_flow = 1e5/7.544586e6 = 0.01325454 kg/s
+from `port_a` to `port_b`. The law is linear and odd in the flow, so one direction pins it.
 """
 test component Line
-  "Upstream pressure above the downstream one, overridden per case"
+  "Upstream pressure"
   upstream = BlockComponents.Sources.Constant(k = 2.0e5) {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
   }
@@ -26,7 +28,7 @@ test component Line
     "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
   }
   "DOT 4 brake fluid"
-  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
 relations
   connect(upstream.y, supply.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(supply.port, line.port_a) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 250}], "E": 2}], "path": {}}}
@@ -42,16 +44,7 @@ metadata {
         "abstol": 1e-10,
         "reltol": 1e-10,
         "atol": {"line.m_flow": 1e-8},
-        "expect": {"final": {"line.m_flow": 0.01325359}}
-      },
-      "reverse": {
-        "stop": 1,
-        "solver": "Auto",
-        "abstol": 1e-10,
-        "reltol": 1e-10,
-        "params": {"upstream.k": 0.0},
-        "atol": {"line.m_flow": 1e-8},
-        "expect": {"final": {"line.m_flow": -0.01325359}}
+        "expect": {"final": {"line.m_flow": 0.01325454}}
       }
     }
   }

@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    HydraulicBraked(; name, __overrides)
 
-A straight-line stop from 25 m/s: the default `HydraulicBraked` wheel (r = 0.31 m, J_w = 4 kg m²,
+A straight-line stop from 25 m/s: the default `HydraulicBraked` wheel (r = 0.31 m, J = 4 kg m²,
 F_z = 13729.31 N, w0 = 0.2 rad/s), rolling at 25/0.31 = 80.645161 rad/s, retards a 1400 kg mass
 on a dry road. One line pressure, set per case, feeds both circuits, each through a default
 `Chassis.Brakes.Line`.
@@ -27,7 +27,7 @@ r mu_A F_z = 0.31 · 13729.31 = 4256.1 N m.
   mu_A g, so by 2 s it still moves at 25 - 2 · 9.81 = 5.4 m/s or more, and kappa = -1 + w r/v
   is within 0.0572 · 0.31/5.4 = 0.0033 of -1.
 """
-@component function HydraulicBraked(; name = nothing, var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
+@component function HydraulicBraked(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

@@ -1,5 +1,5 @@
 """
-A straight-line stop from 25 m/s: the default `Braked` wheel (r = 0.31 m, J_w = 4 kg m²,
+A straight-line stop from 25 m/s: the default `Braked` wheel (r = 0.31 m, inertia J = 4 kg m²,
 F_z = 13729.31 N, w0 = 0.2 rad/s), rolling at 25/0.31 = 80.645161 rad/s, retards a 1400 kg mass
 on a dry road. The brake command is set per case; the actuator reaches it within 20 T = 0.6 s.
 The tire can pass at most r mu_A F_z = 0.31 · 13729.31 = 4256.1 N m.

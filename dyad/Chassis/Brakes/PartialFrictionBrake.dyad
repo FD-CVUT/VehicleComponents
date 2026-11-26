@@ -1,0 +1,37 @@
+"""
+In-line friction brake: a disc rigid with the shaft, clamped with the torque magnitude `tau`,
+which an extending component binds.
+
+The brake sits in the shaft line between `spline_a` and `spline_b` and passes its reaction to the
+`support` housing. Both splines share one angle, so the brake adds no rotation state;
+`spline_b.tau` is the torque passed on downstream. The friction torque `tau_friction` is `tau`
+against the shaft's rotation, so the brake decelerates in both directions and never spins the
+shaft up.
+
+Ports: `spline_a`, `spline_b` the shaft ends; `support` the housing, which takes the brake
+reaction. `support` must be connected, to the hub carrier or a `Fixed`: an open housing takes no
+torque, so the brake would apply none.
+
+Assumptions: below `w0` the direction sign(w) is replaced by the sine ramp sin(pi/2 w/w0), which
+is continuously differentiable at ±w0. That is not stiction: the brake holds no torque at exact
+standstill, so a braked wheel on a grade creeps.
+"""
+partial component PartialFrictionBrake
+  extends RotationalComponents.Interfaces.PartialElementaryTwoSplinesAndSupport
+  "Shaft speed below which the friction direction is ramped"
+  parameter w0::AngularVelocity(min = eps(Float64))
+  "Brake-torque magnitude, never negative"
+  variable tau::Torque
+  "Shaft angle relative to the support"
+  variable phi::Angle
+  "Shaft speed relative to the support"
+  variable w::AngularVelocity
+  "Friction torque removed from the shaft line, with the sign of w"
+  variable tau_friction::Torque
+relations
+  phi = spline_a.phi - phi_support
+  w = der(phi)
+  spline_b.phi = spline_a.phi
+  tau_friction = tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0))
+  spline_a.tau + spline_b.tau = tau_friction
+end

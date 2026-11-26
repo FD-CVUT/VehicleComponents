@@ -2,24 +2,20 @@
 One axle's hydraulic disc brakes: the caliper's fluid compliance and the friction torque its
 pressure clamps onto the disc.
 
-The caliper sits in the shaft line between `spline_a` and `spline_b` and passes its reaction to
-the `support` housing; the disc is rigid with the shaft, so both splines share one angle.
-
-Ports: `spline_a`, `spline_b` the shaft ends; `port` the brake-fluid connection; `support` the
-housing, which takes the brake reaction. `support` must be connected, to the hub carrier or a
-`Fixed`: an open housing takes no torque, so the caliper would apply none.
+The friction, its sine ramp below `w0` and the shaft ports are
+`Chassis.Brakes.PartialFrictionBrake`'s; `support` must be connected. `port` is the brake-fluid
+connection.
 
 The admitted fluid volume V sets the pressure. Up to the clearance take-up volume `V0` the pads
-travel against a soft linear law, p = p0 V/V0; beyond it they press the disc and the stiffness
-rises cubically, p = p0 + K1 u + K3 u³ with u = V - V0. The friction torque magnitude is
-K max(0, p - p0) and acts against the shaft's rotation.
+travel against a soft linear law, p = p0 V/V0, and apply no torque; beyond it they press the disc,
+the stiffness rises cubically, p = p0 + K1 u + K3 u³ with u = V - V0, and the friction torque
+magnitude is K (p - p0).
 
-Assumptions: the caliper starts empty, V = 0. Below `w0` the friction direction sign(w) is
-replaced by the sine ramp sin(pi/2 w/w0), as in `Chassis.Wheel.BrakeActuator`, so the brake holds
-no torque at exact standstill. The defaults are a front axle's (textbook).
+Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. The defaults are a
+front axle's (textbook).
 """
 component Caliper
-  extends RotationalComponents.Interfaces.PartialElementaryTwoSplinesAndSupport
+  extends VehicleComponents.Chassis.Brakes.PartialFrictionBrake(w0 = 0.2)
   "Brake-fluid connection"
   port = HydraulicComponents.Interfaces.Port() {^port}
   "Torque gain [N m/Pa]"
@@ -32,8 +28,6 @@ component Caliper
   parameter K1::Real = 1e12
   "Cubic pressure-volume coefficient [Pa/m⁹]"
   parameter K3::Real = 4.8e23
-  "Shaft speed below which the friction direction is ramped"
-  parameter w0::AngularVelocity(min = eps(Float64)) = 0.2
   "Fluid volume admitted to the caliper"
   variable V::Volume = initial 0.0
   "Caliper pressure"
@@ -42,26 +36,13 @@ component Caliper
   variable rho::Density
   "Volume beyond the clearance take-up"
   variable u::Volume
-  "Brake-torque magnitude"
-  variable tau::Torque
-  "Shaft angle relative to the support"
-  variable phi::Angle
-  "Shaft speed relative to the support"
-  variable w::AngularVelocity
-  "Friction torque removed from the shaft line, with the sign of w"
-  variable tau_friction::Torque
 relations
-  phi = spline_a.phi - phi_support
-  w = der(phi)
-  spline_b.phi = spline_a.phi
   port.p = p
   rho = HydraulicComponents.density(port.medium, p)
   der(V) = port.m_flow / rho
   u = V - V0
   p = ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3)
-  tau = K * max(0.0, p - p0)
-  tau_friction = tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0))
-  spline_a.tau + spline_b.tau = tau_friction
+  tau = ifelse(V < V0, 0.0, K * (p - p0))
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/Caliper.svg"}},
   "_links": {

@@ -22,7 +22,9 @@ means r dw/dt = (1 + kappa) dv/dt; with m dv/dt = F_x and J dw/dt = tau - r F_x 
 
 and F_x = mu(kappa) F_z on the rising cubic, mu(kappa) = mu_A c(kappa/sAdhesion). Iterating the
 two from kappa = 0 settles at kappa = 0.0075525, F_x = 1921.097 N (mu = 0.279853), so the mass
-accelerates at 1921.097/1400 = 1.372212 m/s².
+accelerates at 1921.097/1400 = 1.372212 m/s². The slip relaxes to that point at a rate of
+(r²/J + 1/m) F_z mu'(kappa)/max(v, v_eps) = 0.096814 · 6864.655 · 36.16/max(v, 0.5) =
+24000/max(v, 0.5) 1/s, at least 17000 1/s while v stays below 1.4 m/s, so by 1 s it is there.
 """
 @component function Slip(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

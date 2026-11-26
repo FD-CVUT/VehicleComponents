@@ -5,36 +5,24 @@
 
 
 @doc Markdown.doc"""
-   BrakeActuator(; name, T, tau_max, w0, __overrides)
+   BrakeActuator(; name, w0, T, tau_max, __overrides)
 
 In-line wheel brake: Coulomb friction of a commanded magnitude, with a first-order actuator lag.
 
-The brake sits in the shaft line between `spline_a` and `spline_b` and passes its reaction to the
-`support` housing. The disc is rigid with the shaft, so both splines share one angle and the brake
-adds no rotation state; `spline_b.tau` is the torque passed on downstream.
+The friction, its sine ramp below `w0` and the ports are `Chassis.Brakes.PartialFrictionBrake`'s;
+`support` must be connected. `tau_cmd` is the requested brake torque. The request is clamped to
+[0, `tau_max`] and lags through the actuator time constant `T` to the applied magnitude `tau`.
 
-Ports: `spline_a`, `spline_b` the shaft ends; `tau_cmd` the requested brake torque; `support` the
-housing, which takes the brake reaction. `support` must be connected, to the hub carrier or a
-`Fixed`: an open housing takes no torque, so the brake would apply none.
-
-The request is clamped to [0, `tau_max`] and lags through the actuator time constant `T` to the
-applied magnitude `tau_actual`, which acts against the shaft's rotation, so the brake decelerates
-in both directions and never spins the shaft up.
-
-Assumptions: below `w0` the direction sign(w) is replaced by the sine ramp sin(pi/2 w/w0), which is
-continuously differentiable at ±w0. That is not stiction: the brake holds no torque at exact
-standstill, so a braked wheel on a grade creeps. For ABS studies, where the wheel approaches but
-does not dwell at standstill, this fidelity is enough. `RotationalComponents.Sources.SignTorque`
-has the same ramp but takes its torque as a parameter, so it cannot follow a command. Defaults are
-one wheel's hydraulic disc brake (assumed).
+Assumptions: those of `PartialFrictionBrake`; the brake starts released, tau = 0. Defaults are one
+wheel's hydraulic disc brake (assumed).
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `w0`         | Shaft speed below which the friction direction is ramped                         | rad/s  |   1.0 |
 | `T`         | Actuator time constant                         | s  |   0.03 |
 | `tau_max`         | Maximum brake torque                         | N.m  |   2000.0 |
-| `w0`         | Shaft speed below which the friction direction is ramped                         | rad/s  |   1.0 |
 
 ## Connectors
 
@@ -48,12 +36,12 @@ one wheel's hydraulic disc brake (assumed).
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `phi_support`         | Variable for the absolute angle of the support spline                         | rad  |
-| `tau_actual`         | Applied brake-torque magnitude, never negative                         | N.m  |
+| `tau`         | Brake-torque magnitude, never negative                         | N.m  |
 | `phi`         | Shaft angle relative to the support                         | rad  |
 | `w`         | Shaft speed relative to the support                         | rad/s  |
 | `tau_friction`         | Friction torque removed from the shaft line, with the sign of w                         | N.m  |
 """
-@component function BrakeActuator(; name = nothing, var"T"=0.03, var"tau_max"=Float64(2000.0), var"w0"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function BrakeActuator(; name = nothing, var"w0"=Float64(1.0), var"T"=0.03, var"tau_max"=Float64(2000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -72,9 +60,9 @@ one wheel's hydraulic disc brake (assumed).
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
   haskey(__overrides, "T") && (T = pop!(__overrides, "T"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
-  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
 
   ### Structural Parameters (functions)
 
@@ -89,15 +77,15 @@ one wheel's hydraulic disc brake (assumed).
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__w0 = w0
+  append!(__params, @parameters (w0::Real), [description = "Shaft speed below which the friction direction is ramped", bounds = (VehicleComponents.eps(VehicleComponents.Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
   __local__T = T
   append!(__params, @parameters (T::Real), [description = "Actuator time constant"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T, __local__T)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
-  __local__w0 = w0
-  append!(__params, @parameters (w0::Real), [description = "Shaft speed below which the friction direction is ramped", bounds = (eps(Float64), Inf)])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
 
   ### Final Parameters (assignments)
 
@@ -106,7 +94,7 @@ one wheel's hydraulic disc brake (assumed).
 
   ### Variables (declarations)
   append!(__vars, @variables (phi_support(t)::Real), [description = "Variable for the absolute angle of the support spline"])
-  append!(__vars, @variables (tau_actual(t)::Real), [description = "Applied brake-torque magnitude, never negative"])
+  append!(__vars, @variables (tau(t)::Real), [description = "Brake-torque magnitude, never negative"])
   append!(__vars, @variables (phi(t)::Real), [description = "Shaft angle relative to the support"])
   append!(__vars, @variables (w(t)::Real), [description = "Shaft speed relative to the support"])
   append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction torque removed from the shaft line, with the sign of w"])
@@ -115,10 +103,10 @@ one wheel's hydraulic disc brake (assumed).
   __ovr_phi_support = pop!(__overrides, "phi_support", nothing); isnothing(__ovr_phi_support) || push!(__eqs, phi_support ~ __ovr_phi_support)
   __ovr_phi_support__initial = pop!(__overrides, "phi_support.initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
   __ovr_phi_support__guess = pop!(__overrides, "phi_support.guess", nothing)
-  __ovr_tau_actual = pop!(__overrides, "tau_actual", nothing); isnothing(__ovr_tau_actual) || push!(__eqs, tau_actual ~ __ovr_tau_actual)
-  __ovr_tau_actual__initial = pop!(__overrides, "tau_actual.initial", nothing); __ic_tau_actual = @something(__ovr_tau_actual__initial, 0.0)
-  ismissing(__ic_tau_actual) || (__initial_conditions[tau_actual] = __ic_tau_actual)
-  __ovr_tau_actual__guess = pop!(__overrides, "tau_actual.guess", nothing)
+  __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); __ic_tau = @something(__ovr_tau__initial, 0.0)
+  ismissing(__ic_tau) || (__initial_conditions[tau] = __ic_tau)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
   __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
   __ovr_phi__initial = pop!(__overrides, "phi.initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
   __ovr_phi__guess = pop!(__overrides, "phi.guess", nothing)
@@ -142,7 +130,7 @@ one wheel's hydraulic disc brake (assumed).
 
   ### Guesses
   isnothing(__ovr_phi_support__guess) || (__guesses[phi_support] = __ovr_phi_support__guess)
-  isnothing(__ovr_tau_actual__guess) || (__guesses[tau_actual] = __ovr_tau_actual__guess)
+  isnothing(__ovr_tau__guess) || (__guesses[tau] = __ovr_tau__guess)
   isnothing(__ovr_phi__guess) || (__guesses[phi] = __ovr_phi__guess)
   isnothing(__ovr_w__guess) || (__guesses[w] = __ovr_w__guess)
   isnothing(__ovr_tau_friction__guess) || (__guesses[tau_friction] = __ovr_tau_friction__guess)
@@ -158,9 +146,9 @@ one wheel's hydraulic disc brake (assumed).
   push!(__eqs, phi ~ spline_a.phi - phi_support)
   push!(__eqs, w ~ ModelingToolkit.D_nounits(phi))
   push!(__eqs, spline_b.phi ~ spline_a.phi)
-  push!(__eqs, T * ModelingToolkit.D_nounits(tau_actual) ~ min(max(tau_cmd, 0.0), tau_max) - tau_actual)
-  push!(__eqs, tau_friction ~ tau_actual * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0)))
+  push!(__eqs, tau_friction ~ tau * VehicleComponents.ifelse(VehicleComponents.abs(w) >= w0, VehicleComponents.sign(w), VehicleComponents.sin(π / 2 * w / w0)))
   push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
+  push!(__eqs, T * ModelingToolkit.D_nounits(tau) ~ min(max(tau_cmd, 0.0), tau_max) - tau)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

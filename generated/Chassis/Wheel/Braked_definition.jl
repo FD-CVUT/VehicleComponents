@@ -5,10 +5,10 @@
 
 
 @doc Markdown.doc"""
-   Braked(; name, radius, J_w, F_z, tau_max, T_brake, w0, sAdhesion, sSlide, mu_A, mu_S, __overrides)
+   Braked(; name, __overrides)
 
-Braked road wheel: rotating inertia, in-line friction brake and slip tire contact, wired in the
-order torque travels: shaft, inertia, brake, tire, road.
+Braked road wheel: rotating inertia, in-line commanded friction brake and slip tire contact, wired
+in the order torque travels: shaft, inertia, brake, tire, road.
 
 Ports:
 - `spline` the inboard shaft end; open when nothing drives the wheel.
@@ -21,27 +21,13 @@ Ports:
   controller reads wheel speed through a sensor and estimates slip from it, and that lag belongs
   between this output and the controller.
 
-Assumptions: the wheel starts at rest; give another start at the declaration,
-`Braked(inertia(w = initial 80.0))`. The defaults lump the whole vehicle onto one equivalent wheel,
-the configuration a straight-line braking study needs: `J_w` is four road wheels, `F_z` the full
-weight of a 1400 kg car and `tau_max` the four brakes together. Loading the equivalent wheel with
-one axle's share while it still retards the whole mass halves the friction ceiling and roughly
-doubles the stopping distance. Values are assumed.
-
-## Parameters:
-
-| Name         | Description                         | Units  |   Default value |
-| ------------ | ----------------------------------- | ------ | --------------- |
-| `radius`         | Rolling radius                         | m  |   0.31 |
-| `J_w`         | Rotating inertia; four road wheels                         | kg.m2  |   4.0 |
-| `F_z`         | Normal load; the full weight of a 1400 kg car                         | N  |   13729.31 |
-| `tau_max`         | Maximum brake torque, all brakes together                         | N.m  |   6000.0 |
-| `T_brake`         | Brake actuator time constant                         | s  |   0.03 |
-| `w0`         | Shaft speed below which the brake's friction direction is ramped                         | rad/s  |   0.2 |
-| `sAdhesion`         | Slip ratio at peak adhesion                         | --  |   0.04 |
-| `sSlide`         | Slip ratio at the sliding plateau                         | --  |   0.12 |
-| `mu_A`         | Peak adhesion coefficient                         | --  |   1.0 |
-| `mu_S`         | Sliding friction coefficient                         | --  |   0.7 |
+Assumptions: the wheel starts at rest and the brake released; give another start at the
+declaration, `Braked(inertia(w = initial 80.0))`. The defaults lump the whole vehicle onto one
+equivalent wheel, the configuration a straight-line braking study needs: `inertia.J` is four road
+wheels, `tire.F_z` the full weight of a 1400 kg car and `brake.tau_max` the four brakes together.
+Loading the equivalent wheel with one axle's share while it still retards the whole mass halves
+the friction ceiling and roughly doubles the stopping distance. Values are assumed; change them
+on the part, `Braked(tire(F_z = 6864.655))`.
 
 ## Connectors
 
@@ -52,7 +38,7 @@ doubles the stopping distance. Values are assumed.
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function Braked(; name = nothing, var"radius"=0.31, var"J_w"=Float64(4.0), var"F_z"=13729.31, var"tau_max"=Float64(6000.0), var"T_brake"=0.03, var"w0"=0.2, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, __overrides = Dict{String, Any}())
+@component function Braked(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -70,18 +56,6 @@ doubles the stopping distance. Values are assumed.
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
-  ### Keyword argument overrides
-  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
-  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
-  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
-  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
-  haskey(__overrides, "T_brake") && (T_brake = pop!(__overrides, "T_brake"))
-  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
-  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
-  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
-  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
-  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
-
   ### Structural Parameters (functions)
 
   ### Structural Parameters (Final)
@@ -95,36 +69,6 @@ doubles the stopping distance. Values are assumed.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Rolling radius"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
-  __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Rotating inertia; four road wheels"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
-  __local__F_z = F_z
-  append!(__params, @parameters (F_z::Real), [description = "Normal load; the full weight of a 1400 kg car"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
-  __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque, all brakes together"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
-  __local__T_brake = T_brake
-  append!(__params, @parameters (T_brake::Real), [description = "Brake actuator time constant"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, T_brake, __local__T_brake)
-  __local__w0 = w0
-  append!(__params, @parameters (w0::Real), [description = "Shaft speed below which the brake's friction direction is ramped"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
-  __local__sAdhesion = sAdhesion
-  append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
-  __local__sSlide = sSlide
-  append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
-  __local__mu_A = mu_A
-  append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
-  __local__mu_S = mu_S
-  append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
 
   ### Final Parameters (assignments)
 
@@ -150,13 +94,13 @@ doubles the stopping distance. Values are assumed.
   inertia_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   inertia_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(inertia_dict, inertia_overrides)
-  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J_w, __overrides = inertia_dict))
+  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=Float64(4.0), __overrides = inertia_dict))
   # Subcomponent brake of type VehicleComponents.Chassis.Wheel.BrakeActuator
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=tau_max, T=T_brake, w0=w0, __overrides = brake_overrides))
+  push!(__systems, @named brake = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(6000.0), w0=0.2, __overrides = brake_overrides))
   # Subcomponent tire of type VehicleComponents.Chassis.Wheel.Slip
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
-  push!(__systems, @named tire = VehicleComponents.Chassis.Wheel.Slip(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, __overrides = tire_overrides))
+  push!(__systems, @named tire = VehicleComponents.Chassis.Wheel.Slip(; F_z=13729.31, __overrides = tire_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

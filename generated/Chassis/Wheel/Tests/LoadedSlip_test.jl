@@ -33,7 +33,7 @@ __dyad_run_test_case!(
   component_stem="LoadedSlip",
   module_path=String["Chassis", "Wheel", "Tests"],
   start=0e+0,
-  stop=5e+0,
+  stop=2e+0,
   abstol=1e-8,
   reltol=1e-8,
   solver=ODEAlg.Auto(),

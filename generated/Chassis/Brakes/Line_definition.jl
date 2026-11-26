@@ -5,19 +5,21 @@
 
 
 @doc Markdown.doc"""
-   Line(; name, D, L, nu, __overrides)
+   Line(; name, D, L, __overrides)
 
 Brake line: laminar flow of brake fluid through a round pipe.
 
 Ports: `port_a`, `port_b` the two fluid connections. Mass flow from `port_a` to `port_b` drops the
 pressure by the Hagen-Poiseuille law,
 
-    port_a.p - port_b.p = 128 nu L m_flow / (pi D⁴)
+    port_a.p - port_b.p = 128 mu L m_flow / (pi D⁴ rho)
+
+with the dynamic viscosity mu and the density rho of the circuit's medium at `port_a`, as in
+`HydraulicComponents.Pipes.TubeBase`.
 
 Assumptions: the flow stays laminar and the fluid in the line has no inertia and no compliance;
-the volume it fills belongs to the caliper or master cylinder at its ends. Viscosity is a
-parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800e-6 m²/s at
--40 °C. Default dimensions are a passenger car's line to the front axle (assumed).
+the volume it fills belongs to the caliper or master cylinder at its ends. Default dimensions are
+a passenger car's line to the front axle (assumed).
 
 ## Parameters:
 
@@ -25,7 +27,6 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `D`         | Internal diameter                         | m  |   3e-3 |
 | `L`         | Line length                         | m  |   1.5 |
-| `nu`         | Brake-fluid kinematic viscosity                         | m2/s  |   10e-6 |
 
 ## Connectors
 
@@ -38,8 +39,10 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
 | ------------ | ----------------------------------- | ------ |
 | `Δp`         | Pressure difference across the component, defined as port_a.p - port_b.p                         | Pa  |
 | `m_flow`         | Overall mass flow rate through the component                         | kg/s  |
+| `rho`         | Fluid density at port_a                         | kg/m3  |
+| `mu`         | Fluid dynamic viscosity                         | Pa.s  |
 """
-@component function Line(; name = nothing, var"D"=0.003, var"L"=1.5, var"nu"=0.00001, var"continuity__graph0", __overrides = Dict{String, Any}())
+@component function Line(; name = nothing, var"D"=0.003, var"L"=1.5, var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -60,7 +63,6 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
   ### Keyword argument overrides
   haskey(__overrides, "D") && (D = pop!(__overrides, "D"))
   haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
-  haskey(__overrides, "nu") && (nu = pop!(__overrides, "nu"))
 
   ### Structural Parameters (functions)
 
@@ -81,9 +83,6 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Line length"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, L, __local__L)
-  __local__nu = nu
-  append!(__params, @parameters (nu::Real), [description = "Brake-fluid kinematic viscosity", bounds = (0, Inf)])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, nu, __local__nu)
 
   ### Final Parameters (assignments)
 
@@ -94,6 +93,8 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
   ### Variables (declarations)
   append!(__vars, @variables (Δp(t)::Real), [description = "Pressure difference across the component, defined as port_a.p - port_b.p"])
   append!(__vars, @variables (m_flow(t)::Real), [description = "Overall mass flow rate through the component"])
+  append!(__vars, @variables (rho(t)::Real), [description = "Fluid density at port_a"])
+  append!(__vars, @variables (mu(t)::Real), [description = "Fluid dynamic viscosity"])
 
   ### Variables (assignments)
   __ovr_Δp = pop!(__overrides, "Δp", nothing); isnothing(__ovr_Δp) || push!(__eqs, Δp ~ __ovr_Δp)
@@ -102,6 +103,12 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
   __ovr_m_flow = pop!(__overrides, "m_flow", nothing); isnothing(__ovr_m_flow) || push!(__eqs, m_flow ~ __ovr_m_flow)
   __ovr_m_flow__initial = pop!(__overrides, "m_flow.initial", nothing); isnothing(__ovr_m_flow__initial) || (__initial_conditions[m_flow] = __ovr_m_flow__initial)
   __ovr_m_flow__guess = pop!(__overrides, "m_flow.guess", nothing)
+  __ovr_rho = pop!(__overrides, "rho", nothing); isnothing(__ovr_rho) || push!(__eqs, rho ~ __ovr_rho)
+  __ovr_rho__initial = pop!(__overrides, "rho.initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
+  __ovr_rho__guess = pop!(__overrides, "rho.guess", nothing)
+  __ovr_mu = pop!(__overrides, "mu", nothing); isnothing(__ovr_mu) || push!(__eqs, mu ~ __ovr_mu)
+  __ovr_mu__initial = pop!(__overrides, "mu.initial", nothing); isnothing(__ovr_mu__initial) || (__initial_conditions[mu] = __ovr_mu__initial)
+  __ovr_mu__guess = pop!(__overrides, "mu.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -116,6 +123,8 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
   ### Guesses
   isnothing(__ovr_Δp__guess) || (__guesses[Δp] = __ovr_Δp__guess)
   isnothing(__ovr_m_flow__guess) || (__guesses[m_flow] = __ovr_m_flow__guess)
+  isnothing(__ovr_rho__guess) || (__guesses[rho] = __ovr_rho__guess)
+  isnothing(__ovr_mu__guess) || (__guesses[mu] = __ovr_mu__guess)
 
   ### Initialization Equations
 
@@ -125,8 +134,10 @@ parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800
   ### Equations
   push!(__eqs, port_a.m_flow + port_b.m_flow ~ 0)
   push!(__eqs, Δp ~ port_a.p - port_b.p)
+  push!(__eqs, rho ~ HydraulicComponents.density(port_a__medium, port_a.p))
+  push!(__eqs, mu ~ HydraulicComponents.viscosity(port_a__medium))
   push!(__eqs, m_flow ~ port_a.m_flow)
-  push!(__eqs, Δp ~ 128 * nu * L * m_flow / (π * D ^ 4))
+  push!(__eqs, Δp ~ 128 * mu * L * m_flow / (π * D ^ 4 * rho))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

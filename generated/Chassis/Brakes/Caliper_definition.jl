@@ -5,37 +5,33 @@
 
 
 @doc Markdown.doc"""
-   Caliper(; name, K, p0, V0, K1, K3, w0, __overrides)
+   Caliper(; name, w0, K, p0, V0, K1, K3, __overrides)
 
 One axle's hydraulic disc brakes: the caliper's fluid compliance and the friction torque its
 pressure clamps onto the disc.
 
-The caliper sits in the shaft line between `spline_a` and `spline_b` and passes its reaction to
-the `support` housing; the disc is rigid with the shaft, so both splines share one angle.
-
-Ports: `spline_a`, `spline_b` the shaft ends; `port` the brake-fluid connection; `support` the
-housing, which takes the brake reaction. `support` must be connected, to the hub carrier or a
-`Fixed`: an open housing takes no torque, so the caliper would apply none.
+The friction, its sine ramp below `w0` and the shaft ports are
+`Chassis.Brakes.PartialFrictionBrake`'s; `support` must be connected. `port` is the brake-fluid
+connection.
 
 The admitted fluid volume V sets the pressure. Up to the clearance take-up volume `V0` the pads
-travel against a soft linear law, p = p0 V/V0; beyond it they press the disc and the stiffness
-rises cubically, p = p0 + K1 u + K3 u³ with u = V - V0. The friction torque magnitude is
-K max(0, p - p0) and acts against the shaft's rotation.
+travel against a soft linear law, p = p0 V/V0, and apply no torque; beyond it they press the disc,
+the stiffness rises cubically, p = p0 + K1 u + K3 u³ with u = V - V0, and the friction torque
+magnitude is K (p - p0).
 
-Assumptions: the caliper starts empty, V = 0. Below `w0` the friction direction sign(w) is
-replaced by the sine ramp sin(pi/2 w/w0), as in `Chassis.Wheel.BrakeActuator`, so the brake holds
-no torque at exact standstill. The defaults are a front axle's (textbook).
+Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. The defaults are a
+front axle's (textbook).
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `w0`         | Shaft speed below which the friction direction is ramped                         | rad/s  |   0.2 |
 | `K`         | Torque gain [N m/Pa]                         | --  |   49.0e-5 |
 | `p0`         | Pad-contact pressure                         | Pa  |   0.5e5 |
 | `V0`         | Clearance take-up volume                         | m3  |   0.5e-6 |
 | `K1`         | Linear pressure-volume coefficient [Pa/m³]                         | --  |   1e12 |
 | `K3`         | Cubic pressure-volume coefficient [Pa/m⁹]                         | --  |   4.8e23 |
-| `w0`         | Shaft speed below which the friction direction is ramped                         | rad/s  |   0.2 |
 
 ## Connectors
 
@@ -49,16 +45,16 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `phi_support`         | Variable for the absolute angle of the support spline                         | rad  |
+| `tau`         | Brake-torque magnitude, never negative                         | N.m  |
+| `phi`         | Shaft angle relative to the support                         | rad  |
+| `w`         | Shaft speed relative to the support                         | rad/s  |
+| `tau_friction`         | Friction torque removed from the shaft line, with the sign of w                         | N.m  |
 | `V`         | Fluid volume admitted to the caliper                         | m3  |
 | `p`         | Caliper pressure                         | Pa  |
 | `rho`         | Fluid density at the caliper pressure                         | kg/m3  |
 | `u`         | Volume beyond the clearance take-up                         | m3  |
-| `tau`         | Brake-torque magnitude                         | N.m  |
-| `phi`         | Shaft angle relative to the support                         | rad  |
-| `w`         | Shaft speed relative to the support                         | rad/s  |
-| `tau_friction`         | Friction torque removed from the shaft line, with the sign of w                         | N.m  |
 """
-@component function Caliper(; name = nothing, var"K"=0.00049, var"p0"=Float64(50000.0), var"V0"=5e-7, var"K1"=Float64(1000000000000.0), var"K3"=Float64(4.8e+23), var"w0"=0.2, var"continuity__graph0", __overrides = Dict{String, Any}())
+@component function Caliper(; name = nothing, var"w0"=0.2, var"K"=0.00049, var"p0"=Float64(50000.0), var"V0"=5e-7, var"K1"=Float64(1000000000000.0), var"K3"=Float64(4.8e+23), var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -77,12 +73,12 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
   haskey(__overrides, "K") && (K = pop!(__overrides, "K"))
   haskey(__overrides, "p0") && (p0 = pop!(__overrides, "p0"))
   haskey(__overrides, "V0") && (V0 = pop!(__overrides, "V0"))
   haskey(__overrides, "K1") && (K1 = pop!(__overrides, "K1"))
   haskey(__overrides, "K3") && (K3 = pop!(__overrides, "K3"))
-  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
 
   ### Structural Parameters (functions)
 
@@ -97,6 +93,9 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__w0 = w0
+  append!(__params, @parameters (w0::Real), [description = "Shaft speed below which the friction direction is ramped", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
   __local__K = K
   append!(__params, @parameters (K::Real), [description = "Torque gain [N m/Pa]"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, K, __local__K)
@@ -112,9 +111,6 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
   __local__K3 = K3
   append!(__params, @parameters (K3::Real), [description = "Cubic pressure-volume coefficient [Pa/m⁹]"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, K3, __local__K3)
-  __local__w0 = w0
-  append!(__params, @parameters (w0::Real), [description = "Shaft speed below which the friction direction is ramped", bounds = (eps(Float64), Inf)])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
 
   ### Final Parameters (assignments)
 
@@ -123,19 +119,31 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
 
   ### Variables (declarations)
   append!(__vars, @variables (phi_support(t)::Real), [description = "Variable for the absolute angle of the support spline"])
+  append!(__vars, @variables (tau(t)::Real), [description = "Brake-torque magnitude, never negative"])
+  append!(__vars, @variables (phi(t)::Real), [description = "Shaft angle relative to the support"])
+  append!(__vars, @variables (w(t)::Real), [description = "Shaft speed relative to the support"])
+  append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction torque removed from the shaft line, with the sign of w"])
   append!(__vars, @variables (V(t)::Real), [description = "Fluid volume admitted to the caliper"])
   append!(__vars, @variables (p(t)::Real), [description = "Caliper pressure"])
   append!(__vars, @variables (rho(t)::Real), [description = "Fluid density at the caliper pressure"])
   append!(__vars, @variables (u(t)::Real), [description = "Volume beyond the clearance take-up"])
-  append!(__vars, @variables (tau(t)::Real), [description = "Brake-torque magnitude"])
-  append!(__vars, @variables (phi(t)::Real), [description = "Shaft angle relative to the support"])
-  append!(__vars, @variables (w(t)::Real), [description = "Shaft speed relative to the support"])
-  append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction torque removed from the shaft line, with the sign of w"])
 
   ### Variables (assignments)
   __ovr_phi_support = pop!(__overrides, "phi_support", nothing); isnothing(__ovr_phi_support) || push!(__eqs, phi_support ~ __ovr_phi_support)
   __ovr_phi_support__initial = pop!(__overrides, "phi_support.initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
   __ovr_phi_support__guess = pop!(__overrides, "phi_support.guess", nothing)
+  __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
+  __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
+  __ovr_phi__initial = pop!(__overrides, "phi.initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
+  __ovr_phi__guess = pop!(__overrides, "phi.guess", nothing)
+  __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
+  __ovr_w__initial = pop!(__overrides, "w.initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
+  __ovr_w__guess = pop!(__overrides, "w.guess", nothing)
+  __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
+  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction.initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
+  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction.guess", nothing)
   __ovr_V = pop!(__overrides, "V", nothing); isnothing(__ovr_V) || push!(__eqs, V ~ __ovr_V)
   __ovr_V__initial = pop!(__overrides, "V.initial", nothing); __ic_V = @something(__ovr_V__initial, 0.0)
   ismissing(__ic_V) || (__initial_conditions[V] = __ic_V)
@@ -149,18 +157,6 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
   __ovr_u = pop!(__overrides, "u", nothing); isnothing(__ovr_u) || push!(__eqs, u ~ __ovr_u)
   __ovr_u__initial = pop!(__overrides, "u.initial", nothing); isnothing(__ovr_u__initial) || (__initial_conditions[u] = __ovr_u__initial)
   __ovr_u__guess = pop!(__overrides, "u.guess", nothing)
-  __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
-  __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
-  __ovr_phi__initial = pop!(__overrides, "phi.initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
-  __ovr_phi__guess = pop!(__overrides, "phi.guess", nothing)
-  __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
-  __ovr_w__initial = pop!(__overrides, "w.initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
-  __ovr_w__guess = pop!(__overrides, "w.guess", nothing)
-  __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
-  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction.initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
-  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -176,14 +172,14 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
 
   ### Guesses
   isnothing(__ovr_phi_support__guess) || (__guesses[phi_support] = __ovr_phi_support__guess)
-  isnothing(__ovr_V__guess) || (__guesses[V] = __ovr_V__guess)
-  isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
-  isnothing(__ovr_rho__guess) || (__guesses[rho] = __ovr_rho__guess)
-  isnothing(__ovr_u__guess) || (__guesses[u] = __ovr_u__guess)
   isnothing(__ovr_tau__guess) || (__guesses[tau] = __ovr_tau__guess)
   isnothing(__ovr_phi__guess) || (__guesses[phi] = __ovr_phi__guess)
   isnothing(__ovr_w__guess) || (__guesses[w] = __ovr_w__guess)
   isnothing(__ovr_tau_friction__guess) || (__guesses[tau_friction] = __ovr_tau_friction__guess)
+  isnothing(__ovr_V__guess) || (__guesses[V] = __ovr_V__guess)
+  isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
+  isnothing(__ovr_rho__guess) || (__guesses[rho] = __ovr_rho__guess)
+  isnothing(__ovr_u__guess) || (__guesses[u] = __ovr_u__guess)
 
   ### Initialization Equations
 
@@ -196,14 +192,14 @@ no torque at exact standstill. The defaults are a front axle's (textbook).
   push!(__eqs, phi ~ spline_a.phi - phi_support)
   push!(__eqs, w ~ ModelingToolkit.D_nounits(phi))
   push!(__eqs, spline_b.phi ~ spline_a.phi)
+  push!(__eqs, tau_friction ~ tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0)))
+  push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
   push!(__eqs, port.p ~ p)
   push!(__eqs, rho ~ HydraulicComponents.density(port__medium, p))
   push!(__eqs, ModelingToolkit.D_nounits(V) ~ port.m_flow / rho)
   push!(__eqs, u ~ V - V0)
   push!(__eqs, p ~ ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3))
-  push!(__eqs, tau ~ K * max(0.0, p - p0))
-  push!(__eqs, tau_friction ~ tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0)))
-  push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
+  push!(__eqs, tau ~ ifelse(V < V0, 0.0, K * (p - p0)))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

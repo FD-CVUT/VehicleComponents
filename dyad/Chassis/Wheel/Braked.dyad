@@ -1,6 +1,6 @@
 """
-Braked road wheel: rotating inertia, in-line friction brake and slip tire contact, wired in the
-order torque travels: shaft, inertia, brake, tire, road.
+Braked road wheel: rotating inertia, in-line commanded friction brake and slip tire contact, wired
+in the order torque travels: shaft, inertia, brake, tire, road.
 
 Ports:
 - `spline` the inboard shaft end; open when nothing drives the wheel.
@@ -13,12 +13,13 @@ Ports:
   controller reads wheel speed through a sensor and estimates slip from it, and that lag belongs
   between this output and the controller.
 
-Assumptions: the wheel starts at rest; give another start at the declaration,
-`Braked(inertia(w = initial 80.0))`. The defaults lump the whole vehicle onto one equivalent wheel,
-the configuration a straight-line braking study needs: `J_w` is four road wheels, `F_z` the full
-weight of a 1400 kg car and `tau_max` the four brakes together. Loading the equivalent wheel with
-one axle's share while it still retards the whole mass halves the friction ceiling and roughly
-doubles the stopping distance. Values are assumed.
+Assumptions: the wheel starts at rest and the brake released; give another start at the
+declaration, `Braked(inertia(w = initial 80.0))`. The defaults lump the whole vehicle onto one
+equivalent wheel, the configuration a straight-line braking study needs: `inertia.J` is four road
+wheels, `tire.F_z` the full weight of a 1400 kg car and `brake.tau_max` the four brakes together.
+Loading the equivalent wheel with one axle's share while it still retards the whole mass halves
+the friction ceiling and roughly doubles the stopping distance. Values are assumed; change them
+on the part, `Braked(tire(F_z = 6864.655))`.
 """
 component Braked
   "Inboard shaft"
@@ -45,35 +46,18 @@ component Braked
   kappa = RealOutput() {
     "Dyad": {"placement": {"icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270}}}
   }
-  inertia = RotationalComponents.Components.Inertia(J = J_w, phi = initial 0.0, w = initial 0.0) {
+  "Rotating inertia; four road wheels"
+  inertia = RotationalComponents.Components.Inertia(J = 4.0, phi = initial 0.0, w = initial 0.0) {
     "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 300, "y2": 400}}}
   }
-  brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0) {
+  "Commanded brake; all four brakes together"
+  brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 6000.0, w0 = 0.2) {
     "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
   }
-  tire = VehicleComponents.Chassis.Wheel.Slip(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {
+  "Tire; the normal load is the full weight of a 1400 kg car"
+  tire = VehicleComponents.Chassis.Wheel.Slip(F_z = 13729.31) {
     "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
   }
-  "Rolling radius"
-  parameter radius::Length = 0.31
-  "Rotating inertia; four road wheels"
-  parameter J_w::MomentOfInertia = 4.0
-  "Normal load; the full weight of a 1400 kg car"
-  parameter F_z::Force = 13729.31
-  "Maximum brake torque, all brakes together"
-  parameter tau_max::Torque = 6000.0
-  "Brake actuator time constant"
-  parameter T_brake::Time = 0.03
-  "Shaft speed below which the brake's friction direction is ramped"
-  parameter w0::AngularVelocity = 0.2
-  "Slip ratio at peak adhesion"
-  parameter sAdhesion::Real = 0.04
-  "Slip ratio at the sliding plateau"
-  parameter sSlide::Real = 0.12
-  "Peak adhesion coefficient"
-  parameter mu_A::Real = 1.0
-  "Sliding friction coefficient"
-  parameter mu_S::Real = 0.7
 relations
   connect(spline, inertia.spline_a) {
     "Dyad": {

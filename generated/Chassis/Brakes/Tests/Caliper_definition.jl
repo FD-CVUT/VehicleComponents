@@ -13,20 +13,21 @@ brakes a J = 100 kg m² shaft spinning at 100 rad/s, its housing fixed. The pres
 case.
 
 Once the caliper has filled, no fluid flows and it sits at the line pressure p. The line's
-resistance R = 7.545e6 Pa s/kg (see the `Line` rig) and the caliper's compliance rho dV/dp fill it
-with a time constant of R rho V0/p0 = 7.545e6 · 1045 · 1e-11 = 0.079 s below p0, and faster above
-it, so within the 2 s run the pressure error decays by e^-25. The caliper decelerates the shaft by
-at most 4875.5/100 = 48.8 rad/s², so in 2 s it keeps turning above 100 - 97.5 = 2.5 rad/s, well
-above w0, and the full torque acts.
+resistance, 128 mu L/(pi D⁴ rho) (see the `Line` rig), and the caliper's compliance rho dV/dp
+fill it with a time constant of 128 mu L V0/(pi D⁴ p0) = 128 · 0.01045 · 1.5 · 1e-11/(pi · 8.1e-11
+· 0.5e5) = 0.0788 s below p0, and faster above it. The caliper decelerates the shaft by at most
+4875.5/100 = 48.8 rad/s², so in 2 s it keeps turning above 100 - 97.5 = 2.5 rad/s, well above w0,
+and the full torque acts.
 
 - `clearance`, 0.25 bar, below p0: the pads have not reached the disc. V = V0 p/p0 = 0.5e-6 ·
-  0.5 = 0.25e-6 m³ and the torque is 0.
+  0.5 = 0.25e-6 m³ and the torque is 0. The fill stays below p0, so it is the one exponential of
+  0.0788 s: by 1 s it is within e^-12.69 = 3.1e-6 of its end, 0.077 Pa and 7.7e-13 m³.
 - `applied`, 100 bar: the pads press the disc, p - p0 = K1 u + K3 u³ = 9.95e6 Pa. Bisection on
   [0, 1e-4] gives u = 2.49499e-6 m³ (K1 u = 2.49499e6 Pa, K3 u³ = 7.45501e6 Pa), so
-  V = 2.99499e-6 m³, and tau = 49e-5 · 9.95e6 = 4875.5 N m. The friction torque has the sign of w,
-  so it is +4875.5 N m too.
+  V = 2.99499e-6 m³. The friction torque is K (p - p0) = 49e-5 · 9.95e6 = 4875.5 N m with the
+  sign of w, positive. By 2 s the fill is complete to within e^-25.
 """
-@component function Caliper(; name = nothing, var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
+@component function Caliper(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

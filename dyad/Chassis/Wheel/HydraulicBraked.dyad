@@ -16,8 +16,9 @@ Ports:
 
 Assumptions: the wheel starts at rest and both calipers empty; give another start at the
 declaration, `HydraulicBraked(inertia(w = initial 80.0))`. Like `Braked`, the defaults lump the
-whole 1400 kg car onto one equivalent wheel. The caliper defaults are a compact car's front and rear
-axles (textbook).
+whole 1400 kg car onto one equivalent wheel. `caliper_f` keeps the `Caliper` defaults, a compact
+car's front axle, and `caliper_r` takes its rear axle's (textbook). Change any of them on the
+part, `HydraulicBraked(caliper_r(K = 25e-5))`.
 """
 component HydraulicBraked
   "Inboard shaft"
@@ -70,60 +71,30 @@ component HydraulicBraked
   kappa = RealOutput() {
     "Dyad": {"placement": {"icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270}}}
   }
-  inertia = RotationalComponents.Components.Inertia(J = J_w, phi = initial 0.0, w = initial 0.0) {
+  "Rotating inertia; four road wheels"
+  inertia = RotationalComponents.Components.Inertia(J = 4.0, phi = initial 0.0, w = initial 0.0) {
     "Dyad": {
       "placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 400, "y2": 500, "rot": 270}}
     }
   }
-  caliper_f = VehicleComponents.Chassis.Brakes.Caliper(K = K_f, p0 = p0, V0 = V0_f, K1 = K1_f, K3 = K3_f, w0 = w0) {
+  "Front-axle caliper"
+  caliper_f = VehicleComponents.Chassis.Brakes.Caliper() {
     "Dyad": {
       "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 250, "y2": 350, "rot": 180}}
     }
   }
-  caliper_r = VehicleComponents.Chassis.Brakes.Caliper(K = K_r, p0 = p0, V0 = V0_r, K1 = K1_r, K3 = K3_r, w0 = w0) {
+  "Rear-axle caliper"
+  caliper_r = VehicleComponents.Chassis.Brakes.Caliper(K = 19.9e-5, V0 = 0.3e-6, K1 = 2.5e12, K3 = 7.5e24) {
     "Dyad": {
       "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 250, "y2": 350, "rot": 180}}
     }
   }
-  tire = VehicleComponents.Chassis.Wheel.Slip(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {
+  "Tire; the normal load is the full weight of a 1400 kg car"
+  tire = VehicleComponents.Chassis.Wheel.Slip(F_z = 13729.31) {
     "Dyad": {
       "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400, "rot": 180}}
     }
   }
-  "Rolling radius"
-  parameter radius::Length = 0.31
-  "Rotating inertia; four road wheels"
-  parameter J_w::MomentOfInertia = 4.0
-  "Normal load; the full weight of a 1400 kg car"
-  parameter F_z::Force = 13729.31
-  "Shaft speed below which the calipers' friction direction is ramped"
-  parameter w0::AngularVelocity = 0.2
-  "Slip ratio at peak adhesion"
-  parameter sAdhesion::Real = 0.04
-  "Slip ratio at the sliding plateau"
-  parameter sSlide::Real = 0.12
-  "Peak adhesion coefficient"
-  parameter mu_A::Real = 1.0
-  "Sliding friction coefficient"
-  parameter mu_S::Real = 0.7
-  "Front-axle torque gain [N m/Pa]"
-  parameter K_f::Real = 49.0e-5
-  "Rear-axle torque gain [N m/Pa]"
-  parameter K_r::Real = 19.9e-5
-  "Pad-contact pressure"
-  parameter p0::Pressure = 0.5e5
-  "Front clearance take-up volume"
-  parameter V0_f::Volume = 0.5e-6
-  "Rear clearance take-up volume"
-  parameter V0_r::Volume = 0.3e-6
-  "Front linear pressure-volume coefficient [Pa/m³]"
-  parameter K1_f::Real = 1e12
-  "Rear linear pressure-volume coefficient [Pa/m³]"
-  parameter K1_r::Real = 2.5e12
-  "Front cubic pressure-volume coefficient [Pa/m⁹]"
-  parameter K3_f::Real = 4.8e23
-  "Rear cubic pressure-volume coefficient [Pa/m⁹]"
-  parameter K3_r::Real = 7.5e24
 relations
   connect(spline, inertia.spline_a) {
     "Dyad": {
