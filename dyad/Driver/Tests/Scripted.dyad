@@ -2,11 +2,9 @@
 The two presets read their tables: `CoastDown` holds full throttle until 9 s and then coasts;
 `HardStop` coasts the same way and brakes fully from 19 s. Neither steers, so steering stays 0 rad.
 
-`between_ticks` plays `tests/steer_step.csv`, which is all zero until a row at 0.105 s sets
-throttle 0.25 and steering 0.1 rad. That breakpoint lies between the 10 ms ticks at 0.10 s and
-0.11 s. Unclocked playback takes the row at its own time, so at 0.107 s, before the next tick,
-throttle is 0.25 and steering 0.1 rad; a driver sampled every 10 ms would still hold the 0.10 s
-values, 0 and 0. Brake stays 0 throughout.
+`between_ticks` plays `tests/steer_step.csv`, whose row at 0.105 s, between 10 ms ticks, steps
+throttle to 0.25 and steering to 0.1 rad, so at 0.107 s throttle is 0.25, brake 0 and steering
+0.1 rad.
 
 `between_ticks` needs its own instance: `table` is a String, and the compiler rejects a String
 override in a case's `params` with `urn:mtkir:unrenderable-param-value`.

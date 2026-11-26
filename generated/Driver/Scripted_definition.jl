@@ -10,13 +10,10 @@
 Driver that plays back a time table of throttle, brake and steering commands.
 
 The table is a CSV with four columns: `time` in seconds, `throttle` and `brake` as pedal
-fractions in [0, 1], and `steer` as the steering-wheel angle in radians. A wired continuous clock
-drives the lookup, with constant interpolation: each row holds from its own time until the next
-breakpoint, not snapped to any sampling tick, and values outside the table use constant
-extrapolation. The clock holds 0 before t = 0, so table time is read from t = 0 and rows before
-0 are never played.
-Playback neither clamps nor converts: a value outside [0, 1] or in other units reaches the ports
-as written.
+fractions in [0, 1], and `steer` as the steering-wheel angle in radians. Each row holds from its
+own time until the next; table time starts at t = 0, and values outside the table hold the nearest
+row. Playback neither clamps nor converts: a value outside [0, 1] or in other units reaches the
+ports as written.
 
 Ports are those of `Driver.Interface`.
 
