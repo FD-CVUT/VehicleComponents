@@ -5,27 +5,31 @@
 
 
 @doc Markdown.doc"""
-   DriveCycle(; name, file, dataset, __overrides)
+   DriveCycle(; name, file, column, dataset, to_kmh, __overrides)
 
-Target vehicle speed from a drive cycle: a time-series CSV of time and speed in km/h.
+Target vehicle speed from a drive cycle: a time-series CSV of time `t_s` in seconds and a speed
+column.
 
 Port: `y`, the target vehicle speed in km/h. The default is the packaged WLTC class 3b trace
 (Regulation (EU) 2017/1151). Linear interpolation follows the prescribed straight ramps between
 its 1 Hz points, and constant extrapolation keeps the endpoint defined. Table time starts at
-t = 0.
+t = 0. The speed column `column` is scaled by `to_kmh`, which is 1.609344 for `v_mph` (the
+packaged EPA cycles) and 1 for any other column, read as km/h.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `file`         | CSV with `t_s` and `v_kmh` columns                         | --  |   "dyad://Veh...lass3b.csv" |
-| `dataset`         |                          | --  |   DyadData.Dy...=["v_kmh"]) |
+| `file`         | CSV with a `t_s` column and the speed column `column`                         | --  |   "dyad://Veh...lass3b.csv" |
+| `column`         | Speed column: `v_kmh` in km/h, or `v_mph` in mph                         | --  |   "v_kmh" |
+| `dataset`         |                          | --  |   DyadData.Dy...s=[column]) |
+| `to_kmh`         | Factor from the column's unit to km/h                         | --  |   ifelse(colu...09344, 1.0) |
 
 ## Connectors
 
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function DriveCycle(; name = nothing, var"file"="dyad://VehicleComponents/data/drive_cycles/wltc_class3b.csv", var"dataset"=nothing, __overrides = Dict{String, Any}())
+@component function DriveCycle(; name = nothing, var"file"="dyad://VehicleComponents/data/drive_cycles/wltc_class3b.csv", var"column"="v_kmh", var"dataset"=nothing, var"to_kmh"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,10 +49,13 @@ t = 0.
 
   ### Keyword argument overrides
   haskey(__overrides, "file") && (file = pop!(__overrides, "file"))
+  haskey(__overrides, "column") && (column = pop!(__overrides, "column"))
   haskey(__overrides, "dataset") && (dataset = pop!(__overrides, "dataset"))
+  haskey(__overrides, "to_kmh") && (to_kmh = pop!(__overrides, "to_kmh"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
-  isnothing(dataset) && (dataset = DyadData.DyadTimeseries(file; independent_var="t_s", dependent_vars=["v_kmh"]))
+  isnothing(dataset) && (dataset = DyadData.DyadTimeseries(file; independent_var="t_s", dependent_vars=[column]))
+  isnothing(to_kmh) && (to_kmh = ifelse(column == "v_mph", 1.609344, 1.0))
 
   ### Structural Parameters (functions)
 
@@ -63,6 +70,9 @@ t = 0.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__to_kmh = to_kmh
+  append!(__params, @parameters (to_kmh::Real), [description = "Factor from the column's unit to km/h"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, to_kmh, __local__to_kmh)
 
   ### Final Parameters (assignments)
 
@@ -83,6 +93,9 @@ t = 0.
   # Subcomponent interpolation of type BlockComponents.Tables.Interpolation
   interpolation_overrides = __pop_subcomponent_overrides!(__overrides, "interpolation")
   push!(__systems, @named interpolation = BlockComponents.Tables.Interpolation(; dataset=dataset, interpolation_type=BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), __overrides = interpolation_overrides))
+  # Subcomponent conversion of type BlockComponents.Math.Gain
+  conversion_overrides = __pop_subcomponent_overrides!(__overrides, "conversion")
+  push!(__systems, @named conversion = BlockComponents.Math.Gain(; k=to_kmh, __overrides = conversion_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -96,7 +109,8 @@ t = 0.
 
   ### Equations
   push!(__eqs, connect(clock.y, interpolation.u))
-  push!(__eqs, connect(interpolation.y, y))
+  push!(__eqs, connect(interpolation.y, conversion.u))
+  push!(__eqs, connect(conversion.y, y))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

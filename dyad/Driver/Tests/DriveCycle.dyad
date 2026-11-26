@@ -2,17 +2,17 @@
 The packaged WLTC class 3b trace is 0.2 km/h at 12 s and 1.7 km/h at 13 s, so linear
 interpolation gives 0.95 km/h at 12.5 s.
 
-The EPA FTP-75 trace publishes 3 mph at 21 s; its file holds that in km/h, 3 x 1.609344 =
-4.828032 km/h, which `epa_kmh` reads at 21 s.
+The EPA FTP-75 file holds 3 mph at 21 s in its `v_mph` column; played with
+`column = "v_mph"`, the output is 3 x 1.609344 = 4.828032 km/h, which `epa_kmh` checks at 21 s.
 
-The FTP-75 case needs its own instance: `file` is a String, and the compiler rejects a String
-override in a case's `params` with `urn:mtkir:unrenderable-param-value`.
+The FTP-75 case needs its own instance: `file` and `column` are Strings, and the compiler rejects
+a String override in a case's `params` with `urn:mtkir:unrenderable-param-value`.
 """
 test component DriveCycle
   cycle = VehicleComponents.Driver.DriveCycle() {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
   }
-  ftp75 = VehicleComponents.Driver.DriveCycle(file = "dyad://VehicleComponents/data/drive_cycles/ftp75.csv") {
+  ftp75 = VehicleComponents.Driver.DriveCycle(file = "dyad://VehicleComponents/data/drive_cycles/ftp75.csv", column = "v_mph") {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
   }
 relations

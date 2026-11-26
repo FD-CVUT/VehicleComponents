@@ -7,13 +7,12 @@ header. A Dyad model reaches a file here as `dyad://VehicleComponents/data/drive
 | File | Cycle | Columns | Rows | Source | License |
 |---|---|---|---|---|---|
 | `wltc_class3b.csv` | WLTC class 3b (Low 3, Medium 3b, High 3b, Extra-high 3) | `t_s,v_kmh` | 1801 (0…1800 s) | Regulation (EU) 2017/1151, Annex XXI, Sub-Annex 1 | EU legislation, reuse with attribution |
-| `ftp75.csv` | US EPA FTP-75 (UDDS plus the 505 s hot-start repeat, soak removed) | `t_s,v_kmh` | 1875 (0…1874 s) | US EPA, `ftpcol.txt` | US government work, public domain |
-| `hwfet.csv` | US EPA Highway Fuel Economy Test | `t_s,v_kmh` | 766 (0…765 s) | US EPA, `hwycol.txt` | public domain |
-| `us06.csv` | US EPA US06 supplemental FTP | `t_s,v_kmh` | 601 (0…600 s) | US EPA, `us06col.txt` | public domain |
+| `ftp75.csv` | US EPA FTP-75 (UDDS plus the 505 s hot-start repeat, soak removed) | `t_s,v_mph` | 1875 (0…1874 s) | US EPA, `ftpcol.txt` | US government work, public domain |
+| `hwfet.csv` | US EPA Highway Fuel Economy Test | `t_s,v_mph` | 766 (0…765 s) | US EPA, `hwycol.txt` | public domain |
+| `us06.csv` | US EPA US06 supplemental FTP | `t_s,v_mph` | 601 (0…600 s) | US EPA, `us06col.txt` | public domain |
 
-Every file gives speed in km/h, the unit `Driver.DriveCycle` reads. The EPA files publish mph;
-each value here is the published one times 1.609344 (the international mile in km), written out
-exactly with no rounding, so dividing by 1.609344 gives back the published number. The NEDC
+The EPA files keep EPA's own unit, mph, so each value is the published one unchanged.
+`Driver.DriveCycle` plays one with `column = "v_mph"`, which converts it to km/h. The NEDC
 has no file: it is a short piecewise-linear definition, generated in
 the course repo's Lecture 2 notebook from UNECE Regulation No 83, Annex 4a, Tables 1 and 2.
 
@@ -47,9 +46,8 @@ reused for any purpose unless stated otherwise (EUR-Lex legal notice; Commission
 ## EPA cycles
 
 Downloaded from <https://www.epa.gov/vehicle-and-fuel-emissions-testing/dynamometer-drive-schedules>
-in October 2026. The two header lines of each text file were replaced by one CSV header, and the
-speeds were converted from mph to km/h as above; the times are unchanged. SHA-256 of the
-downloads:
+in October 2026. The two header lines of each text file were replaced by one CSV header; the
+numbers are unchanged. SHA-256 of the downloads:
 
 | File | SHA-256 |
 |---|---|

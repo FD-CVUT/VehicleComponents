@@ -34,11 +34,8 @@ not listed has not moved yet.
 
 ## Data
 
-| Course | Library | Notes |
-|---|---|---|
-| `dyad://VehicleSystemsComponents/data/drive_cycles/<file>` | `dyad://VehicleComponents/data/drive_cycles/<file>` | |
-| `dyad://VehicleSystemsComponents/data/drive_cycles/ftp75.csv` | `dyad://VehicleComponents/data/drive_cycles/ftp75.csv` | Column `v_mph` is now `v_kmh`, in km/h (mph × 1.609344), so `Driver.DriveCycle` plays it. |
-| `dyad://VehicleSystemsComponents/data/drive_cycles/hwfet.csv` | `dyad://VehicleComponents/data/drive_cycles/hwfet.csv` | As `ftp75.csv`. |
-| `dyad://VehicleSystemsComponents/data/drive_cycles/us06.csv` | `dyad://VehicleComponents/data/drive_cycles/us06.csv` | As `ftp75.csv`. |
-| `dyad://VehicleSystemsComponents/drivers/coast_down.csv` | `dyad://VehicleComponents/data/drivers/coast_down.csv` | |
-| `dyad://VehicleSystemsComponents/drivers/hard_stop.csv` | `dyad://VehicleComponents/data/drivers/hard_stop.csv` | |
+| Course | Library |
+|---|---|
+| `dyad://VehicleSystemsComponents/data/drive_cycles/<file>` | `dyad://VehicleComponents/data/drive_cycles/<file>` |
+| `dyad://VehicleSystemsComponents/drivers/coast_down.csv` | `dyad://VehicleComponents/data/drivers/coast_down.csv` |
+| `dyad://VehicleSystemsComponents/drivers/hard_stop.csv` | `dyad://VehicleComponents/data/drivers/hard_stop.csv` |
