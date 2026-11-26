@@ -20,7 +20,9 @@ __dyad_run_test_case!(
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.caliper.p, "caliper.p", 10000000, 1, 1e-7),
-    (m -> m.caliper.V, "caliper.V", 0.00000299499, 1e-11, 1e-7),
+    (m -> m.caliper.V, "caliper.V", 0.000002994991, 1e-12, 1e-7),
+    (m -> m.master.V_disp, "master.V_disp", 0.000002994991, 1e-12, 1e-7),
+    (m -> m.master.x_rod, "master.x_rod", 0.008601346, 1e-9, 1e-7),
   ],
   signals=Tuple[],
 )
@@ -37,10 +39,10 @@ __dyad_run_test_case!(
   solver=ODEAlg.Auto(),
   params=Dict{String, Any}(),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[(m -> m.caliper.V, "caliper.V", 0, 1e-11, 1e-7)],
+  expected_initial=Tuple[(m -> m.caliper.V, "caliper.V", 0, 1e-12, 1e-7)],
   expected_final=Tuple[
     (m -> m.caliper.p, "caliper.p", 4000000, 1, 1e-7),
-    (m -> m.caliper.V, "caliper.V", 0.000002178818, 1e-11, 1e-7),
+    (m -> m.caliper.V, "caliper.V", 0.000002178818, 1e-12, 1e-7),
   ],
   signals=Tuple[],
 )
@@ -57,13 +59,13 @@ __dyad_run_test_case!(
   solver=ODEAlg.Auto(),
   params=Dict{String, Any}(),
   initial_conditions=Tuple[
-    (m -> m.caliper.V, 0.00000299499),
+    (m -> m.caliper.V, 0.000002994991),
     (m -> m.valve.p_hold, 10000000.0),
   ],
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.caliper.p, "caliper.p", 4000000, 1, 1e-7),
-    (m -> m.caliper.V, "caliper.V", 0.000002178818, 1e-11, 1e-7),
+    (m -> m.caliper.V, "caliper.V", 0.000002178818, 1e-12, 1e-7),
     (m -> m.valve.p_a, "valve.p_a", 10000000, 1, 1e-7),
   ],
   signals=Tuple[],
@@ -83,7 +85,8 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.valve.p_hold, "valve.p_hold", 6207276.6, 100, 1e-7),
+    (m -> m.valve.p_hold, "valve.p_hold", 6207276.6, 10, 1e-7),
+    (m -> m.valve.p_b, "valve.p_b", 7602541.6, 10, 1e-7),
     (m -> m.valve.port_a.m_flow, "valve.port_a.m_flow", 0, 1e-12, 1e-7),
   ],
   signals=Tuple[],
@@ -103,7 +106,7 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.valve.p_hold, "valve.p_hold", 6207276.6, 100, 1e-7),
+    (m -> m.valve.p_hold, "valve.p_hold", 6207276.6, 10, 1e-7),
     (m -> m.valve.m_dump, "valve.m_dump", 0, 1e-12, 1e-7),
   ],
   signals=Tuple[],
@@ -115,17 +118,65 @@ __dyad_run_test_case!(
   component_stem="ABSValve",
   module_path=String["Chassis", "Brakes", "Tests"],
   start=0e+0,
-  stop=1.5e+0,
+  stop=5.3e-1,
   abstol=1e-10,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
   params=Dict{String, Any}("command.height" => 16000000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.valve.p_b, "valve.p_b", 9187988.3, 10, 1e-7)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "backflow for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="backflow",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=5.3e-1,
+  abstol=1e-14,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.offset" => 8000000.0, "command.height" => -7000000.0, "force.height" => -3436.116964863836),
+  initial_conditions=Tuple[
+    (m -> m.caliper.V, 0.000002777744),
+    (m -> m.valve.p_hold, 8000000.0),
+    (m -> m.valve.y, 0.0),
+  ],
+  expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.caliper.p, "caliper.p", 10000000, 1, 1e-7),
-    (m -> m.caliper.V, "caliper.V", 0.00000299499, 1e-11, 1e-7),
-    (m -> m.valve.p_hold, "valve.p_hold", 10000000, 1, 1e-7),
+    (m -> m.valve.m_dump, "valve.m_dump", 0, 1e-12, 1e-7),
+    (m -> m.valve.p_b, "valve.p_b", 3000000, 1, 1e-7),
+    (m -> m.caliper.V, "caliper.V", 0.00000195906, 1e-12, 1e-7),
+    (m -> m.master.V_disp, "master.V_disp", -8.18684e-7, 1e-12, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "backflow_dump for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="backflow_dump",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=1.5e+0,
+  abstol=1e-14,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.offset" => 8000000.0, "command.height" => -7000000.0, "force.height" => -3436.116964863836),
+  initial_conditions=Tuple[
+    (m -> m.caliper.V, 0.000002777744),
+    (m -> m.valve.p_hold, 8000000.0),
+    (m -> m.valve.y, 0.0),
+  ],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.valve.m_dump, "valve.m_dump", 0, 1e-12, 1e-7),
+    (m -> m.valve.port_a.m_flow, "valve.port_a.m_flow", 0, 1e-12, 1e-7),
+    (m -> m.caliper.V, "caliper.V", 0.000001248618, 1e-12, 1e-7),
+    (m -> m.master.V_disp, "master.V_disp", -8.18684e-7, 1e-12, 1e-7),
   ],
   signals=Tuple[],
 )

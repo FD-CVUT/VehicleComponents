@@ -8,7 +8,10 @@ connection.
 
 Pressures are gauge: the caliper's pressure p is `port.p` less the ambient pressure `p_amb`, since
 HydraulicComponents ports carry absolute pressure. A released circuit at ambient pressure leaves
-the caliper empty and applies no torque. The admitted fluid volume V sets p. Up to the clearance
+the caliper empty and applies no torque. The admitted fluid volume V sets p. V is the admitted
+fluid's mass over its density at `p_amb`, so it counts fluid, not the pressure it was admitted at:
+a fill and a release at different pressures cancel, and the fluid's own compressibility is part of
+the pressure-volume law. Up to the clearance
 take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no torque;
 beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with
 u = V - V0, and the friction torque magnitude is K (p - p0).
@@ -34,18 +37,18 @@ component Caliper
   parameter K3::Real = 4.8e23
   "Ambient pressure, which a released caliper sits at"
   parameter p_amb::Pressure = 100325.0
-  "Fluid volume admitted to the caliper"
+  "Fluid admitted to the caliper, as volume at p_amb"
   variable V::Volume = initial 0.0
   "Caliper pressure, gauge: above p_amb"
   variable p::Pressure
-  "Fluid density at the caliper pressure"
-  variable rho::Density
+  "Fluid density at p_amb, which converts admitted mass to V"
+  variable rho_ref::Density
   "Volume beyond the clearance take-up"
   variable u::Volume
 relations
   port.p = p_amb + p
-  rho = HydraulicComponents.density(port.medium, port.p)
-  der(V) = port.m_flow / rho
+  rho_ref = HydraulicComponents.density(port.medium, p_amb)
+  der(V) = port.m_flow / rho_ref
   u = V - V0
   p = ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3)
   tau = ifelse(V < V0, 0.0, K * (p - p0))

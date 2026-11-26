@@ -12,7 +12,8 @@ function of the force on its input rod.
 
 Ports: `input` the input rod from the pedal; `rod_out` the output rod to the master cylinder;
 `support` the housing, which takes the assist force. The rods are one rigid piece, so the booster
-adds no travel.
+adds no travel. The flange forces follow the stdlib's sign, the force on this part along s: the
+input rod pushes the booster toward +s, and the booster pushes the output rod on toward +s.
 
 The output force F_out follows the booster's characteristic of the input force F_in:
 
@@ -26,7 +27,8 @@ A_d (p_atm - p_vac) - F_rs0.
 Assumptions: the vacuum chamber holds `p_vac` whatever the assist draws; the valve and the
 chambers have no dynamics (see `VacuumBooster` for both). Defaults: `A_d`, `p_vac` and `F_rs0`
 from PATH (UCB-ITS-PRR-97-21, Table 2.1), `SR`, `F_cut`, `F_jump` assumed, `p_atm` the standard
-atmosphere.
+atmosphere, the air the assist works against; it is not the brake fluid's reference pressure
+`p_amb` (100325 Pa) of the hydraulic parts.
 
 ## Parameters:
 
@@ -155,8 +157,8 @@ atmosphere.
 
   ### Equations
   push!(__eqs, input.s ~ rod_out.s)
-  push!(__eqs, F_in ~ -input.f)
-  push!(__eqs, F_out ~ rod_out.f)
+  push!(__eqs, F_in ~ input.f)
+  push!(__eqs, F_out ~ -rod_out.f)
   push!(__eqs, F_out ~ max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max))))
   push!(__eqs, input.f + rod_out.f + support.f ~ 0.0)
 

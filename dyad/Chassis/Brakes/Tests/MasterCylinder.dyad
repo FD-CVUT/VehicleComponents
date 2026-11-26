@@ -1,0 +1,208 @@
+"""
+One default `MasterCylinder` pushed by a stdlib `Force` against its fixed housing, feeding a
+front-axle `Caliper` through a default `Line` and a rear-axle one through a 4 m line; the discs
+are held still. The force steps at 0.5 s; its level before and after is set per case.
+
+The cylinder holds p_mc = (F - 218)/4.908738521e-4 (the `ForceChain` rig). Once the calipers have
+filled, both sit at p_mc. V_disp and each caliper's V count fluid as volume at p_amb, so the
+fluid the cylinder gave up is exactly what the calipers hold, V_disp = V_f + V_r, and
+x_rod = 2.5e-3 + (V_f + V_r)/4.908738521e-4.
+
+- `apply`, +1000 N, the stdlib's sign for a force pushing the rod into the cylinder:
+  p_mc = 782/4.908738521e-4 = 1593077.32 Pa. Above p0 = 0.5e5 Pa, p - p0 = 1543077.32 Pa; the
+  front caliper's law 1e12 u + 4.8e23 u³ gives u = 1.025465e-6 m³ by bisection on [0, 1e-4], so
+  V_f = 1.525465e-6 m³, and the rear's 2.5e12 u + 7.5e24 u³ gives u = 0.410186e-6 m³, so
+  V_r = 0.710186e-6 m³. The rod moves out, x_rod = 2.5e-3 + 2.235652e-6/4.908738521e-4 =
+  7.054432e-3 m. The slower fill, the rear's through 4 m of line, settles within 0.1 s.
+- `release`, 4594.7225 N (the `HydraulicStop` rig's 8.92 MPa) let go at 0.5 s: the force drops
+  to 0, so p_mc = 0 and the calipers drain back into the cylinder until they are empty, the rear
+  last with a time constant of 128 · 0.01045 · 4 · 0.3e-6/(pi · 8.1e-11 · 0.5e5) = 0.126 s. By
+  3 s that is within e^-19, so V_disp = 0 and the rod is back at the dead stroke,
+  x_rod = 2.5e-3 m, whatever pressures the fluid crossed on the way.
+"""
+test component MasterCylinder
+  "Pushrod force, overridden per case"
+  force = BlockComponents.Sources.Step(height = 0.0, offset = 1000.0, start_time = 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+  push = TranslationalComponents.Sources.Force() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550, "rot": 270}}
+    }
+  }
+  ground = TranslationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 550, "x2": 650, "y1": 200, "y2": 300, "rot": 270}}
+    }
+  }
+  master = VehicleComponents.Chassis.Brakes.MasterCylinder() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 450, "y2": 550}}}
+  }
+  master_mount = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 700, "y2": 800}}}
+  }
+  line_f = VehicleComponents.Chassis.Brakes.Line() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 550, "y2": 650}}}
+  }
+  line_r = VehicleComponents.Chassis.Brakes.Line(L = 4.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 800, "y2": 900}}}
+  }
+  caliper_f = VehicleComponents.Chassis.Brakes.Caliper() {
+    "Dyad": {"placement": {"diagram": {"x1": 1300, "x2": 1200, "y1": 450, "y2": 550}}}
+  }
+  caliper_r = VehicleComponents.Chassis.Brakes.Caliper(K = 19.9e-5, V0 = 0.3e-6, K1 = 2.5e12, K3 = 7.5e24) {
+    "Dyad": {"placement": {"diagram": {"x1": 1300, "x2": 1200, "y1": 700, "y2": 800}}}
+  }
+  "Discs held still"
+  disc = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1450, "x2": 1550, "y1": 550, "y2": 650, "rot": 270}}
+    }
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 950, "y2": 1050}}}
+  }
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = VehicleComponents.DOT4
+relations
+  connect(force.y, push.f) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(push.flange_a, ground.flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 500, "y": 650}, {"x": 100, "y": 650}, {"x": 100, "y": 250}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(push.flange_b, master.pushrod) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 500, "y": 400}, {"x": 650, "y": 400}, {"x": 650, "y": 500}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(master.support, master_mount.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(master.front, line_f.port_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 850, "y": 475},
+            {"x": 850, "y": 500},
+            {"x": 900, "y": 500},
+            {"x": 900, "y": 600}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(line_f.port_b, caliper_f.port) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 1150, "y": 600}, {"x": 1150, "y": 400}, {"x": 1250, "y": 400}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(master.rear, line_r.port_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 525}, {"x": 850, "y": 850}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(line_r.port_b, caliper_r.port) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 1150, "y": 850}, {"x": 1150, "y": 650}, {"x": 1250, "y": 650}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  continuity(medium, master.front.medium)
+  connect(caliper_f.spline_a, disc.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1400, "y": 500}, {"x": 1400, "y": 600}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(caliper_r.spline_a, disc.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1400, "y": 750}, {"x": 1400, "y": 600}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(caliper_f.support, housing.spline) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 1250, "y": 600},
+            {"x": 1350, "y": 600},
+            {"x": 1350, "y": 900},
+            {"x": 1250, "y": 900}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(caliper_r.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "apply": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "atol": {
+          "master.p_mc": 0.01,
+          "caliper_f.V": 1e-12,
+          "caliper_r.V": 1e-12,
+          "master.x_rod": 1e-9
+        },
+        "expect": {
+          "initial": {"master.x_rod": 2.5e-3},
+          "final": {
+            "master.p_mc": 1593077.32,
+            "caliper_f.V": 1.525465e-6,
+            "caliper_r.V": 0.710186e-6,
+            "master.x_rod": 7.054432e-3
+          }
+        }
+      },
+      "release": {
+        "stop": 3,
+        "solver": "Auto",
+        "abstol": 1e-10,
+        "reltol": 1e-8,
+        "params": {"force.offset": 4594.7225, "force.height": -4594.7225},
+        "atol": {"master.p_mc": 1e-6, "master.V_disp": 1e-13, "master.x_rod": 1e-10},
+        "expect": {"final": {"master.p_mc": 0.0, "master.V_disp": 0.0, "master.x_rod": 2.5e-3}}
+      }
+    }
+  }
+}
+end

@@ -6,7 +6,7 @@ the circuit sends.
 
 Assumptions: the reservoir is too large to be drawn down, such as an engine's intake manifold at a
 fixed operating point or the atmosphere. `p` is absolute: a pressure meant as gauge needs the
-ambient pressure added before it reaches `p`.
+atmosphere, 101325 Pa on the air side, added before it reaches `p`.
 """
 component GasPressureSource
   "Absolute pressure the source holds"

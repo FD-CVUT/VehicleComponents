@@ -15,7 +15,8 @@ pivot, which takes the lever's reaction. The foot pushes against the car, so its
 into `support` with the pivot's.
 
 The lever multiplies the foot force F_ped by `i_p` at the pushrod, F_rod = i_p F_ped, and the
-pedal travels `i_p` times the pushrod's travel relative to the pivot.
+pedal travels `i_p` times the pushrod's travel relative to the pivot. The flange forces follow
+the stdlib's sign, the force on this part along s, so the pedal pushes the rod toward +s.
 
 Assumptions: no pedal mass, friction or return spring; the foot force is whatever the command
 asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted pedals span 3.2 to
@@ -135,7 +136,7 @@ asks, whatever the pedal's travel. Defaults: `i_p` 3.5 (assumed; OEM boosted ped
   push!(__eqs, x_rod ~ rod.s - support.s)
   push!(__eqs, x_ped ~ i_p * x_rod)
   push!(__eqs, F_ped ~ min(max(u, 0.0), 1.0) * F_max)
-  push!(__eqs, F_rod ~ rod.f)
+  push!(__eqs, F_rod ~ -rod.f)
   push!(__eqs, F_rod ~ i_p * F_ped)
   push!(__eqs, rod.f + support.f ~ 0.0)
 

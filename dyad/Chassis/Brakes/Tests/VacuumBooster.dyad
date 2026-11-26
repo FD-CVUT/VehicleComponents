@@ -17,11 +17,11 @@ out, p_f = (1.26e-7 · 33000 + 1.4e-10 · 101325)/(1.26e-7 + 1.4e-10) = 33075.83
   p_mc = (F_out - 218)/4.908738521e-4 and both calipers fill to it, and the piston travel x_p is
   their displaced volume over the bore area. Fixed-point iteration on x_p, with each caliper's
   volume by bisection on its pressure-volume law (the `HydraulicStop` rig), settles at
-  x_p = 8.501e-3 m, F_out = 4720.185 N, p_mc = 9171775 Pa, front caliper V = 2.909248e-6 m³ and
-  rear V = 1.263699e-6 m³. The valve stays open: e = 1200 - 40 - (4720.185 - 500)/5 = 316 N,
-  above the 10 N apply threshold. The cylinder counts its fluid at its own pressure, never below
-  the calipers', so x_p may fall short by up to 4.17e-6 · 9.17e6/1.4e9/4.91e-4 = 5.6e-5 m, which
-  moves F_out by 0.14 N and p_mc by 275 Pa. The chambers settle with time constants near 0.2 s,
+  x_p = 8.501e-3 m, F_out = 4720.1846 N, p_mc = 9171775.1 Pa, front caliper V = 2.9092485e-6 m³
+  and rear V = 1.2636994e-6 m³. The valve stays open: e = 1200 - 40 - (4720.18 - 500)/5 = 316 N,
+  above the 10 N apply threshold. The cylinder and the calipers count fluid alike, as volume at
+  p_amb, so x_p is exactly their volume over the bore area. The chambers settle with time
+  constants near 0.2 s,
   so by 5 s, 3.5 s after the ramp, they are within e^-15.
 - `servo`, 300 N held, in the boosted range: the valve closes once the reaction-disc force
   balances the input, so it holds the output wherever the force error e = F_in - F_cut - F_r
@@ -228,19 +228,19 @@ metadata {
         "atol": {
           "booster.p_r": 1.0,
           "booster.p_f": 1.0,
-          "booster.F_out": 0.2,
-          "master.p_mc": 300.0,
-          "caliper_f.V": 5e-11,
-          "caliper_r.V": 5e-11
+          "booster.F_out": 0.01,
+          "master.p_mc": 20.0,
+          "caliper_f.V": 5e-12,
+          "caliper_r.V": 5e-12
         },
         "expect": {
           "final": {
             "booster.p_r": 101325.0,
             "booster.p_f": 33075.832,
-            "booster.F_out": 4720.185,
-            "master.p_mc": 9171775.0,
-            "caliper_f.V": 2.909248e-6,
-            "caliper_r.V": 1.263699e-6
+            "booster.F_out": 4720.1846,
+            "master.p_mc": 9171775.1,
+            "caliper_f.V": 2.9092485e-6,
+            "caliper_r.V": 1.2636994e-6
           }
         }
       },

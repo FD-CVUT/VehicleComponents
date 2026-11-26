@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSValve(; name, T_v, T_open, return_dump, p_amb, __overrides)
+   ABSValve(; name, T_v, return_dump, p_amb, __overrides)
 
 Ideal per-circuit ABS modulator: the ECU commands the wheel-side pressure it allows, and the valve
 makes the caliper follow it after the solenoid lag `T_v`, never above the master-cylinder
@@ -14,34 +14,40 @@ pressure.
 Ports: `port_a` the master-cylinder side; `port_b` the brake-line and caliper side; `p_cmd` the
 allowed wheel-circuit pressure, gauge.
 
-With p_a and p_b the two sides' gauge pressures:
+With p_a and p_b the two sides' gauge pressures, a command at or above p_a asks for the inlet
+open, one below it for the inlet closed. The inlet's opening y, 1 open and 0 closed, follows that
+request with the lag `T_v`, and the held pressure p_hold follows the command clamped to
+[0, p_a], also with `T_v`:
 
-- a command at or above p_a leaves the inlet open: p_b = p_a, and the fluid passes straight
-  through;
-- below p_a the valve holds or dumps: the held pressure p_hold relaxes to the command, clamped to
-  [0, p_a], with the time constant `T_v`, and p_b = min(p_a, max(p_hold, 0)). While the inlet is
-  open, p_hold follows p_a with the time constant `T_open`, so a closing valve starts from the
-  pressure it held.
+    p_b = min(p_a, y p_a + (1 - y) p_hold)
 
-`return_dump` decides where fluid dumped from the caliper goes. At 0 it leaves the model, so the
-master cylinder makes up every dumped volume and the pedal creeps forward without pulsing. At 1 it
-re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it straight back to
-the master cylinder: the pedal is pushed back with every dump, the pulsation a driver feels.
-`m_dump` is the fluid that leaves the model.
+So a valve held open passes p_a straight through, a closed one holds or dumps the wheel side to
+the command, and both the close and the re-apply after it take the solenoid's time. The wheel side
+never rises above p_a: when p_a falls below the held pressure, the inlet valve's parallel check
+valve opens and the wheel side follows p_a down.
+
+Fluid passes between the ports, either way, while the inlet is asked open or the check valve
+conducts (p_hold >= p_a). Otherwise the closed valve still lets the caliper fill from the master
+cylinder, and fluid dumped from the caliper goes where `return_dump` decides. At 0 it leaves the
+model, so the master cylinder makes up every dumped volume and the pedal creeps forward without
+pulsing. At 1 it re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it
+straight back to the master cylinder: the pedal is pushed back with every dump, the pulsation a
+driver feels. `m_dump` is the fluid that leaves the model.
 
 Pressures are gauge: the ports carry absolute pressure, `p_amb` + p, as `Caliper` and
 `MasterCylinder` read it.
 
-Assumptions: the valve has no flow restriction and no volume of its own; the held pressure starts
-at 0. `p_amb` defaults to 100325 Pa, the reference pressure of `VehicleComponents.DOT4`. `T_v`
-lumps the electronics' and the solenoid's reaction (assumed).
+Assumptions: the valve has no flow restriction and no volume of its own; it starts open, y = 1,
+with the held pressure at 0. A start with the valve closed sets both at the declaration,
+`ABSValve(y = initial 0.0, p_hold = initial 8e6)`. `p_amb` defaults to 100325 Pa, the reference
+pressure of `VehicleComponents.DOT4`. `T_v` lumps the electronics' and the solenoid's reaction
+(assumed).
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `T_v`         | Electronics and solenoid reaction time                         | s  |   0.03 |
-| `T_open`         | Time constant with which the held pressure follows the master cylinder while the inlet is open                         | s  |   1e-3 |
 | `return_dump`         | Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side                         | --  |   0.0 |
 | `p_amb`         | Ambient pressure, which a released circuit sits at                         | Pa  |   100325.0 |
 
@@ -57,11 +63,12 @@ lumps the electronics' and the solenoid's reaction (assumed).
 | ------------ | ----------------------------------- | ------ |
 | `p_a`         | Master-cylinder side pressure, gauge                         | Pa  |
 | `p_b`         | Wheel side pressure, gauge                         | Pa  |
+| `y`         | Inlet opening: 1 open, 0 closed                         | --  |
 | `p_hold`         | Pressure the closed valve holds the wheel side at, gauge                         | Pa  |
 | `p_target`         | Command clamped to the master-cylinder side                         | Pa  |
 | `m_dump`         | Mass flow of dumped fluid leaving the model                         | kg/s  |
 """
-@component function ABSValve(; name = nothing, var"T_v"=0.03, var"T_open"=0.001, var"return_dump"=Float64(0.0), var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
+@component function ABSValve(; name = nothing, var"T_v"=0.03, var"return_dump"=Float64(0.0), var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -81,7 +88,6 @@ lumps the electronics' and the solenoid's reaction (assumed).
 
   ### Keyword argument overrides
   haskey(__overrides, "T_v") && (T_v = pop!(__overrides, "T_v"))
-  haskey(__overrides, "T_open") && (T_open = pop!(__overrides, "T_open"))
   haskey(__overrides, "return_dump") && (return_dump = pop!(__overrides, "return_dump"))
   haskey(__overrides, "p_amb") && (p_amb = pop!(__overrides, "p_amb"))
 
@@ -101,9 +107,6 @@ lumps the electronics' and the solenoid's reaction (assumed).
   __local__T_v = T_v
   append!(__params, @parameters (T_v::Real), [description = "Electronics and solenoid reaction time", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_v, __local__T_v)
-  __local__T_open = T_open
-  append!(__params, @parameters (T_open::Real), [description = "Time constant with which the held pressure follows the master cylinder while the inlet is open", bounds = (eps(Float64), Inf)])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, T_open, __local__T_open)
   __local__return_dump = return_dump
   append!(__params, @parameters (return_dump::Real), [description = "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, return_dump, __local__return_dump)
@@ -121,6 +124,7 @@ lumps the electronics' and the solenoid's reaction (assumed).
   ### Variables (declarations)
   append!(__vars, @variables (p_a(t)::Real), [description = "Master-cylinder side pressure, gauge"])
   append!(__vars, @variables (p_b(t)::Real), [description = "Wheel side pressure, gauge"])
+  append!(__vars, @variables (y(t)::Real), [description = "Inlet opening: 1 open, 0 closed"])
   append!(__vars, @variables (p_hold(t)::Real), [description = "Pressure the closed valve holds the wheel side at, gauge"])
   append!(__vars, @variables (p_target(t)::Real), [description = "Command clamped to the master-cylinder side"])
   append!(__vars, @variables (m_dump(t)::Real), [description = "Mass flow of dumped fluid leaving the model"])
@@ -132,6 +136,10 @@ lumps the electronics' and the solenoid's reaction (assumed).
   __ovr_p_b = pop!(__overrides, "p_b", nothing); isnothing(__ovr_p_b) || push!(__eqs, p_b ~ __ovr_p_b)
   __ovr_p_b__initial = pop!(__overrides, "p_b.initial", nothing); isnothing(__ovr_p_b__initial) || (__initial_conditions[p_b] = __ovr_p_b__initial)
   __ovr_p_b__guess = pop!(__overrides, "p_b.guess", nothing)
+  __ovr_y = pop!(__overrides, "y", nothing); isnothing(__ovr_y) || push!(__eqs, y ~ __ovr_y)
+  __ovr_y__initial = pop!(__overrides, "y.initial", nothing); __ic_y = @something(__ovr_y__initial, 1.0)
+  ismissing(__ic_y) || (__initial_conditions[y] = __ic_y)
+  __ovr_y__guess = pop!(__overrides, "y.guess", nothing)
   __ovr_p_hold = pop!(__overrides, "p_hold", nothing); isnothing(__ovr_p_hold) || push!(__eqs, p_hold ~ __ovr_p_hold)
   __ovr_p_hold__initial = pop!(__overrides, "p_hold.initial", nothing); __ic_p_hold = @something(__ovr_p_hold__initial, 0.0)
   ismissing(__ic_p_hold) || (__initial_conditions[p_hold] = __ic_p_hold)
@@ -156,6 +164,7 @@ lumps the electronics' and the solenoid's reaction (assumed).
   ### Guesses
   isnothing(__ovr_p_a__guess) || (__guesses[p_a] = __ovr_p_a__guess)
   isnothing(__ovr_p_b__guess) || (__guesses[p_b] = __ovr_p_b__guess)
+  isnothing(__ovr_y__guess) || (__guesses[y] = __ovr_y__guess)
   isnothing(__ovr_p_hold__guess) || (__guesses[p_hold] = __ovr_p_hold__guess)
   isnothing(__ovr_p_target__guess) || (__guesses[p_target] = __ovr_p_target__guess)
   isnothing(__ovr_m_dump__guess) || (__guesses[m_dump] = __ovr_m_dump__guess)
@@ -169,9 +178,10 @@ lumps the electronics' and the solenoid's reaction (assumed).
   push!(__eqs, port_a.p ~ p_amb + p_a)
   push!(__eqs, port_b.p ~ p_amb + p_b)
   push!(__eqs, p_target ~ min(max(p_cmd, 0.0), max(p_a, 0.0)))
-  push!(__eqs, ModelingToolkit.D_nounits(p_hold) ~ ifelse(p_cmd >= p_a, (p_a - p_hold) / T_open, (p_target - p_hold) / T_v))
-  push!(__eqs, p_b ~ ifelse(p_cmd >= p_a, p_a, min(p_a, max(p_hold, 0.0))))
-  push!(__eqs, port_a.m_flow ~ ifelse(p_cmd >= p_a, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0)))
+  push!(__eqs, ModelingToolkit.D_nounits(p_hold) ~ (p_target - p_hold) / T_v)
+  push!(__eqs, ModelingToolkit.D_nounits(y) ~ (ifelse(p_cmd >= p_a, 1.0, 0.0) - y) / T_v)
+  push!(__eqs, p_b ~ min(p_a, y * p_a + (1.0 - y) * max(p_hold, 0.0)))
+  push!(__eqs, port_a.m_flow ~ ifelse((p_cmd >= p_a) | (p_hold >= p_a), -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0)))
   push!(__eqs, m_dump ~ port_a.m_flow + port_b.m_flow)
 
   # Return completely constructed System

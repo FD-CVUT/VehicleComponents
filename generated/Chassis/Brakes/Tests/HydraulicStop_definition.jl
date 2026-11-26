@@ -28,10 +28,9 @@ r mu_A F_z = 4256.09 N m, so the wheel locks and the tire slides: the mass decel
 -0.7 · 13729.31/1400 = -6.864655 m/s². It decelerates at most at mu_A g from 0.5 s, so at 2.5 s it
 still moves at 25 - 2 · 9.81 = 5.4 m/s or more.
 
-The cylinder displaced the two calipers' fluid, 4.134319e-6 m³, so x_rod =
-2.5e-3 + 4.134319e-6/4.908738521e-4 = 0.0109224 m. The cylinder counts the fluid at its own
-pressure and the calipers at theirs, never higher, so V_disp falls short of their sum by at most
-4.134319e-6 · 8.92e6/1.4e9 = 2.6e-8 m³, 5.4e-5 m of travel.
+The cylinder and the calipers both count fluid as volume at p_amb, so the cylinder gave up exactly
+the calipers' fluid, 2.881656e-6 + 1.252663e-6 = 4.134319e-6 m³, and
+x_rod = 2.5e-3 + 4.134319e-6/4.908738521e-4 = 0.01092237 m.
 """
 @component function HydraulicStop(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

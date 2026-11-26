@@ -1,10 +1,10 @@
 """
-One default `ElectricVacuumPump` (Q = 0.4e-3 m³/s, p_min = 14 kPa, on above 40 kPa, off below
+One default `ElectricVacuumPump` (Q = 0.49e-3 m³/s, p_min = 14 kPa, on above 40 kPa, off below
 17 kPa, V_h = 0.05e-3 m³) with its hose capped, so no air enters it, and a constant sensor
 pressure set per case.
 
 Running with nothing flowing in, the hose follows dp_h/dt = -(Q/V_h)(p_h - p_min), down to
-p_min with the time constant V_h/Q = 0.05e-3/0.4e-3 = 0.125 s; by 3 s that is within e^-24 of
+p_min with the time constant V_h/Q = 0.05e-3/0.49e-3 = 0.102 s; by 3 s that is within e^-29 of
 14 kPa. Stopped, the hose holds its pressure.
 
 - `stays_on`, the default start (hose at 101325 Pa, pump running), sensor at 30 kPa, between

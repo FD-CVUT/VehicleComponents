@@ -7,36 +7,59 @@
 @doc Markdown.doc"""
    ABSValve(; name, __overrides)
 
-One default `ABSValve` (T_v = 0.03 s) between a master-cylinder side held at 10 MPa gauge
-(10100325 Pa absolute, p_amb = 100325 Pa) and a default `Caliper` behind a default `Line`. The
-disc and the caliper housing are fixed. The allowed pressure p_cmd steps at 0.5 s; its level
-before and after the step is set per case, and is the same in the cases that do not cross.
+One default `ABSValve` (T_v = 0.03 s) between a default `MasterCylinder` and a default `Caliper`
+behind a default `Line`; the cylinder's rear circuit is plugged, and the disc and the caliper
+housing are fixed. A stdlib `Force` pushes the cylinder's pushrod with a force that steps at
+0.5 s, and the allowed pressure p_cmd steps at 0.5 s; each one's level before and after the step
+is set per case, and is the same in the cases that do not step it.
 
-The caliper's pressure-volume law is the `Caliper` rig's: at 10 MPa it holds V = 2.99499e-6 m³.
-At 4 MPa, p - p0 = 3.95e6 = 1e12 u + 4.8e23 u³, and bisection on [0, 1e-4] gives
-u = 1.678818e-6 m³ (K1 u = 1.678818e6 Pa, K3 u³ = 2.271182e6 Pa), so V = 2.178818e-6 m³. The
-valve's lag, 0.03 s, and the line's fill, under 0.08 s (the `Caliper` rig), have both settled
-by 1 s.
+The cylinder holds p_a = (F - 218)/4.908738521e-4 (the `ForceChain` rig): F = 5126.738521 N gives
+10 MPa and F = 1690.621556 N gives 3 MPa. Its V_disp is the fluid it has given up, as volume at
+p_amb, which is how the caliper counts V too, so with no dump the two are equal.
 
-- `open`, p_cmd = 20 MPa, above the master-cylinder side: the inlet stays open and the caliper
-  fills to 10 MPa, V = 2.99499e-6 m³.
-- `limited`, p_cmd = 4 MPa: the valve lets the caliper rise only to the command, so it fills
-  from empty to 4 MPa, V = 2.178818e-6 m³.
-- `dump`, p_cmd = 4 MPa, the caliper starting full at 10 MPa (V = 2.99499e-6 m³, the valve
-  holding 10 MPa): the valve dumps the caliper down to 4 MPa, V = 2.178818e-6 m³, with the
-  master-cylinder side still at 10 MPa.
+The caliper's pressure-volume law is the `Caliper` rig's: p - p0 = 1e12 u + 4.8e23 u³ with
+u = V - 0.5e-6 m³ above p0 = 0.5e5 Pa. Bisection on [0, 1e-4] gives V = 1.248618e-6 m³ at 1 MPa,
+1.959060e-6 m³ at 3 MPa, 2.178818e-6 m³ at 4 MPa, 2.777744e-6 m³ at 8 MPa and 2.994991e-6 m³ at
+10 MPa. The line fills or drains the caliper with a time constant of 128 mu L/(pi D⁴) times its
+compliance dV/dp, under 3 ms above 1 MPa, so it has settled well before each check.
+
+The valve's opening y and its held pressure p_hold both follow with T_v, and
+p_b = min(p_a, y p_a + (1 - y) p_hold). The `backflow` cases tighten abstol to 1e-14 because
+V_disp is a pure integral of the flow, so the solver's absolute error accumulates on it, where
+the caliper's V is pulled back onto its pressure.
+
+- `open`, p_cmd = 20 MPa, 10 MPa on the cylinder: the inlet stays open and the caliper fills to
+  10 MPa, V = 2.994991e-6 m³. The cylinder gave up the same fluid, V_disp = 2.994991e-6 m³, so a
+  positive pushrod force moved its rod out, x_rod = 2.5e-3 + 2.994991e-6/4.908738521e-4 =
+  8.601346e-3 m.
+- `limited`, p_cmd = 4 MPa: the request is closed from the start, so the opening decays, the held
+  pressure rises to the command and the caliper ends at 4 MPa, V = 2.178818e-6 m³.
+- `dump`, p_cmd = 4 MPa, the caliper starting full at 10 MPa (the valve holding 10 MPa): the valve
+  dumps the caliper down to 4 MPa, V = 2.178818e-6 m³, with the master-cylinder side still at
+  10 MPa.
 - `close`, p_cmd = 20 MPa stepping down to 4 MPa at 0.5 s: the inlet is open first, so the
-  caliper fills to 10 MPa and the held pressure follows the master-cylinder side with
-  T_open = 1 ms, reaching 10 MPa to within e^-500. At the step the valve closes and the held
-  pressure relaxes from 10 MPa to the command with T_v, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03),
-  so at 0.53 s it is 4e6 + 6e6 e^-1 = 6207276.6 Pa. The caliper then dumps into the valve and,
-  with `return_dump` = 0, the dumped fluid leaves the model: the master-cylinder side passes no
-  fluid, port_a.m_flow = 0.
+  caliper fills to 10 MPa and the held pressure follows the clamped command, 10 MPa, reaching it
+  to within e^-16. At the step the opening decays, y = e^(-(t - 0.5)/0.03), and the held pressure
+  relaxes to the command, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03). So at 0.53 s p_hold =
+  4e6 + 6e6 e^-1 = 6207276.6 Pa and p_b = 1e7 - 6e6 (1 - e^-1)² = 7602541.6 Pa. The caliper then
+  dumps into the valve and, with `return_dump` = 0, the dumped fluid leaves the model: the
+  master-cylinder side passes no fluid, port_a.m_flow = 0.
 - `close_return`, the same with `return_dump` = 1: all the dumped fluid re-enters at `port_a`, so
-  port_a.m_flow = -port_b.m_flow and m_dump = 0, and the held pressure is the same 6207276.6 Pa.
-- `reopen`, p_cmd = 4 MPa stepping up to 20 MPa at 0.5 s: the caliper first fills to 4 MPa; at
-  the step the inlet opens, the caliper refills to 10 MPa, V = 2.99499e-6 m³, by 1.5 s, and the
-  held pressure follows the master-cylinder side to 10 MPa.
+  m_dump = 0.
+- `reopen`, p_cmd = 4 MPa stepping up to 20 MPa at 0.5 s: the caliper first sits at 4 MPa with
+  the valve closed (y within e^-16 of 0, p_hold of 4 MPa). At the step the inlet opens with the
+  solenoid's lag: y = 1 - e^(-(t - 0.5)/0.03) and p_hold = 1e7 - 6e6 e^(-(t - 0.5)/0.03), so
+  p_b = 1e7 - 6e6 e^(-2 (t - 0.5)/0.03), at 0.53 s 1e7 - 6e6 e^-2 = 9187988.3 Pa.
+- `backflow`, the valve starting closed (y = 0), holding the caliper at 8 MPa (V = 2.777744e-6 m³)
+  with p_cmd = 8 MPa and 10 MPa on the cylinder. At 0.5 s the command steps to 1 MPa and the
+  cylinder force to 3 MPa. The held pressure starts at 8 MPa, above p_a, so the check valve
+  conducts: p_b = p_a = 3 MPa, and the caliper drains to 3 MPa back into the master cylinder, not
+  out of the model. By 0.53 s it has settled to within e^-10: m_dump = 0, caliper V =
+  1.959060e-6 m³, and the cylinder took back V(8 MPa) - V(3 MPa) = 0.818684e-6 m³, V_disp =
+  -0.818684e-6 m³. The held pressure falls below 3 MPa at 0.5 + 0.03 ln(3.5) = 0.5376 s; from
+  then the valve dumps the caliper on to the command.
+- `backflow_dump`, the same run on to 1.5 s: the caliper ends at 1 MPa, V = 1.248618e-6 m³, and the
+  fluid dumped below 3 MPa left the model, so the cylinder still holds V_disp = -0.818684e-6 m³.
 """
 @component function ABSValve(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -86,12 +109,24 @@ by 1 s.
   __constants = Any[]
 
   ### Components
-  # Subcomponent pressure of type BlockComponents.Sources.Constant
-  pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = BlockComponents.Sources.Constant(; k=Float64(10100325.0), __overrides = pressure_overrides))
-  # Subcomponent supply of type HydraulicComponents.Sources.BoundaryPressure
-  supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
-  push!(__systems, @named supply = HydraulicComponents.Sources.BoundaryPressure(; continuity__graph0=medium, __overrides = supply_overrides))
+  # Subcomponent force of type BlockComponents.Sources.Step
+  force_overrides = __pop_subcomponent_overrides!(__overrides, "force")
+  push!(__systems, @named force = BlockComponents.Sources.Step(; height=Float64(0.0), offset=5126.738521234052, start_time=0.5, __overrides = force_overrides))
+  # Subcomponent push of type TranslationalComponents.Sources.Force
+  push_overrides = __pop_subcomponent_overrides!(__overrides, "push")
+  push!(__systems, @named push = TranslationalComponents.Sources.Force(; __overrides = push_overrides))
+  # Subcomponent ground of type TranslationalComponents.Components.Fixed
+  ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
+  push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; __overrides = ground_overrides))
+  # Subcomponent master of type VehicleComponents.Chassis.Brakes.MasterCylinder
+  master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
+  push!(__systems, @named master = VehicleComponents.Chassis.Brakes.MasterCylinder(; continuity__graph0=medium, __overrides = master_overrides))
+  # Subcomponent master_mount of type TranslationalComponents.Components.Fixed
+  master_mount_overrides = __pop_subcomponent_overrides!(__overrides, "master_mount")
+  push!(__systems, @named master_mount = TranslationalComponents.Components.Fixed(; __overrides = master_mount_overrides))
+  # Subcomponent rear_plug of type VehicleComponents.Chassis.Brakes.ClosedHydraulicPort
+  rear_plug_overrides = __pop_subcomponent_overrides!(__overrides, "rear_plug")
+  push!(__systems, @named rear_plug = VehicleComponents.Chassis.Brakes.ClosedHydraulicPort(; continuity__graph0=medium, __overrides = rear_plug_overrides))
   # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
   push!(__systems, @named command = BlockComponents.Sources.Step(; height=Float64(0.0), offset=Float64(4000000.0), start_time=0.5, __overrides = command_overrides))
@@ -122,8 +157,12 @@ by 1 s.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(pressure.y, supply.p))
-  push!(__eqs, connect(supply.port, valve.port_a))
+  push!(__eqs, connect(force.y, push.f))
+  push!(__eqs, connect(push.flange_a, ground.flange))
+  push!(__eqs, connect(push.flange_b, master.pushrod))
+  push!(__eqs, connect(master.support, master_mount.flange))
+  push!(__eqs, connect(master.rear, rear_plug.port))
+  push!(__eqs, connect(master.front, valve.port_a))
   push!(__eqs, connect(command.y, valve.p_cmd))
   push!(__eqs, connect(valve.port_b, line.port_a))
   push!(__eqs, connect(line.port_b, caliper.port))

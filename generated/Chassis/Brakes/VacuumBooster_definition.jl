@@ -37,6 +37,11 @@ cylinder's dead stroke puts that position at. Both
 chambers start at 33 kPa, a booster at idle manifold vacuum; give another start at the
 declaration, `VacuumBooster(p_f = initial 101325.0, p_r = initial 101325.0)`.
 
+`p_atm` is the standard atmosphere, 101325 Pa, which the rear chamber fills from and the front one
+leaks from; it is the air the assist works against, so it is not the brake fluid's reference
+pressure `p_amb` (100325 Pa) of the hydraulic parts, where 1 kPa is 0.01 % of an apply but here
+1.5 % of the 68 kPa difference that drives the diaphragm.
+
 PATH (UCB-ITS-PRR-97-21, Table 2.1) tabulates the flow coefficients in m s, which read as
 kg/(s Pa) give a rear-chamber time constant near 0.2 ms, a thousand times faster than PATH's own
 traces. Read per kPa they give 0.1 to 0.2 s, which matches, so the defaults are PATH's numbers
@@ -327,8 +332,8 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
 
   ### Equations
   push!(__eqs, input.s ~ rod_out.s)
-  push!(__eqs, F_in ~ -input.f)
-  push!(__eqs, F_out ~ rod_out.f)
+  push!(__eqs, F_in ~ input.f)
+  push!(__eqs, F_out ~ -rod_out.f)
   push!(__eqs, input.f + rod_out.f + support.f ~ 0.0)
   push!(__eqs, ModelingToolkit.D_nounits(x_p) ~ ModelingToolkit.D_nounits(rod_out.s) - ModelingToolkit.D_nounits(support.s))
   push!(__eqs, V_f ~ V_f0 - A_d * x_p)

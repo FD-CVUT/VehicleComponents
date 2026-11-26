@@ -28,16 +28,22 @@ with the latch state y relaxing to its target over `T_latch`. All pressures are 
 Assumptions: the hose air is an ideal gas at the fixed temperature `T`; the latch's transition
 time stands in for the switch and the motor spin-up. The hose starts at ambient and the pump
 running, as a pump switched on with the booster at ambient would; give another start at the
-declaration, `ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`. `Q` and `p_min` are
-derived from Hella's UP28, which evacuates 3.2 L to 500 mbar in 5.5 to 6 s and reaches at least
-86 % vacuum; the switch points are the aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch`
-are assumed.
+declaration, `ElectricVacuumPump(p_h = initial 30e3, y = initial 0.0)`. Ambient is the standard
+atmosphere, 101325 Pa, the air the pump draws against, not the brake fluid's reference pressure
+`p_amb` of the hydraulic parts.
+
+`Q` and `p_min` are derived from Hella's UP28, which evacuates 3.2 L to 500 mbar in 5.5 to 6 s and
+reaches at least 86 % vacuum: p_min = 0.14 · 101325 = 14.2 kPa, rounded to 14 kPa. A volume V
+pumped from the atmosphere follows V dp/dt = -Q (p - p_min), so it reaches p_1 = 50 kPa after
+t = (V/Q) ln((101325 - 14000)/(50000 - 14000)) = 0.8861 V/Q. The middle of the datum, t = 5.75 s,
+gives Q = 0.8861 · 3.2e-3/5.75 = 0.493e-3 m³/s, rounded to 0.49e-3 m³/s (5.79 s). The switch points
+are the aftermarket 18 and 25 inHg of vacuum; `V_h` and `T_latch` are assumed.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `Q`         | Displaced volume flow [m³/s]                         | --  |   0.40e-3 |
+| `Q`         | Displaced volume flow [m³/s]                         | --  |   0.49e-3 |
 | `p_min`         | Ultimate pressure                         | Pa  |   14e3 |
 | `p_on`         | Switch-on pressure, 18 inHg of vacuum                         | Pa  |   40e3 |
 | `p_off`         | Switch-off pressure, 25 inHg of vacuum                         | Pa  |   17e3 |
@@ -68,7 +74,7 @@ holds its ambient reference as a parameter. ([`GasPort`](@ref))
 | `request`         | Latch target                         | --  |
 | `mdot_pump`         | Air mass flow the pump removes                         | kg/s  |
 """
-@component function ElectricVacuumPump(; name = nothing, var"Q"=0.0004, var"p_min"=Float64(14000.0), var"p_on"=Float64(40000.0), var"p_off"=Float64(17000.0), var"V_h"=0.00005, var"T_latch"=0.01, var"T"=298.15, var"R"=287.05, __overrides = Dict{String, Any}())
+@component function ElectricVacuumPump(; name = nothing, var"Q"=0.00049, var"p_min"=Float64(14000.0), var"p_on"=Float64(40000.0), var"p_off"=Float64(17000.0), var"V_h"=0.00005, var"T_latch"=0.01, var"T"=298.15, var"R"=287.05, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

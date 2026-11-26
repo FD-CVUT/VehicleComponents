@@ -24,7 +24,7 @@ __dyad_run_test_case!(
     (m -> m.wheel.caliper_r.p, "wheel.caliper_r.p", 8916185.86, 1, 1e-7),
     (m -> m.wheel.caliper_f.V, "wheel.caliper_f.V", 0.000002881656, 1e-11, 1e-7),
     (m -> m.wheel.caliper_r.V, "wheel.caliper_r.V", 0.000001252663, 1e-11, 1e-7),
-    (m -> m.master.x_rod, "master.x_rod", 0.0109224, 0.00006, 1e-7),
+    (m -> m.master.x_rod, "master.x_rod", 0.01092237, 0.000001, 1e-7),
     (m -> m.body.a, "body.a", -6.864655, 0.00001, 1e-7),
   ],
   signals=Tuple[],

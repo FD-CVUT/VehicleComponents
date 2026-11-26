@@ -12,15 +12,20 @@ The pistons pass the pushrod force F_rod less the spring preload `F_cs0` and the
     p_mc = max(0, F_rod - F_cs0 - F_cf)/A_mc
 
 Both circuits carry p_mc. Fluid leaving through either port adds to the displaced volume V_disp,
-and the pushrod travels the dead stroke `s_dead` before the pistons close the reservoir ports,
-x_rod = s_dead + V_disp/A_mc.
+the displaced mass over the fluid's density at `p_amb`, as `Caliper` counts what it admits; so a
+fill and a release at different pressures cancel, and V_disp equals the fluid the calipers hold.
+The pushrod travels the dead stroke `s_dead` before the pistons close the reservoir ports,
+x_rod = s_dead + V_disp/A_mc. The flange forces follow the stdlib's sign, the force on this part
+along s: the booster pushes the pushrod toward +s, which builds pressure and moves x_rod
+positive.
 
 Pressures are gauge: the ports carry absolute pressure, `p_amb` + p_mc, as `Caliper` reads it.
 
 Assumptions: the pistons have no mass and the seal friction always opposes the apply, so the
 release follows the same law; both circuits share one pressure, as a tandem cylinder's floating
 piston gives. The cylinder starts with nothing displaced. `p_amb` defaults to 100325 Pa, the
-reference pressure of `VehicleComponents.DOT4`. Defaults: a 25 mm bore, `F_cs0` and `F_cf` from
+reference pressure of `VehicleComponents.DOT4`, at which the fluid has its tabulated density; it
+sits 1 kPa below the standard atmosphere, 0.01 % of a 10 MPa apply. Defaults: a 25 mm bore, `F_cs0` and `F_cf` from
 PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
 """
 component MasterCylinder
@@ -50,18 +55,18 @@ component MasterCylinder
   variable V_disp::Volume = initial 0.0
   "Pushrod-force magnitude"
   variable F_rod::Force
-  "Fluid density at the master-cylinder pressure"
-  variable rho::Density
+  "Fluid density at p_amb, which converts displaced mass to V_disp"
+  variable rho_ref::Density
 relations
   continuity(front.medium, rear.medium)
-  F_rod = -pushrod.f
+  F_rod = pushrod.f
   pushrod.f + support.f = 0.0
   pushrod.s - support.s = x_rod
   p_mc = max(0.0, F_rod - F_cs0 - F_cf) / A_mc
   front.p = p_amb + p_mc
   rear.p = p_amb + p_mc
-  rho = HydraulicComponents.density(front.medium, front.p)
-  der(V_disp) = -(front.m_flow + rear.m_flow) / rho
+  rho_ref = HydraulicComponents.density(front.medium, p_amb)
+  der(V_disp) = -(front.m_flow + rear.m_flow) / rho_ref
   x_rod = s_dead + V_disp / A_mc
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/MasterCylinder.svg"}},

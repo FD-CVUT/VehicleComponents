@@ -20,15 +20,20 @@ The pistons pass the pushrod force F_rod less the spring preload `F_cs0` and the
     p_mc = max(0, F_rod - F_cs0 - F_cf)/A_mc
 
 Both circuits carry p_mc. Fluid leaving through either port adds to the displaced volume V_disp,
-and the pushrod travels the dead stroke `s_dead` before the pistons close the reservoir ports,
-x_rod = s_dead + V_disp/A_mc.
+the displaced mass over the fluid's density at `p_amb`, as `Caliper` counts what it admits; so a
+fill and a release at different pressures cancel, and V_disp equals the fluid the calipers hold.
+The pushrod travels the dead stroke `s_dead` before the pistons close the reservoir ports,
+x_rod = s_dead + V_disp/A_mc. The flange forces follow the stdlib's sign, the force on this part
+along s: the booster pushes the pushrod toward +s, which builds pressure and moves x_rod
+positive.
 
 Pressures are gauge: the ports carry absolute pressure, `p_amb` + p_mc, as `Caliper` reads it.
 
 Assumptions: the pistons have no mass and the seal friction always opposes the apply, so the
 release follows the same law; both circuits share one pressure, as a tandem cylinder's floating
 piston gives. The cylinder starts with nothing displaced. `p_amb` defaults to 100325 Pa, the
-reference pressure of `VehicleComponents.DOT4`. Defaults: a 25 mm bore, `F_cs0` and `F_cf` from
+reference pressure of `VehicleComponents.DOT4`, at which the fluid has its tabulated density; it
+sits 1 kPa below the standard atmosphere, 0.01 % of a 10 MPa apply. Defaults: a 25 mm bore, `F_cs0` and `F_cf` from
 PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
 
 ## Parameters:
@@ -56,7 +61,7 @@ PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
 | ------------ | ----------------------------------- | ------ |
 | `V_disp`         | Brake-fluid volume displaced into the circuits                         | m3  |
 | `F_rod`         | Pushrod-force magnitude                         | N  |
-| `rho`         | Fluid density at the master-cylinder pressure                         | kg/m3  |
+| `rho_ref`         | Fluid density at p_amb, which converts displaced mass to V_disp                         | kg/m3  |
 """
 @component function MasterCylinder(; name = nothing, var"A_mc"=π * 0.025 ^ 2 / 4, var"F_cs0"=Float64(138.0), var"F_cf"=Float64(80.0), var"s_dead"=0.0025, var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -123,7 +128,7 @@ PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
   ### Variables (declarations)
   append!(__vars, @variables (V_disp(t)::Real), [description = "Brake-fluid volume displaced into the circuits"])
   append!(__vars, @variables (F_rod(t)::Real), [description = "Pushrod-force magnitude"])
-  append!(__vars, @variables (rho(t)::Real), [description = "Fluid density at the master-cylinder pressure"])
+  append!(__vars, @variables (rho_ref(t)::Real), [description = "Fluid density at p_amb, which converts displaced mass to V_disp"])
 
   ### Variables (assignments)
   __ovr_V_disp = pop!(__overrides, "V_disp", nothing); isnothing(__ovr_V_disp) || push!(__eqs, V_disp ~ __ovr_V_disp)
@@ -133,9 +138,9 @@ PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
   __ovr_F_rod = pop!(__overrides, "F_rod", nothing); isnothing(__ovr_F_rod) || push!(__eqs, F_rod ~ __ovr_F_rod)
   __ovr_F_rod__initial = pop!(__overrides, "F_rod.initial", nothing); isnothing(__ovr_F_rod__initial) || (__initial_conditions[F_rod] = __ovr_F_rod__initial)
   __ovr_F_rod__guess = pop!(__overrides, "F_rod.guess", nothing)
-  __ovr_rho = pop!(__overrides, "rho", nothing); isnothing(__ovr_rho) || push!(__eqs, rho ~ __ovr_rho)
-  __ovr_rho__initial = pop!(__overrides, "rho.initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
-  __ovr_rho__guess = pop!(__overrides, "rho.guess", nothing)
+  __ovr_rho_ref = pop!(__overrides, "rho_ref", nothing); isnothing(__ovr_rho_ref) || push!(__eqs, rho_ref ~ __ovr_rho_ref)
+  __ovr_rho_ref__initial = pop!(__overrides, "rho_ref.initial", nothing); isnothing(__ovr_rho_ref__initial) || (__initial_conditions[rho_ref] = __ovr_rho_ref__initial)
+  __ovr_rho_ref__guess = pop!(__overrides, "rho_ref.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -152,7 +157,7 @@ PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
   ### Guesses
   isnothing(__ovr_V_disp__guess) || (__guesses[V_disp] = __ovr_V_disp__guess)
   isnothing(__ovr_F_rod__guess) || (__guesses[F_rod] = __ovr_F_rod__guess)
-  isnothing(__ovr_rho__guess) || (__guesses[rho] = __ovr_rho__guess)
+  isnothing(__ovr_rho_ref__guess) || (__guesses[rho_ref] = __ovr_rho_ref__guess)
 
   ### Initialization Equations
 
@@ -160,14 +165,14 @@ PATH (UCB-ITS-PRR-97-21), `s_dead` assumed within the textbook 1.5 to 3.5 mm.
   __assertions = []
 
   ### Equations
-  push!(__eqs, F_rod ~ -pushrod.f)
+  push!(__eqs, F_rod ~ pushrod.f)
   push!(__eqs, pushrod.f + support.f ~ 0.0)
   push!(__eqs, pushrod.s - support.s ~ x_rod)
   push!(__eqs, p_mc ~ max(0.0, F_rod - F_cs0 - F_cf) / A_mc)
   push!(__eqs, front.p ~ p_amb + p_mc)
   push!(__eqs, rear.p ~ p_amb + p_mc)
-  push!(__eqs, rho ~ HydraulicComponents.density(front__medium, front.p))
-  push!(__eqs, ModelingToolkit.D_nounits(V_disp) ~ -(front.m_flow + rear.m_flow) / rho)
+  push!(__eqs, rho_ref ~ HydraulicComponents.density(front__medium, p_amb))
+  push!(__eqs, ModelingToolkit.D_nounits(V_disp) ~ -(front.m_flow + rear.m_flow) / rho_ref)
   push!(__eqs, x_rod ~ s_dead + V_disp / A_mc)
 
   # Return completely constructed System
