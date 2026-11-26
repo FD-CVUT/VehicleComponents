@@ -37,7 +37,8 @@ VehicleComponents = {url = "https://github.com/FD-CVUT/VehicleComponents", rev =
 Components live in nested submodules by vehicle domain (`Body`, `Chassis`, `Powertrain`,
 `Electrical`, `Control`, `CanBus`, `Driver`, `Road`, `Sensors`, `Blocks`), with complete vehicles
 under `Examples`. Tests are Dyad test models in each domain's `Tests` submodule (fast tier, every PR)
-and under `Examples` (example tier, nightly). [AGENTS.md](AGENTS.md) has the full tree and test rules.
+and under `Examples` (example tier, nightly). [AGENTS.md](AGENTS.md) has the full tree, and
+[docs/agents/tests.md](docs/agents/tests.md) the test rules.
 
 ```sh
 mise run test            # fast tier
@@ -47,7 +48,7 @@ mise run check           # what CI runs on every PR: generated-code check and fa
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md) for the component and test rules, and
+Read [AGENTS.md](AGENTS.md) for the component rules and the task docs it points to, and
 [docs/agents/toolchain.md](docs/agents/toolchain.md) for the toolchain pin and upgrades.
 
 ## License

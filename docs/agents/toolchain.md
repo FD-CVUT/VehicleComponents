@@ -15,10 +15,11 @@ Upgrade only through the Dyad Studio extension, in a PR of its own:
    `.vscode/settings.json`.
 2. Set `DYAD_STUDIO_VERSION` to the installed Studio version.
 3. Regenerate `generated/` with `mise run compile`.
-4. Commit all of it together.
+4. Regenerate the `dyad-cli` skill with `node "$DYAD_CLI" install skills --project .`.
+5. Commit all of it together.
 
 Done when `mise run check` passes; it fails while the pin, `Project.toml` and `generated/`
-disagree. Then recheck the redeclaration rule in `AGENTS.md` (Examples and platforms): Dyad 3.5
+disagree. Then recheck the redeclaration rule in `docs/agents/examples.md`: Dyad 3.5
 ignores a redeclaration written at a declaration site. Work through `docs/agents/stdlib-upgrades.md`
 for the library parts the new standard library replaces.
 
