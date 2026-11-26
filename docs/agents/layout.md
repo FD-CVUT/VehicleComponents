@@ -38,7 +38,9 @@ waypoints to the wrong branch and the Studio draws diagonals.
 
 1. After adding or rewiring a part, run
    `node "$DYAD_CLI" layout VehicleComponents.<Module>.<Component> --dir .`. Done when the model
-   has no part left unplaced.
+   has no part left unplaced and a second run changes nothing. `dyad layout` writes a
+   declaration's `x = initial v` as `x(initial = v)` and drops the file's trailing newline; put
+   both back after the last run.
 2. On `connection(s) could not be routed legally`, look for a block with more than three ports on
    one edge: the layout grid gives a default-size block 2 cells per edge. Scale its placement up in
    both directions (250 x 250 for five ports, as `Electrical.Battery.Helpers.Tests.BalancerRequest`
