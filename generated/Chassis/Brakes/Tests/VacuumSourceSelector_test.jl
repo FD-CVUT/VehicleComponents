@@ -23,7 +23,6 @@ __dyad_run_test_case!(
     (m -> m.m_manifold.port.mdot, "m_manifold.port.mdot", 0.00000997442, 1e-10, 1e-9),
     (m -> m.m_pump.port.mdot, "m_pump.port.mdot", 0, 1e-12, 1e-9),
     (m -> m.p_booster.p_vac, "p_booster.p_vac", 20090.261, 0.01, 1e-9),
-    (m -> m.p_manifold.port.mdot, "p_manifold.port.mdot", 0, 1e-12, 1e-9),
     (m -> m.p_pump.port.mdot, "p_pump.port.mdot", 0.00001137286, 1e-10, 1e-9),
   ],
   signals=Tuple[],

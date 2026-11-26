@@ -10,12 +10,14 @@ front-chamber pressure, what a booster vacuum sensor reads.
 The front (vacuum) chamber p_f drains through the check valve into the `vacuum` hose. The valve
 compares the input force F_in with the reaction-disc force F_r: above the apply threshold it lets
 atmosphere into the rear chamber p_r, below the release threshold it joins the rear chamber to the
-front one, and in between it holds. Below cut-in the plunger spring holds the plunger on its stop,
-which keeps the rear chamber joined to the front one. Both chambers' volumes trade with the piston
-travel x_p, the output rod's travel relative to the housing since the start of the run.
+front one, and in between it holds. Below cut-in the plunger spring pulls the plunger toward its
+stop, which opens the vacuum valve too: by (F_cut - F_in)/F_w, so fully at F_cut - F_w = 20 N and
+below, and only partly over the last `F_w` before cut-in. Both chambers' volumes trade with the
+piston travel x_p, the output rod's travel relative to the housing since the start of the run.
 
     F_out = max(0, F_in + A_d (p_r - p_f) - F_rs0 - K_rs x_p)
     e     = F_in - F_cut - max(0, F_out - F_jump)/SR
+    u_vac = clamp(max(-e - F_rel, F_cut - F_in)/F_w, 0, 1)
     dp_r/dt = n/V_r (R T (mdot_aa - mdot_av) - p_r A_d dx_p/dt)
     dp_f/dt = n/V_f (R T (mdot_av - mdot_out + mdot_leak) + p_f A_d dx_p/dt)
     mdot_out = C_vm max(0, p_f - vacuum.p),  vacuum.mdot = -mdot_out

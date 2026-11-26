@@ -83,10 +83,7 @@ __dyad_run_test_case!(
   params=Dict{String, Any}("command.offset" => 20000000.0, "command.height" => -16000000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.valve.p_b, "valve.p_b", 7602541.6, 10, 1e-7),
-    (m -> m.valve.port_a.m_flow, "valve.port_a.m_flow", 0, 1e-12, 1e-7),
-  ],
+  expected_final=Tuple[(m -> m.valve.p_b, "valve.p_b", 7602541.6, 10, 1e-7)],
   signals=Tuple[],
 )
 __dyad_run_test_case!(
@@ -137,13 +134,54 @@ __dyad_run_test_case!(
   params=Dict{String, Any}("command.offset" => 8000000.0, "command.height" => -7000000.0, "force.height" => -3436.116964863836),
   initial_conditions=Tuple[
     (m -> m.caliper.V, 0.000002777744),
+    (m -> m.master.V_disp, 0.000002777744),
     (m -> m.valve.p_hold, 8000000.0),
     (m -> m.valve.y, 0.0),
   ],
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.caliper.V, "caliper.V", 0.000001248618, 1e-12, 1e-7),
-    (m -> m.master.V_disp, "master.V_disp", -8.18684e-7, 1e-12, 1e-7),
+    (m -> m.master.V_disp, "master.V_disp", 0.000001961516, 1e-12, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "close_flows for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="close_flows",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=3.03e+0,
+  abstol=1e-10,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.offset" => 20000000.0, "command.height" => -16000000.0, "command.start_time" => 3.0, "line.L" => 0.01),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.valve.port_a.m_flow, "valve.port_a.m_flow", -0.0043819, 0.00002, 1e-7),
+    (m -> m.valve.m_dump, "valve.m_dump", 0.0075294, 0.00002, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.ABSValve,
+  "close_split for VehicleComponents.Chassis.Brakes.Tests.ABSValve";
+  case_name="close_split",
+  component_stem="ABSValve",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=3.5e+0,
+  abstol=1e-14,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("command.offset" => 20000000.0, "command.height" => -16000000.0, "command.start_time" => 3.0, "line.L" => 0.01),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.caliper.V, "caliper.V", 0.000002178818, 1e-12, 1e-7),
+    (m -> m.master.V_disp, "master.V_disp", 0.000002757953, 1e-10, 1e-7),
   ],
   signals=Tuple[],
 )

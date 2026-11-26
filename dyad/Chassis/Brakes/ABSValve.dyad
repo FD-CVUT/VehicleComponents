@@ -11,27 +11,30 @@ open, one below it for the inlet closed. The inlet's opening y, 1 open and 0 clo
 request with the lag `T_v`, and the held pressure p_hold follows the command clamped to
 [0, p_a], also with `T_v`:
 
-    p_b = min(p_a, y p_a + (1 - y) p_hold)
+    p_b = min(p_a + dp_check, y p_a + (1 - y) p_hold)
 
 So a valve held open passes p_a straight through, a closed one holds or dumps the wheel side to
 the command, and both the close and the re-apply after it take the solenoid's time. The wheel side
-never rises above p_a: when p_a falls below the held pressure, the inlet valve's parallel check
-valve opens and the wheel side follows p_a down.
+never rises more than `dp_check` above p_a: when p_a falls below the held pressure, the inlet
+valve's parallel check valve cracks open at `dp_check` and the wheel side follows p_a down.
 
-Fluid passes between the ports, either way, while the inlet is asked open or the check valve
-conducts (p_hold >= p_a). Otherwise the closed valve still lets the caliper fill from the master
-cylinder, and fluid dumped from the caliper goes where `return_dump` decides. At 0 it leaves the
-model, so the master cylinder makes up every dumped volume and the pedal creeps forward without
-pulsing. At 1 it re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it
-straight back to the master cylinder: the pedal is pushed back with every dump, the pulsation a
-driver feels. `m_dump` is the fluid that leaves the model.
+The flow splits the way the pressure does. The open share y of the inlet passes fluid between the
+ports either way. The closed share 1 - y passes it too while the check valve conducts, which is
+exactly while the clamp above holds, (1 - y)(p_hold - p_a) > dp_check; otherwise it lets the
+caliper fill from the master cylinder, and fluid dumped from the caliper goes where `return_dump`
+decides. At 0 it leaves the model, so the master cylinder makes up every dumped volume and the
+pedal creeps forward without pulsing. At 1 it re-enters at `port_a`, as if an ideal return pump
+with no accumulator pushed it straight back to the master cylinder: the pedal is pushed back with
+every dump, the pulsation a driver feels. `m_dump` is the fluid that leaves the model. Since the
+held pressure of an open valve tracks p_a from below, the check valve's condition stays clear of
+it by `dp_check`.
 
 Pressures are gauge: the ports carry `p_amb` + p (`VehicleComponents.DOT4` has the convention).
 
 Assumptions: the valve has no flow restriction and no volume of its own; it starts open, y = 1, with
 the held pressure at 0. A start with the valve closed sets both at the declaration, `ABSValve(y =
-initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the solenoid's reaction
-(assumed).
+initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the solenoid's reaction;
+`dp_check`, 0.1 bar, is a typical check valve's cracking pressure (both assumed).
 """
 component ABSValve
   "Master-cylinder side"
@@ -44,6 +47,8 @@ component ABSValve
   parameter T_v::Time(min = eps(Float64)) = 0.03
   "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"
   parameter return_dump::Real = 0.0
+  "Cracking pressure of the inlet's check valve"
+  parameter dp_check::Pressure = 1e4
   "Ambient pressure, which a released circuit sits at"
   parameter p_amb::Pressure = 100325.0
   "Master-cylinder side pressure, gauge"
@@ -65,8 +70,8 @@ relations
   p_target = min(max(p_cmd, 0.0), max(p_a, 0.0))
   der(p_hold) = (p_target - p_hold) / T_v
   der(y) = (ifelse(p_cmd >= p_a, 1.0, 0.0) - y) / T_v
-  p_b = min(p_a, y * p_a + (1.0 - y) * p_hold)
-  port_a.m_flow = ifelse(p_cmd >= p_a or p_hold >= p_a, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0))
+  p_b = min(p_a + dp_check, y * p_a + (1.0 - y) * p_hold)
+  port_a.m_flow = -y * port_b.m_flow + (1.0 - y) * ifelse((1.0 - y) * (p_hold - p_a) > dp_check, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0))
   m_dump = port_a.m_flow + port_b.m_flow
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/ABSValve.svg"}},

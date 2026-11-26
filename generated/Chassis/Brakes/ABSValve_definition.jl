@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSValve(; name, T_v, return_dump, p_amb, __overrides)
+   ABSValve(; name, T_v, return_dump, dp_check, p_amb, __overrides)
 
 Ideal per-circuit ABS modulator: the ECU commands the wheel-side pressure it allows, and the valve
 makes the caliper follow it after the solenoid lag `T_v`, never above the master-cylinder
@@ -19,27 +19,30 @@ open, one below it for the inlet closed. The inlet's opening y, 1 open and 0 clo
 request with the lag `T_v`, and the held pressure p_hold follows the command clamped to
 [0, p_a], also with `T_v`:
 
-    p_b = min(p_a, y p_a + (1 - y) p_hold)
+    p_b = min(p_a + dp_check, y p_a + (1 - y) p_hold)
 
 So a valve held open passes p_a straight through, a closed one holds or dumps the wheel side to
 the command, and both the close and the re-apply after it take the solenoid's time. The wheel side
-never rises above p_a: when p_a falls below the held pressure, the inlet valve's parallel check
-valve opens and the wheel side follows p_a down.
+never rises more than `dp_check` above p_a: when p_a falls below the held pressure, the inlet
+valve's parallel check valve cracks open at `dp_check` and the wheel side follows p_a down.
 
-Fluid passes between the ports, either way, while the inlet is asked open or the check valve
-conducts (p_hold >= p_a). Otherwise the closed valve still lets the caliper fill from the master
-cylinder, and fluid dumped from the caliper goes where `return_dump` decides. At 0 it leaves the
-model, so the master cylinder makes up every dumped volume and the pedal creeps forward without
-pulsing. At 1 it re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it
-straight back to the master cylinder: the pedal is pushed back with every dump, the pulsation a
-driver feels. `m_dump` is the fluid that leaves the model.
+The flow splits the way the pressure does. The open share y of the inlet passes fluid between the
+ports either way. The closed share 1 - y passes it too while the check valve conducts, which is
+exactly while the clamp above holds, (1 - y)(p_hold - p_a) > dp_check; otherwise it lets the
+caliper fill from the master cylinder, and fluid dumped from the caliper goes where `return_dump`
+decides. At 0 it leaves the model, so the master cylinder makes up every dumped volume and the
+pedal creeps forward without pulsing. At 1 it re-enters at `port_a`, as if an ideal return pump
+with no accumulator pushed it straight back to the master cylinder: the pedal is pushed back with
+every dump, the pulsation a driver feels. `m_dump` is the fluid that leaves the model. Since the
+held pressure of an open valve tracks p_a from below, the check valve's condition stays clear of
+it by `dp_check`.
 
 Pressures are gauge: the ports carry `p_amb` + p (`VehicleComponents.DOT4` has the convention).
 
 Assumptions: the valve has no flow restriction and no volume of its own; it starts open, y = 1, with
 the held pressure at 0. A start with the valve closed sets both at the declaration, `ABSValve(y =
-initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the solenoid's reaction
-(assumed).
+initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the solenoid's reaction;
+`dp_check`, 0.1 bar, is a typical check valve's cracking pressure (both assumed).
 
 ## Parameters:
 
@@ -47,6 +50,7 @@ initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the soleno
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `T_v`         | Electronics and solenoid reaction time                         | s  |   0.03 |
 | `return_dump`         | Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side                         | --  |   0.0 |
+| `dp_check`         | Cracking pressure of the inlet's check valve                         | Pa  |   1e4 |
 | `p_amb`         | Ambient pressure, which a released circuit sits at                         | Pa  |   100325.0 |
 
 ## Connectors
@@ -66,7 +70,7 @@ initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the soleno
 | `p_target`         | Command clamped to the master-cylinder side                         | Pa  |
 | `m_dump`         | Mass flow of dumped fluid leaving the model                         | kg/s  |
 """
-@component function ABSValve(; name = nothing, var"T_v"=0.03, var"return_dump"=Float64(0.0), var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
+@component function ABSValve(; name = nothing, var"T_v"=0.03, var"return_dump"=Float64(0.0), var"dp_check"=Float64(10000.0), var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -87,6 +91,7 @@ initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the soleno
   ### Keyword argument overrides
   haskey(__overrides, "T_v") && (T_v = pop!(__overrides, "T_v"))
   haskey(__overrides, "return_dump") && (return_dump = pop!(__overrides, "return_dump"))
+  haskey(__overrides, "dp_check") && (dp_check = pop!(__overrides, "dp_check"))
   haskey(__overrides, "p_amb") && (p_amb = pop!(__overrides, "p_amb"))
 
   ### Structural Parameters (functions)
@@ -108,6 +113,9 @@ initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the soleno
   __local__return_dump = return_dump
   append!(__params, @parameters (return_dump::Real), [description = "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, return_dump, __local__return_dump)
+  __local__dp_check = dp_check
+  append!(__params, @parameters (dp_check::Real), [description = "Cracking pressure of the inlet's check valve"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dp_check, __local__dp_check)
   __local__p_amb = p_amb
   append!(__params, @parameters (p_amb::Real), [description = "Ambient pressure, which a released circuit sits at"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, p_amb, __local__p_amb)
@@ -178,8 +186,8 @@ initial 0.0, p_hold = initial 8e6)`. `T_v` lumps the electronics' and the soleno
   push!(__eqs, p_target ~ min(max(p_cmd, 0.0), max(p_a, 0.0)))
   push!(__eqs, ModelingToolkit.D_nounits(p_hold) ~ (p_target - p_hold) / T_v)
   push!(__eqs, ModelingToolkit.D_nounits(y) ~ (ifelse(p_cmd >= p_a, 1.0, 0.0) - y) / T_v)
-  push!(__eqs, p_b ~ min(p_a, y * p_a + (1.0 - y) * p_hold))
-  push!(__eqs, port_a.m_flow ~ ifelse((p_cmd >= p_a) | (p_hold >= p_a), -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0)))
+  push!(__eqs, p_b ~ min(p_a + dp_check, y * p_a + (1.0 - y) * p_hold))
+  push!(__eqs, port_a.m_flow ~ -y * port_b.m_flow + (1.0 - y) * ifelse((1.0 - y) * (p_hold - p_a) > dp_check, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0)))
   push!(__eqs, m_dump ~ port_a.m_flow + port_b.m_flow)
 
   # Return completely constructed System

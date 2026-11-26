@@ -24,9 +24,12 @@ u = V - 0.5e-6 m³ above p0 = 0.5e5 Pa. Bisection on [0, 1e-4] gives V = 1.24861
 compliance dV/dp, under 3 ms above 1 MPa, so it has settled well before each check.
 
 The valve's opening y and its held pressure p_hold both follow with T_v, and
-p_b = min(p_a, y p_a + (1 - y) p_hold). The cases that check V_disp tighten abstol to 1e-14
-because V_disp is a pure integral of the flow, so the solver's absolute error accumulates on it,
-where the caliper's V is pulled back onto its pressure.
+p_b = min(p_a + 1e4, y p_a + (1 - y) p_hold), the clamp being the check valve's 0.1 bar cracking
+pressure. The open share y of the outflow from the caliper goes back to the cylinder, the closed
+share 1 - y leaves the model as dump (`return_dump` = 0) unless the check valve conducts. The
+cases that check V_disp tighten abstol to 1e-14 because V_disp is a pure integral of the flow, so
+the solver's absolute error accumulates on it, where the caliper's V is pulled back onto its
+pressure.
 
 - `open`, p_cmd = 20 MPa, 10 MPa on the cylinder: the inlet stays open and the caliper fills to
   10 MPa, V = 2.994991e-6 m³. The cylinder gave up the same fluid, V_disp = 2.994991e-6 m³.
@@ -39,25 +42,38 @@ where the caliper's V is pulled back onto its pressure.
   caliper fills to 10 MPa and the held pressure follows the clamped command, 10 MPa, reaching it
   to within e^-16. At the step the opening decays, y = e^(-(t - 0.5)/0.03), and the held pressure
   relaxes to the command, p_hold = 4e6 + 6e6 e^(-(t - 0.5)/0.03). So at 0.53 s
-  p_b = e^-1 1e7 + (1 - e^-1)(4e6 + 6e6 e^-1) = 1e7 - 6e6 (1 - e^-1)² = 7602541.6 Pa. The caliper then
-  dumps into the valve and, with `return_dump` = 0, the dumped fluid leaves the model: the
-  master-cylinder side passes no fluid, port_a.m_flow = 0.
+  p_b = e^-1 1e7 + (1 - e^-1)(4e6 + 6e6 e^-1) = 1e7 - 6e6 (1 - e^-1)² = 7602541.6 Pa.
 - `close_return`, the same with `return_dump` = 1: all the dumped fluid re-enters at `port_a`, so
   m_dump = 0.
 - `reopen`, p_cmd = 4 MPa stepping up to 20 MPa at 0.5 s: the caliper first sits at 4 MPa with
   the valve closed (y within e^-16 of 0, p_hold of 4 MPa). At the step the inlet opens with the
   solenoid's lag: y = 1 - e^(-(t - 0.5)/0.03) and p_hold = 1e7 - 6e6 e^(-(t - 0.5)/0.03), so
   p_b = 1e7 - 6e6 e^(-2 (t - 0.5)/0.03), at 0.53 s 1e7 - 6e6 e^-2 = 9187988.3 Pa.
+- `close_flows`, the `close` run with the valve held open for 3 s first, so the held pressure
+  has crept up to p_a from below for 100 time constants before the command steps down at 3 s, and
+  a 0.01 m line, whose fill time constant, near 7e-6 s, lets the caliper follow p_b within a few
+  1e-4 of its flow. With s = (t - 3)/0.03, y = e^-s and p_b = 4e6 + 1.2e7 y - 6e6 y², so
+  dp_b/dt = 1.2e7 (1 - y)(-y/0.03). At s = 1, p_b = 7602541.6 Pa, where the caliper's law gives
+  u = 2.2779e-6 m³ by bisection and dV/dp = 1/(1e12 + 3 · 4.8e23 u²) = 1.225397e-13 m³/Pa, and
+  dp_b/dt = -9.301766e7 Pa/s. The caliper sends q = 1045 · 1.225397e-13 · 9.301766e7 =
+  0.0119113 kg/s into the valve; the open share returns, port_a.m_flow = -e^-1 q = -0.0043819 kg/s,
+  and the closed share is dumped, m_dump = (1 - e^-1) q = 0.0075294 kg/s.
+- `close_split`, the same run on to 3.5 s: the caliper ends at 4 MPa, V = 2.178818e-6 m³. The
+  cylinder gave V(10 MPa) and took back the open share of the outflow, y dV summed over the close,
+  so V_disp = V(10 MPa) - ∫ y (-dV) = ∫_0^1 V(p_b(y)) dy after integrating by parts; the midpoint
+  rule on 200000 steps, with V by bisection, gives V_disp = 2.757953e-6 m³. The caliper's lag
+  shifts that by about 7e-6/0.03 of the returned 0.237e-6 m³, 6e-11 m³.
 - `backflow`, the valve starting closed (y = 0), holding the caliper at 8 MPa (V = 2.777744e-6 m³)
-  with p_cmd = 8 MPa and 10 MPa on the cylinder. At 0.5 s the command steps to 1 MPa and the
-  cylinder force to 3 MPa. The held pressure starts at 8 MPa, above p_a, so the check valve
-  conducts: p_b = p_a = 3 MPa, and the caliper drains to 3 MPa, V = 1.959060e-6 m³, back into the
-  master cylinder, not out of the model, settling within a few ms. The held pressure falls below
-  3 MPa only at 0.5 + 0.03 ln(3.5) = 0.5376 s; from then the valve dumps the caliper on to the
-  command, and that fluid leaves the model. By 1 s the held pressure is within
-  7e6 e^(-0.5/0.03) = 0.4 Pa of 1 MPa, so the caliper ends at V = 1.248618e-6 m³, and the cylinder
-  holds what it took back through the check valve, V(8 MPa) - V(3 MPa) = 0.818684e-6 m³:
-  V_disp = -0.818684e-6 m³. Had the check valve's flow been dumped, V_disp would stay at 0.
+  that the cylinder gave, V_disp = 2.777744e-6 m³, with p_cmd = 8 MPa and 10 MPa on the
+  cylinder. At 0.5 s the command steps to 1 MPa and the cylinder force to 3 MPa. The held pressure
+  starts at 8 MPa, above p_a + 0.1 bar, so the check valve conducts: p_b = 3.01 MPa, and the
+  caliper drains to it, V = 1.961516e-6 m³ by bisection, back into the master cylinder, not out of
+  the model, settling within a few ms. The held pressure falls below 3.01 MPa only at
+  0.5 + 0.03 ln(7/2.01) = 0.5374 s; from then the valve dumps the caliper on to the command, and
+  that fluid leaves the model. By 1 s the held pressure is within 7e6 e^(-0.5/0.03) = 0.4 Pa of
+  1 MPa, so the caliper ends at V = 1.248618e-6 m³, and the cylinder holds what is left after the
+  check valve's return, V_disp = V(3.01 MPa) = 1.961516e-6 m³. Had the check valve's flow been
+  dumped, V_disp would stay at 2.777744e-6 m³.
 """
 @component function ABSValve(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

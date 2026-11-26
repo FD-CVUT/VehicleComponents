@@ -8,11 +8,13 @@
    VacuumSourceSelector(; name, __overrides)
 
 Two `VacuumSourceSelector`s, one choosing the manifold and one the pump, since the choice is
-structural. Each joins its own default `VacuumBooster` at rest to its own manifold held at 30 kPa
-and its own pump held at 20 kPa, both absolute `Gas.PressureSource`s. Each booster's output rod
-is held still, so its chamber volumes do not change; the chambers start at 33 kPa.
+structural. Each joins its own default `VacuumBooster` at rest to its own vacuum sources, absolute
+`Gas.PressureSource`s: a manifold held at 30 kPa and a pump held at 20 kPa for the first, wired
+both, and only a pump at 20 kPa for the second, wired as an EV with its `manifold` port open.
+Each booster's output rod is held still, so its chamber volumes do not change; the chambers start
+at 33 kPa.
 
-At rest the input force is 0, below the 40 N cut-in, so the booster's vacuum valve is fully open
+At rest the input force is 0, below F_cut - F_w = 20 N, so the booster's vacuum valve is fully open
 and joins the rear chamber to the front one; the atmospheric valve is shut. Air leaks into the
 front chamber, C_leak (p_atm - p_f), and leaves through the check valve, C_vm (p_f - p_s), with
 p_s the chosen source's pressure, so the chambers settle where the two balance:
@@ -20,7 +22,7 @@ p_s the chosen source's pressure, so the chambers settle where the two balance:
     p_f = (C_vm p_s + C_leak p_atm)/(C_vm + C_leak)
 
 and the rear chamber, with no flow left between them, at the same pressure. The chosen source
-takes C_vm (p_f - p_s), the air the leak lets in; the other source sees no flow. Both chosen
+takes C_vm (p_f - p_s), the air the leak lets in; the other source, where wired, sees no flow. Both chosen
 pressures lie below the chambers' 33 kPa start, so the check valve opens at once. The chambers
 drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 Â· 298.15 Â·
 1.26e-7) = 0.26 s, so by 5 s they are within e^-19 of the balance.
@@ -98,12 +100,6 @@ drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 Â
   # Subcomponent m_housing of type TranslationalComponents.Components.Fixed
   m_housing_overrides = __pop_subcomponent_overrides!(__overrides, "m_housing")
   push!(__systems, @named m_housing = TranslationalComponents.Components.Fixed(; __overrides = m_housing_overrides))
-  # Subcomponent p_manifold_pressure of type BlockComponents.Sources.Constant
-  p_manifold_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "p_manifold_pressure")
-  push!(__systems, @named p_manifold_pressure = BlockComponents.Sources.Constant(; k=Float64(30000.0), __overrides = p_manifold_pressure_overrides))
-  # Subcomponent p_manifold of type VehicleComponents.Gas.PressureSource
-  p_manifold_overrides = __pop_subcomponent_overrides!(__overrides, "p_manifold")
-  push!(__systems, @named p_manifold = VehicleComponents.Gas.PressureSource(; __overrides = p_manifold_overrides))
   # Subcomponent p_pump_pressure of type BlockComponents.Sources.Constant
   p_pump_pressure_overrides = __pop_subcomponent_overrides!(__overrides, "p_pump_pressure")
   push!(__systems, @named p_pump_pressure = BlockComponents.Sources.Constant(; k=Float64(20000.0), __overrides = p_pump_pressure_overrides))
@@ -141,9 +137,7 @@ drain with a time constant of about (V_f0 + V_r0)/(R T C_vm) = 2.83e-3/(287.05 Â
   push!(__eqs, connect(m_selector.booster, m_booster.vacuum))
   push!(__eqs, connect(m_booster.rod_out, m_rod.flange))
   push!(__eqs, connect(m_booster.support, m_housing.flange))
-  push!(__eqs, connect(p_manifold_pressure.y, p_manifold.p))
   push!(__eqs, connect(p_pump_pressure.y, p_pump.p))
-  push!(__eqs, connect(p_manifold.port, p_selector.manifold))
   push!(__eqs, connect(p_pump.port, p_selector.pump))
   push!(__eqs, connect(p_selector.booster, p_booster.vacuum))
   push!(__eqs, connect(p_booster.rod_out, p_rod.flange))

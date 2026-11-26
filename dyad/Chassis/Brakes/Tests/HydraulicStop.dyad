@@ -12,10 +12,12 @@ each step). Once the calipers have filled, no fluid flows and both sit at p_mc; 
 the rear's through 4 m of line, takes well under 0.1 s at this pressure (the `MasterCylinder` rig
 has the fill and the displaced volume).
 
-Both apply 68.9e-5 (8916185.86 - 0.5e5) = 6108.80 N m, above the tire's ceiling
-r mu_A F_z = 4256.09 N m, so the wheel locks and the tire slides: the mass decelerates at
--0.7 · 13729.31/1400 = -6.864655 m/s². It decelerates at most at mu_A g from 0.5 s, so at 1.5 s it
-still moves at 25 - 9.81 = 15.2 m/s or more, far above the tire's slip regularization speed.
+The front caliper applies 49e-5 (8916185.86 - 0.5e5) = 4344.43 N m and the rear
+19.9e-5 · 8866185.86 = 1764.37 N m, 6108.80 N m on the one shaft. The front alone is above the
+tire's ceiling r mu_A F_z = 4256.09 N m, so the sum is too: the wheel locks and the tire slides,
+and the mass decelerates at -0.7 · 13729.31/1400 = -6.864655 m/s². It decelerates at most at
+mu_A g from 0.5 s, so at 1.5 s it still moves at 25 - 9.81 = 15.2 m/s or more, far above the
+tire's slip regularization speed.
 """
 test component HydraulicStop
   "Pedal step to 0.6 at 0.5 s"

@@ -23,9 +23,11 @@ Both circuits carry p_mc. Fluid leaving through either port adds to the displace
 the displaced mass over the fluid's density at `p_amb`, as `Caliper` counts what it admits; so a
 fill and a release at different pressures cancel, and V_disp equals the fluid the calipers hold.
 The pushrod travels the dead stroke `s_dead` before the pistons close the reservoir ports,
-x_rod = s_dead + V_disp/A_mc. The flange forces follow the stdlib's sign, the force on this part
-along s: the booster pushes the pushrod toward +s, which builds pressure and moves x_rod
-positive.
+x_rod = s_dead + V_disp/A_mc. With the pistons back at rest, V_disp = 0, fluid the circuits return
+passes on to the reservoir through the compensation ports, as in a real tandem cylinder, so V_disp
+never drops below 0 and x_rod never below `s_dead`. The flange forces follow the stdlib's sign,
+the force on this part along s: the booster pushes the pushrod toward +s, which builds pressure
+and moves x_rod positive.
 
 Pressures are gauge: the ports carry `p_amb` + p_mc (`VehicleComponents.DOT4` has the convention).
 
@@ -170,7 +172,7 @@ piston gives. The cylinder starts with nothing displaced. Defaults: a 25 mm bore
   push!(__eqs, front.p ~ p_amb + p_mc)
   push!(__eqs, rear.p ~ p_amb + p_mc)
   push!(__eqs, rho_ref ~ HydraulicComponents.density(front__medium, p_amb))
-  push!(__eqs, ModelingToolkit.D_nounits(V_disp) ~ -(front.m_flow + rear.m_flow) / rho_ref)
+  push!(__eqs, ModelingToolkit.D_nounits(V_disp) ~ ifelse(V_disp > 0.0, -(front.m_flow + rear.m_flow) / rho_ref, max(-(front.m_flow + rear.m_flow) / rho_ref, 0.0)))
   push!(__eqs, x_rod ~ s_dead + V_disp / A_mc)
 
   # Return completely constructed System
