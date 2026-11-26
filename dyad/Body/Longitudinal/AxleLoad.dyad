@@ -11,8 +11,8 @@ tire onto the road):
 - `flange` attaches to the vehicle body to measure its motion and takes no force.
 - `load` pushes the normal load `F_z` onto the driven wheels, which hold it at zero travel. It
   must be connected, to a wheel's load flange or to a `Fixed`.
-- `downforce` takes a force pushing the car onto the road and moves with `load`. Left
-  unconnected it carries no force.
+- `downforce` takes a force pushing the car onto the road and moves with `load`. It may stay
+  open: an open `downforce` means zero downforce.
 
 Assumptions: the transfer follows the acceleration through a first-order lag of `T_pitch`, the
 time the suspension takes to pitch the body. The lag also keeps the solver from solving the load

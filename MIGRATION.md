@@ -8,12 +8,12 @@ not listed has not moved yet.
 
 | Course | Library | Notes |
 |---|---|---|
-| `Vehicle.VehicleBody` | `Body.Longitudinal.Vehicle` | The rolling resistance coefficient `f_r` is an input, no longer a parameter: wire a constant (0.012 was the default). |
-| `HandsOn.GradeBody` | `Body.Longitudinal.Vehicle` | Same equations as `Vehicle.VehicleBody`; `f_r` as there. |
+| `Vehicle.VehicleBody` | `Body.Longitudinal.Vehicle` | The rolling resistance coefficient `f_r` is an input, no longer a parameter: wire a constant (0.012 was the default). Starts at rest by default (`mass.s`, `mass.v` = 0), so drop an old `initial` statement for them; give another start at the declaration: `Vehicle(mass(v = initial 10.0))`. |
+| `HandsOn.GradeBody` | `Body.Longitudinal.Vehicle` | Same equations as `Vehicle.VehicleBody`; `f_r` and the start at rest as there. |
 | `Vehicle.RoadLoad` | `Body.Longitudinal.RoadLoad` | `f_r` is an input, as for `Vehicle`. |
-| `Vehicle.GradeForce` | `Body.Longitudinal.GradeForce` | |
+| `Vehicle.GradeForce` | `Body.Longitudinal.GradeForce` | `m` defaults to 1400 kg; the course required it. |
 | `HandsOn.GradeForce` | `Body.Longitudinal.GradeForce` | |
-| `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | `F_z` output and `downforce` input are now flanges: wire `load` to the wheel's load flange and push `downforce` with a force source; positive force presses the car onto the road. Default `m` is 1400 kg, was 2000 kg. |
+| `Roadster.AxleLoad` | `Body.Longitudinal.AxleLoad` | `F_z` output and `downforce` input are now flanges: wire `load` to the wheel's load flange and push `downforce` with a force source; positive force presses the car onto the road. An open `downforce` means zero downforce. Default `m` is 1400 kg, was 2000 kg. |
 | `Driver` | `Driver.Interface` | |
 | `ClockedDriver` | not yet in the library | Needs `DiscreteComponents`; FD-CVUT/VehicleComponents#29. |
 | `ScriptedDriver` | `Driver.Scripted` | Unclocked: a breakpoint takes effect at its own time, not at the next 10 ms tick. The `period`, `clock`, `*_hold`, `*_sampler` and `*_clock` parts are gone. |

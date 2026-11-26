@@ -7,11 +7,18 @@
 @doc Markdown.doc"""
    RoadLoad(; name, __overrides)
 
-Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade, both on
-f_r = 0.012. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
-f_r m g = 164.7517 N on the flat and that times cos(atan(0.1)) on the climb; the climb adds
-m g sin(atan(0.1)) = 1366.117 N. Reversing the speed flips drag and rolling resistance but not
-the grade force.
+One road load held at a constant speed on f_r = 0.012, with the speed and the grade set per case.
+With m g = 1400 · 9.80665 = 13729.31 N:
+
+- `flat`, 30 m/s on a 0 grade: drag 1/2 rho CdA v² = 0.5 · 1.2 · 0.63 · 900 = 340.2 N plus
+  rolling resistance f_r m g = 164.75172 N, 504.95172 N in all.
+- `climb`, 30 m/s on a 10 % grade: rolling resistance shrinks to
+  164.75172 · cos(atan(0.1)) = 164.75172 · 0.9950372 = 163.93409 N and the along-slope weight
+  m g sin(atan(0.1)) = 1366.11740 N joins the drag: 1870.25149 N.
+- `reverse_climb`, -30 m/s on the same grade: drag and rolling resistance flip, the along-slope
+  weight does not: 1366.11740 - 340.2 - 163.93409 = 861.98332 N.
+
+At 30 m/s the rolling resistance's standstill regularization is fully saturated.
 """
 @component function RoadLoad(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -59,22 +66,19 @@ the grade force.
   ### Components
   # Subcomponent speed of type TranslationalComponents.Sources.ConstantVelocity
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = TranslationalComponents.Sources.ConstantVelocity(; v_fixed=Float64(30.0), __overrides = speed_overrides))
+  speed_dict = Dict{String, Any}()
+  speed_dict["s.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(speed_dict, speed_overrides)
+  push!(__systems, @named speed = TranslationalComponents.Sources.ConstantVelocity(; v_fixed=Float64(30.0), __overrides = speed_dict))
   # Subcomponent grade of type BlockComponents.Sources.Constant
   grade_overrides = __pop_subcomponent_overrides!(__overrides, "grade")
-  push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=0.1, __overrides = grade_overrides))
-  # Subcomponent level of type BlockComponents.Sources.Constant
-  level_overrides = __pop_subcomponent_overrides!(__overrides, "level")
-  push!(__systems, @named level = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = level_overrides))
+  push!(__systems, @named grade = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = grade_overrides))
   # Subcomponent tire of type BlockComponents.Sources.Constant
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
   push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=0.012, __overrides = tire_overrides))
-  # Subcomponent climbing of type VehicleComponents.Body.Longitudinal.RoadLoad
-  climbing_overrides = __pop_subcomponent_overrides!(__overrides, "climbing")
-  push!(__systems, @named climbing = VehicleComponents.Body.Longitudinal.RoadLoad(; __overrides = climbing_overrides))
-  # Subcomponent flat of type VehicleComponents.Body.Longitudinal.RoadLoad
-  flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = VehicleComponents.Body.Longitudinal.RoadLoad(; __overrides = flat_overrides))
+  # Subcomponent load of type VehicleComponents.Body.Longitudinal.RoadLoad
+  load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
+  push!(__systems, @named load = VehicleComponents.Body.Longitudinal.RoadLoad(; __overrides = load_overrides))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
@@ -85,19 +89,15 @@ the grade force.
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, speed.s ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(speed.flange, climbing.flange))
-  push!(__eqs, connect(speed.flange, flat.flange))
+  push!(__eqs, connect(speed.flange, load.flange))
   push!(__eqs, connect(speed.support, fixed.flange))
-  push!(__eqs, connect(grade.y, climbing.grade))
-  push!(__eqs, connect(level.y, flat.grade))
-  push!(__eqs, connect(tire.y, climbing.f_r))
-  push!(__eqs, connect(tire.y, flat.f_r))
+  push!(__eqs, connect(grade.y, load.grade))
+  push!(__eqs, connect(tire.y, load.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

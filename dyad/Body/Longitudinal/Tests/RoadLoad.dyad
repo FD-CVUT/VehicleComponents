@@ -1,107 +1,90 @@
 """
-Two road loads held at the same speed: `climbing` on a 10 % grade, `flat` on a 0 grade, both on
-f_r = 0.012. At 30 m/s the drag is 1/2 rho CdA v² = 340.2 N; rolling resistance is
-f_r m g = 164.7517 N on the flat and that times cos(atan(0.1)) on the climb; the climb adds
-m g sin(atan(0.1)) = 1366.117 N. Reversing the speed flips drag and rolling resistance but not
-the grade force.
+One road load held at a constant speed on f_r = 0.012, with the speed and the grade set per case.
+With m g = 1400 · 9.80665 = 13729.31 N:
+
+- `flat`, 30 m/s on a 0 grade: drag 1/2 rho CdA v² = 0.5 · 1.2 · 0.63 · 900 = 340.2 N plus
+  rolling resistance f_r m g = 164.75172 N, 504.95172 N in all.
+- `climb`, 30 m/s on a 10 % grade: rolling resistance shrinks to
+  164.75172 · cos(atan(0.1)) = 164.75172 · 0.9950372 = 163.93409 N and the along-slope weight
+  m g sin(atan(0.1)) = 1366.11740 N joins the drag: 1870.25149 N.
+- `reverse_climb`, -30 m/s on the same grade: drag and rolling resistance flip, the along-slope
+  weight does not: 1366.11740 - 340.2 - 163.93409 = 861.98332 N.
+
+At 30 m/s the rolling resistance's standstill regularization is fully saturated.
 """
 test component RoadLoad
-  "Holds both flanges at a fixed speed, overridden per case"
-  speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 550, "y2": 650}}}
+  "Holds the flange at a fixed speed, overridden per case"
+  speed = TranslationalComponents.Sources.ConstantVelocity(v_fixed = 30.0, s = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 850, "y1": 200, "y2": 300}}}
   }
-  grade = BlockComponents.Sources.Constant(k = 0.1) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 250, "y2": 350}}}
-  }
-  level = BlockComponents.Sources.Constant(k = 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 750, "y2": 850}}}
+  "Road gradient, overridden per case"
+  grade = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 250, "y2": 350}}}
   }
   "Car tire on asphalt"
   tire = BlockComponents.Sources.Constant(k = 0.012) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
+    "Dyad": {
+      "placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600, "rot": 270}}
+    }
   }
-  climbing = VehicleComponents.Body.Longitudinal.RoadLoad() {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 200, "y2": 300}}}
-  }
-  flat = VehicleComponents.Body.Longitudinal.RoadLoad() {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 750, "y2": 850}}}
+  load = VehicleComponents.Body.Longitudinal.RoadLoad() {
+    "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 200, "y2": 300}}}
   }
   fixed = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 800, "y2": 900}}}
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 450, "y2": 550}}}
   }
 relations
-  connect(speed.flange, climbing.flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 650, "y": 600}, {"x": 650, "y": 250}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(speed.flange, flat.flange) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 650, "y": 600}, {"x": 650, "y": 800}], "E": 2}],
-      "path": {}
-    }
-  }
+  connect(speed.flange, load.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(speed.support, fixed.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(grade.y, climbing.grade) {
+  connect(grade.y, load.grade) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 450, "y": 300}, {"x": 450, "y": 250}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 550, "y": 300}, {"x": 550, "y": 250}], "E": 2}],
       "path": {}
     }
   }
-  connect(level.y, flat.grade) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(tire.y, climbing.f_r) {
+  connect(tire.y, load.f_r) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [
-            {"x": 350, "y": 550},
-            {"x": 350, "y": 450},
-            {"x": 150, "y": 450},
-            {"x": 150, "y": 150},
-            {"x": 450, "y": 150},
-            {"x": 450, "y": 225}
-          ],
+          "M": [{"x": 250, "y": 150}, {"x": 550, "y": 150}, {"x": 550, "y": 225}],
           "E": 2
         }
       ],
       "path": {}
     }
   }
-  connect(tire.y, flat.f_r) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 450, "y": 550}, {"x": 450, "y": 775}], "E": 2}],
-      "path": {}
-    }
-  }
-  initial speed.s = 0.0
 metadata {
   "Dyad": {
     "tests": {
-      "forward": {
+      "flat": {
         "stop": 1,
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "params": {"speed.v_fixed": 30.0},
-        "atol": {"climbing.flange.f": 0.001, "flat.flange.f": 0.001},
+        "atol": {"load.flange.f": 0.001},
+        "expect": {"initial": {"load.flange.f": 504.95172}, "final": {"load.flange.f": 504.95172}}
+      },
+      "climb": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "params": {"grade.k": 0.1},
+        "atol": {"load.flange.f": 0.001},
         "expect": {
-          "initial": {"climbing.flange.f": 1870.2514931432536, "flat.flange.f": 504.95172},
-          "final": {"climbing.flange.f": 1870.2514931432536, "flat.flange.f": 504.95172}
+          "initial": {"load.flange.f": 1870.25149},
+          "final": {"load.flange.f": 1870.25149}
         }
       },
-      "reverse": {
+      "reverse_climb": {
         "stop": 1,
         "solver": "Auto",
         "abstol": 1e-6,
         "reltol": 1e-6,
-        "params": {"speed.v_fixed": -30.0},
-        "atol": {"climbing.flange.f": 0.001, "flat.flange.f": 0.001},
-        "expect": {
-          "initial": {"climbing.flange.f": 861.9833160411279, "flat.flange.f": -504.95172},
-          "final": {"climbing.flange.f": 861.9833160411279, "flat.flange.f": -504.95172}
-        }
+        "params": {"grade.k": 0.1, "speed.v_fixed": -30.0},
+        "atol": {"load.flange.f": 0.001},
+        "expect": {"initial": {"load.flange.f": 861.98332}, "final": {"load.flange.f": 861.98332}}
       }
     }
   }

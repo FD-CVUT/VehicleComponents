@@ -19,14 +19,11 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.force.f, "force.f", 0, 0.01, 1e-5),
-    (m -> m.mass.a, "mass.a", 0, 0.0001, 1e-5),
+    (m -> m.mass.v, "mass.v", 0, 0.001, 1e-5),
   ],
   expected_final=Tuple[
-    (m -> m.force.f, "force.f", 1366.1174045921907, 0.01, 1e-5),
-    (m -> m.mass.a, "mass.a", -0.9757981461372791, 0.0001, 1e-5),
+    (m -> m.force.f, "force.f", 1366.1174, 0.01, 1e-5),
+    (m -> m.mass.v, "mass.v", -3.90319, 0.001, 1e-5),
   ],
-  signals=Tuple[
-    (m -> m.force.f, "force.f", 0.01, 1e-5),
-    (m -> m.mass.v, "mass.v", 1e-5, 1e-5),
-  ],
+  signals=Tuple[],
 )

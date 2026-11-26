@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Body.Longitudinal.Tests.RoadLoad,
-  "forward for VehicleComponents.Body.Longitudinal.Tests.RoadLoad";
-  case_name="forward",
+  "flat for VehicleComponents.Body.Longitudinal.Tests.RoadLoad";
+  case_name="flat",
   component_stem="RoadLoad",
   module_path=String["Body", "Longitudinal", "Tests"],
   start=0e+0,
@@ -15,22 +15,16 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("speed.v_fixed" => 30.0),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[
-    (m -> m.climbing.flange.f, "climbing.flange.f", 1870.2514931432536, 0.001, 1e-5),
-    (m -> m.flat.flange.f, "flat.flange.f", 504.95172, 0.001, 1e-5),
-  ],
-  expected_final=Tuple[
-    (m -> m.climbing.flange.f, "climbing.flange.f", 1870.2514931432536, 0.001, 1e-5),
-    (m -> m.flat.flange.f, "flat.flange.f", 504.95172, 0.001, 1e-5),
-  ],
+  expected_initial=Tuple[(m -> m.load.flange.f, "load.flange.f", 504.95172, 0.001, 1e-5)],
+  expected_final=Tuple[(m -> m.load.flange.f, "load.flange.f", 504.95172, 0.001, 1e-5)],
   signals=Tuple[],
 )
 __dyad_run_test_case!(
   VehicleComponents.Body.Longitudinal.Tests.RoadLoad,
-  "reverse for VehicleComponents.Body.Longitudinal.Tests.RoadLoad";
-  case_name="reverse",
+  "climb for VehicleComponents.Body.Longitudinal.Tests.RoadLoad";
+  case_name="climb",
   component_stem="RoadLoad",
   module_path=String["Body", "Longitudinal", "Tests"],
   start=0e+0,
@@ -38,15 +32,26 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("speed.v_fixed" => -30.0),
+  params=Dict{String, Any}("grade.k" => 0.1),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[
-    (m -> m.climbing.flange.f, "climbing.flange.f", 861.9833160411279, 0.001, 1e-5),
-    (m -> m.flat.flange.f, "flat.flange.f", -504.95172, 0.001, 1e-5),
-  ],
-  expected_final=Tuple[
-    (m -> m.climbing.flange.f, "climbing.flange.f", 861.9833160411279, 0.001, 1e-5),
-    (m -> m.flat.flange.f, "flat.flange.f", -504.95172, 0.001, 1e-5),
-  ],
+  expected_initial=Tuple[(m -> m.load.flange.f, "load.flange.f", 1870.25149, 0.001, 1e-5)],
+  expected_final=Tuple[(m -> m.load.flange.f, "load.flange.f", 1870.25149, 0.001, 1e-5)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Body.Longitudinal.Tests.RoadLoad,
+  "reverse_climb for VehicleComponents.Body.Longitudinal.Tests.RoadLoad";
+  case_name="reverse_climb",
+  component_stem="RoadLoad",
+  module_path=String["Body", "Longitudinal", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("grade.k" => 0.1, "speed.v_fixed" => -30.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.load.flange.f, "load.flange.f", 861.98332, 0.001, 1e-5)],
+  expected_final=Tuple[(m -> m.load.flange.f, "load.flange.f", 861.98332, 0.001, 1e-5)],
   signals=Tuple[],
 )

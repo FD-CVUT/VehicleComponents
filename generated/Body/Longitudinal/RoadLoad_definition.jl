@@ -18,11 +18,13 @@ Ports: `flange` moves with the vehicle; `grade` is the road gradient tan(alpha),
 road; `f_r` is the rolling resistance coefficient of tire on road (0.012 is a car tire on asphalt).
 Every reaction goes to the road through `ground`.
 
-Assumptions: drag uses the v|v| form, so it opposes motion in both directions; the stdlib
-regularizes the sign of rolling resistance near standstill. Being mass-free, the road load moves
-only as its flange is moved, by the mass in `Vehicle` or by a speed source that follows a planar
-body; `m` enters only through the normal load and the along-slope weight. Source tags:
-(textbook) standard physical values; (assumed) the course's Lecture 1 car.
+Assumptions: drag uses the v|v| form, so it opposes motion in both directions. Rolling resistance
+takes the stdlib's exponential regularization with v0 = 0.1 m/s, which scales it by
+tanh(v/(0.02 v0)) = tanh(v/(2 mm/s)): zero at standstill, 46 % of its full value at 1 mm/s and
+over 99 % above 5.3 mm/s. Being mass-free, the road load moves only as its flange is moved, by
+the mass in `Vehicle` or by a speed source that follows a planar body; `m` enters only through
+the normal load and the along-slope weight. Source tags: (textbook) standard physical values;
+(assumed) the course's Lecture 1 car.
 
 ## Parameters:
 
