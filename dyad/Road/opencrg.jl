@@ -1,11 +1,17 @@
 # OpenCRG road surfaces as the callables behind `Road.Grip` and `Road.Slope`.
 
 import DyadData, ForwardDiff, OpenCRG
+using LinearAlgebra: lu
 using ModelingToolkit: Symbolics
 
-"Resolve a `dyad://` road asset to its file, or pass a filesystem path through."
-asset_path(file::AbstractString) =
-    startswith(file, "dyad://") ? DyadData.resolve_dyad_uri(file[length("dyad://")+1:end]) : file
+"Resolve a `dyad://` or `file://` road asset to its file, or pass a filesystem path through."
+asset_path(file::AbstractString) = occursin("://", file) ? uri_path(DyadData.parse_uri(file)...) : file
+
+function uri_path(scheme, location)
+    scheme == "dyad" && return DyadData.resolve_dyad_uri(location)
+    scheme == "file" && return location
+    error("a road file must be local, not a $scheme URI")
+end
 
 "Innermost real value of a possibly nested `ForwardDiff.Dual`."
 primal(x::ForwardDiff.Dual) = primal(ForwardDiff.value(x))
@@ -135,44 +141,26 @@ end
 
 Symbolics.@register_symbolic lookup(surface::Surface, x, y)
 
-"""
-    read_grid(file; fill_missing = nothing, kind = "road") -> (path, data, grid)
-
-Read an OpenCRG `file` into the reader's `data` and its evaluated world `grid`
-`(u, v, X, Y, z)`. Missing grid values become `fill_missing`, or raise without it.
-"""
-function read_grid(file::AbstractString; fill_missing = nothing, kind = "road")
-    isempty(file) && error("$(repr(file)): road filename is empty")
-    path = asset_path(file)
-    isfile(path) || error("$file: road file does not exist")
-    data = try
-        OpenCRG.read_crg(path)
+"Run `f`, prefixing any error it raises with the road file's name."
+function with_file(f, file)
+    try
+        f()
     catch e
         error("$file: $(sprint(showerror, e))")
     end
-    if any(isnan, data.z)
-        fill_missing === nothing && error("$file: $kind grid contains NaN")
-        isfinite(fill_missing) || error("$file: fill_missing must be finite")
-        replace!(data.z, NaN => Float64(fill_missing))
-    end
-    # The reader leaves absent heading samples as NaN, even for a straight reference line.
-    replace!(data.phi, NaN => data.refline.start_phi)
-    grid = try
-        OpenCRG.road_surface_grid(data)
-    catch e
-        error("$file: $(sprint(showerror, e))")
-    end
-    return path, data, grid
 end
+
+# OpenCRG.jl 0.1 reads the standard _S/_B start keys, not these spelled-out aliases.
+const START_ALIAS = r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]*)"
 
 """
     surface(file; fill_missing = nothing, elevation = false,
         default_value = elevation ? 0.0 : 1.0, blend_width = 2.0) -> Surface
 
 Load an OpenCRG grid and fit its world-coordinate [`Surface`](@ref): the file's value on its
-grid, `default_value` from `blend_width` meters beyond it, and a C1 blend between. With
-`elevation = false` the file must carry grip only: slope, banking or a reference-line start
-elevation is an error.
+grid, `default_value` from `blend_width` meters beyond it, and a C1 blend between. Missing grid
+values become `fill_missing`, or raise without it. With `elevation = false` the file must carry
+grip only: slope, banking or a reference-line start elevation is an error.
 """
 function surface(file::AbstractString; fill_missing = nothing, elevation = false,
         default_value = elevation ? 0.0 : 1.0, blend_width = 2.0)
@@ -180,24 +168,28 @@ function surface(file::AbstractString; fill_missing = nothing, elevation = false
     isfinite(default_value) || throw(ArgumentError("$file: default $kind must be finite"))
     blend_width > 0 && isfinite(blend_width) ||
         throw(ArgumentError("$file: blend width must be positive and finite"))
-    path, data, (u, v, X, Y, z) = read_grid(file; fill_missing, kind)
-    r = data.refline
-    # OpenCRG.jl 0.1 recognizes the standard _S/_B keys, not these spelled-out aliases.
-    header = first(split(read(path, String), "\$\$\$\$"; limit = 2))
-    if elevation
-        occursin(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=", header) &&
-            error("$file: unsupported start slope/banking alias; use REFERENCE_LINE_START_S or REFERENCE_LINE_START_B")
-    end
-    if !elevation
-        for m in eachmatch(r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]+)", header)
-            value = tryparse(Float64, m.captures[1])
-            value == 0.0 || error("$file: elevation data (slope or banking start value) is not grip")
+    isempty(file) && error("$(repr(file)): road filename is empty")
+    return with_file(file) do
+        path = asset_path(file)
+        isfile(path) || error("road file does not exist")
+        data = OpenCRG.read_crg(path)
+        if any(isnan, data.z)
+            fill_missing === nothing && error("$kind grid contains NaN")
+            isfinite(fill_missing) || error("fill_missing must be finite")
+            replace!(data.z, NaN => Float64(fill_missing))
         end
-        (data.slope !== nothing || data.banking !== nothing ||
+        # The reader leaves absent heading samples as NaN, even for a straight reference line.
+        replace!(data.phi, NaN => data.refline.start_phi)
+        u, v, X, Y, z = OpenCRG.road_surface_grid(data)
+        r = data.refline
+        for m in eachmatch(START_ALIAS, readuntil(path, "\$\$\$\$"))
+            elevation && error("unsupported start slope/banking alias; use REFERENCE_LINE_START_S or REFERENCE_LINE_START_B")
+            tryparse(Float64, m.captures[1]) == 0.0 ||
+                error("elevation data (slope or banking start value) is not grip")
+        end
+        !elevation && (data.slope !== nothing || data.banking !== nothing ||
             r.start_z != 0 || r.start_slope != 0 || r.start_banking != 0) &&
-            error("$file: elevation data (slope, banking, or reference-line start elevation) is not grip")
-    end
-    try
+            error("elevation data (slope, banking, or reference-line start elevation) is not grip")
         all(isfinite, z) || error("$kind grid contains nonfinite values after modifiers")
         all(>(0), diff(u)) && all(>(0), diff(v)) || error("grid axes must increase")
         # Grid columns are affine in v, including the reader's corner-normal rescaling, so
@@ -213,23 +205,23 @@ function surface(file::AbstractString; fill_missing = nothing, elevation = false
         xaxis = c .* (cx .- cx[1]) .+ s .* (cy .- cy[1])
         center = -s .* (cx .- cx[1]) .+ c .* (cy .- cy[1])
         all(>(0), diff(xaxis)) || error("reference line turns back in its start frame")
-        extent = (; x = extrema(X), y = extrema(Y))
         v_breaks, av = spline_dimension(v)
         # A straight road keeps its file's arc-length axis, so the spline matches the file's
         # nodes exactly.
-        straight = maximum(abs.(center)) <= 1e-12 * max(1.0, last(xaxis))
+        straight = maximum(abs, center) <= 1e-12 * max(1.0, last(xaxis))
         u_breaks, au = spline_dimension(straight ? u : xaxis)
-        coefficients = (au \ z) / transpose(av)
+        along = lu(au)
+        coefficients = (along \ z) / transpose(av)
         if straight
-            return Surface(cx[1], cy[1], c, s, first(u), u_breaks, v_breaks, coefficients,
-                Float64[], Float64[], extent, default_value, blend_width)
+            u0, center_coefficients, heading_coefficients = first(u), Float64[], Float64[]
+        else
+            heading = [atan(center[min(i+1,end)] - center[max(i-1,1)],
+                            xaxis[min(i+1,end)] - xaxis[max(i-1,1)]) for i in eachindex(xaxis)]
+            u0, center_coefficients, heading_coefficients = 0.0, along \ center, along \ heading
         end
-        heading = [atan(center[min(i+1,end)] - center[max(i-1,1)],
-                        xaxis[min(i+1,end)] - xaxis[max(i-1,1)]) for i in eachindex(xaxis)]
-        return Surface(cx[1], cy[1], c, s, 0.0, u_breaks, v_breaks, coefficients,
-            au \ center, au \ heading, extent, default_value, blend_width)
-    catch e
-        error("$file: $(sprint(showerror, e))")
+        Surface(cx[1], cy[1], c, s, u0, u_breaks, v_breaks, coefficients,
+            center_coefficients, heading_coefficients, (; x = extrema(X), y = extrema(Y)),
+            default_value, blend_width)
     end
 end
 
@@ -244,18 +236,30 @@ grip(file::AbstractString; fill_missing = nothing, default_grip = 1.0, blend_wid
     surface(file; fill_missing, elevation = false, default_value = default_grip, blend_width)
 
 """
-    slope(file; fill_missing = nothing, default_height = 0.0, blend_width = 2.0)
+    slope(file; fill_missing = nothing, default_height = 0.0, blend_width = 2.0) -> SurfaceSlope
 
 A `Slope` callable: load an OpenCRG height file once and return a function of world x and y
 in meters and heading in radians, giving tan of the road angle along that heading. Beyond the
 grid the road is level at `default_height`, reached over `blend_width` meters.
 """
-function slope(file::AbstractString; fill_missing = nothing, default_height = 0.0,
-        blend_width = 2.0)
-    height = surface(file; fill_missing, elevation = true, default_value = default_height,
-        blend_width)
-    return (x, y, psi) -> directional_slope(height, x, y, psi)
+slope(file::AbstractString; fill_missing = nothing, default_height = 0.0, blend_width = 2.0) =
+    SurfaceSlope(surface(file; fill_missing, elevation = true, default_value = default_height,
+        blend_width))
+
+"""
+    SurfaceSlope(height::Surface)
+
+Tan of the road angle of the height surface `height` along a heading: called with world x and y
+in meters and heading in radians. [`slope`](@ref) builds one; `height` is the fitted surface it
+differentiates, which [`mesh`](@ref) draws.
+"""
+struct SurfaceSlope <: Function
+    height::Surface
 end
+
+(road::SurfaceSlope)(x, y, psi) = directional_slope(road.height, x, y, psi)
+
+Base.show(io::IO, road::SurfaceSlope) = print(io, "Road.SurfaceSlope(", road.height, ")")
 
 "Directional derivative of a height surface along heading `psi`; one opaque term symbolically."
 directional_slope(height::Function, x, y, psi) = ForwardDiff.derivative(t ->
@@ -266,23 +270,19 @@ Symbolics.@register_symbolic directional_slope(height::Function, x, y, psi)
 """
     extent(roads...; margin = 20.0) -> (; x = (xmin, xmax), y = (ymin, ymax))
 
-World bounding box, in meters, of the grids of one or more OpenCRG files or fitted
-[`Surface`](@ref)s, grown by `margin` on every side. Use it to pick the sampling window for
-[`mesh`](@ref).
+World bounding box, in meters, of the grids of one or more fitted roads, a [`Surface`](@ref)
+or a [`SurfaceSlope`](@ref), grown by `margin` on every side. Use it to pick the sampling window
+for [`mesh`](@ref).
 """
-function extent(roads::Union{AbstractString, Surface}...; margin = 20.0)
+function extent(roads::Union{Surface, SurfaceSlope}...; margin = 20.0)
     isempty(roads) && throw(ArgumentError("extent needs at least one road"))
-    boxes = map(grid_extent, roads)
+    boxes = map(road -> height_surface(road).extent, roads)
     return (; x = (minimum(b -> b.x[1], boxes) - margin, maximum(b -> b.x[2], boxes) + margin),
               y = (minimum(b -> b.y[1], boxes) - margin, maximum(b -> b.y[2], boxes) + margin))
 end
 
-grid_extent(road::Surface) = road.extent
-function grid_extent(file::AbstractString)
-    # Grid values do not move the grid, so missing ones need no policy here.
-    _, _, (_, _, X, Y, _) = read_grid(file; fill_missing = 0.0)
-    return (; x = extrema(X), y = extrema(Y))
-end
+height_surface(road::Surface) = road
+height_surface(road::SurfaceSlope) = road.height
 
 """
     sample_axes(roads...; margin = 20.0, max_points = 160_000, min_step = 0.25) -> (; x, y)
@@ -290,7 +290,7 @@ end
 Evenly spaced world sample axes over [`extent`](@ref) with one spacing on both axes, no finer
 than `min_step` meters and with at most about `max_points` grid points.
 """
-function sample_axes(roads::Union{AbstractString, Surface}...; margin = 20.0,
+function sample_axes(roads::Union{Surface, SurfaceSlope}...; margin = 20.0,
         max_points = 160_000, min_step = 0.25)
     box = extent(roads...; margin)
     wx, wy = box.x[2] - box.x[1], box.y[2] - box.y[1]
@@ -300,16 +300,16 @@ function sample_axes(roads::Union{AbstractString, Surface}...; margin = 20.0,
 end
 
 """
-    mesh(height_file; grip_file = nothing, x, y) -> (; x, y, vertices, faces, height, grip)
+    mesh(height; grip = nothing, x, y) -> (; x, y, vertices, faces, height, grip)
 
 Sample a road on the world grid `x` by `y` (meters) for drawing.
 
-Heights and grips come from the same fitted surfaces the callables evaluate, with their default
-values and blend width ([`surface`](@ref), behind [`slope`](@ref) and [`grip`](@ref)), not from
-the raw CRG nodes, so the picture is what the tires feel, including the blend to the defaults
-beyond a file's grid. Without `height_file` (`nothing`) the road is flat at zero; without
-`grip_file` the grip is one everywhere. At least one file is needed. `x` and `y` default to
-[`sample_axes`](@ref) over the files given.
+`height` is the fitted road a [`slope`](@ref) callable holds (or its height
+[`Surface`](@ref)), and `grip` the [`Surface`](@ref) that [`grip`](@ref) returns, so the
+picture is what the tires feel, with the same default values, blend width and missing-value
+policy, including the blend to the defaults beyond a file's grid. Without `height` (`nothing`)
+the road is flat at zero; without `grip` the grip is one everywhere. At least one road is
+needed. `x` and `y` default to [`sample_axes`](@ref) over the roads given.
 
 Everything is in the CRG world frame: right-handed and z-up, x and y the planar car's world
 coordinates. Returns plain arrays:
@@ -327,14 +327,12 @@ A y-up scene such as the multibody world takes each vertex through `(x, y, z) ->
 proper rotation about x. The swap `(x, z, y)` is a mirror: it reverses face winding and the sign
 of yaw.
 """
-function mesh(height_file::Union{Nothing, AbstractString}; grip_file = nothing,
-        x = nothing, y = nothing)
-    height_file === grip_file === nothing &&
-        throw(ArgumentError("mesh needs a height file, a grip file, or both"))
-    elevation = height_file === nothing ? nothing : surface(height_file; elevation = true)
-    grip_surface = grip_file === nothing ? nothing : surface(grip_file)
+function mesh(height::Union{Nothing, Surface, SurfaceSlope};
+        grip::Union{Nothing, Surface} = nothing, x = nothing, y = nothing)
+    height === grip === nothing && throw(ArgumentError("mesh needs a height, a grip, or both"))
+    elevation = height === nothing ? nothing : height_surface(height)
     if x === nothing || y === nothing
-        sampled = sample_axes((r for r in (elevation, grip_surface) if r !== nothing)...)
+        sampled = sample_axes((r for r in (elevation, grip) if r !== nothing)...)
         x = something(x, sampled.x)
         y = something(y, sampled.y)
     end
@@ -343,8 +341,8 @@ function mesh(height_file::Union{Nothing, AbstractString}; grip_file = nothing,
     nx >= 2 && ny >= 2 || throw(ArgumentError("mesh needs at least two samples per axis"))
     sample(road, fallback) = road === nothing ? fill(fallback, nx, ny) :
         Float64[road(xi, yi) for xi in xs, yi in ys]
-    height, grip_values = sample(elevation, 0.0), sample(grip_surface, 1.0)
-    vertices = vec([(xs[i], ys[j], height[i, j]) for i in 1:nx, j in 1:ny])
+    heights, grip_values = sample(elevation, 0.0), sample(grip, 1.0)
+    vertices = vec([(xs[i], ys[j], heights[i, j]) for i in 1:nx, j in 1:ny])
     index(i, j) = i + (j - 1) * nx
     faces = NTuple{3, Int}[]
     sizehint!(faces, 2 * (nx - 1) * (ny - 1))
@@ -352,5 +350,5 @@ function mesh(height_file::Union{Nothing, AbstractString}; grip_file = nothing,
         push!(faces, (index(i, j), index(i + 1, j), index(i + 1, j + 1)))
         push!(faces, (index(i, j), index(i + 1, j + 1), index(i, j + 1)))
     end
-    return (; x = xs, y = ys, vertices, faces, height, grip = grip_values)
+    return (; x = xs, y = ys, vertices, faces, height = heights, grip = grip_values)
 end

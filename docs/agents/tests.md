@@ -21,8 +21,8 @@ preset that adds parts or equations needs its own rig.
   each case's `initial` (`{"body.mass.v": 10.0}`).
 - **Second seam: plain Julia test sets** against the public Julia API, only for what a test model
   cannot express (OpenCRG reading, CAN frame encoding and decoding, the realtime drive headless).
-  Each is a file under `test/` wrapped in a module of its own and listed in `JULIA_TESTS` in
-  `test/runtests.jl`; the fast tier runs them after the rigs (`test/road.jl`).
+  Each is a file `test/<topic>.jl` (`test/road.jl`); the fast tier runs every one after the rigs,
+  in a fresh module.
 
 ## Tiers
 

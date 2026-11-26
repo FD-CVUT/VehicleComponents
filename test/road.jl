@@ -1,5 +1,4 @@
 # Reading grip and height from OpenCRG files through `VehicleComponents.Road`.
-module RoadTests
 
 using Test, Random, VehicleComponents
 import DataInterpolationsND, ForwardDiff, OpenCRG
@@ -10,14 +9,17 @@ const OPENCRG = joinpath(@__DIR__, "data", "opencrg")
 
 gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
 
+"LDFI data records, one per row of values, in 20-character fields."
+crg_rows(rows) = join((join(lpad(value, 20) for value in row) for row in rows), '\n') * "\n"
+
 @testset "Grip: finite nodes and rejected unsupported geometry" begin
     for file in ("handmade_straight.crg", "handmade_straight_double.crg")
         path = joinpath(OPENCRG, file)
         data = OpenCRG.read_crg(path)
+        u = first(OpenCRG.road_surface_grid(data))
         road = R.grip(path; fill_missing = 0.0)
-        errors = [abs(road(data.refline.start_u + (i-1)*data.refline.increment,
-            data.v[j]) - data.z[i,j]) for i in axes(data.z,1), j in axes(data.z,2)
-            if isfinite(data.z[i,j])]
+        errors = [abs(road(u[i], data.v[j]) - data.z[i,j])
+            for i in axes(data.z,1), j in axes(data.z,2) if isfinite(data.z[i,j])]
         @test maximum(errors) < 1e-9
         # Beyond the grid and its blend the road takes the default grip.
         @test road(-100.0, 0.0) == 1.0
@@ -64,7 +66,7 @@ gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
         straight = joinpath(dir, "constant_phi.crg")
         header, _ = split(uniform, "\$\$\$\$"; limit = 2)
         header = replace(header, "#:LDFI" => "#:LDFI\nD:reference line phi,rad")
-        write(straight, header * "\$\$\$\$\n" * repeat(join(lpad(v, 20) for v in ("0.0", "1.0", "1.0", "1.0")) * "\n", 3))
+        write(straight, header * "\$\$\$\$\n" * crg_rows(fill(("0.0", "1.0", "1.0", "1.0"), 3)))
         @test R.grip(straight)(1.0, 0.0) ≈ 1.0
         rotated = joinpath(dir, "rotated_mu.crg")
         angle = 0.7
@@ -77,8 +79,8 @@ gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
             @test rotated_grip(cos(angle)*x-sin(angle)*y, sin(angle)*x+cos(angle)*y) ≈ base(x,y) atol=1e-9
         end
         back = joinpath(dir, "turning_back.crg")
-        write(back, header * "\$\$\$\$\n" * join([join(lpad(value,20) for value in
-            (string(phi), "1.0", "1.0", "1.0")) for phi in (0.0, 0.8, 1.8)], '\n') * "\n")
+        write(back, header * "\$\$\$\$\n" *
+            crg_rows((string(phi), "1.0", "1.0", "1.0") for phi in (0.0, 0.8, 1.8)))
         @test_throws r"turning_back.crg.*reference line turns back" R.grip(back)
     end
 end
@@ -112,10 +114,11 @@ lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
     rng = Xoshiro(1)
     files = vcat([ROADS * f for f in ("hill_z.crg", "ramp_hold_z.crg", "ice_patch_mu.crg")],
         [joinpath(OPENCRG, f) for f in ("handmade_straight.crg", "handmade_curved.crg")])
+    fitted = Dict{String, R.Surface}()
     for file in files
-        road = R.surface(file; elevation = true, fill_missing = 0.0)
+        road = fitted[basename(file)] = R.surface(file; elevation = true, fill_missing = 0.0)
         reference = reference_surface(road)
-        box = R.extent(file; margin = 20.0)
+        box = R.extent(road; margin = 20.0)
         points = [(box.x[1] + (box.x[2] - box.x[1]) * rand(rng), box.y[1] + (box.y[2] - box.y[1]) * rand(rng))
                   for _ in 1:2000]
         filter!(p -> !isnan(reference(p...)), points)
@@ -131,7 +134,7 @@ lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
         @test maximum(maximum(abs, gradient(road, p...) .- gradient(reference, p...)) for p in points) <
             1e-12 * scale
     end
-    grip, slope = R.grip(ROADS * "ice_patch_mu.crg"), R.slope(ROADS * "hill_z.crg")
+    grip, slope = fitted["ice_patch_mu.crg"], R.SurfaceSlope(fitted["hill_z.crg"])
     # Beyond the blend the road is level at its default height, so the grade is exactly zero.
     @test slope(1.0e4, 0.0, 0.0) == 0.0
     dual = ForwardDiff.Dual{typeof(ForwardDiff.Tag(sin, Float64))}(470.3, 1.0)
@@ -272,13 +275,14 @@ end
 end
 
 @testset "Mesh: what is drawn is what the tires feel" begin
-    hill, ice = ROADS * "hill_z.crg", ROADS * "ice_patch_mu.crg"
+    hill = R.slope(ROADS * "hill_z.crg")
+    ice = R.grip(ROADS * "ice_patch_mu.crg")
     # The patch grid spans x = 420..530 m and y = -1..1 m, grown by the 5 m margin.
     box = R.extent(ice; margin = 5.0)
     @test all(box.x .≈ (415.0, 535.0))
     @test all(box.y .≈ (-6.0, 6.0))
     x, y = 430.0:2.5:520.0, -3.0:0.5:3.0
-    mesh = R.mesh(hill; grip_file = ice, x, y)
+    mesh = R.mesh(hill; grip = ice, x, y)
     nx, ny = length(x), length(y)
     @test mesh.x == collect(x) && mesh.y == collect(y)
     @test size(mesh.height) == size(mesh.grip) == (nx, ny)
@@ -292,26 +296,25 @@ end
         p, q, r = mesh.vertices[a], mesh.vertices[b], mesh.vertices[c]
         (q[1] - p[1]) * (r[2] - p[2]) - (q[2] - p[2]) * (r[1] - p[1]) > 0
     end
-    grip = R.grip(ice)
-    height = R.surface(hill; elevation = true)
     for (i, j) in ((1, 1), (11, 7), (20, 3), (nx, ny))
-        @test mesh.grip[i, j] == grip(x[i], y[j])
-        @test mesh.height[i, j] == height(x[i], y[j])
+        @test mesh.grip[i, j] == ice(x[i], y[j])
+        @test mesh.height[i, j] == hill.height(x[i], y[j])
     end
     @test minimum(mesh.grip) < 0.3 && maximum(mesh.grip) ≈ 1.0
-    flat = R.mesh(ROADS * "flat_z.crg"; x = -50.0:10.0:50.0, y = -5.0:5.0:5.0)
+    flat = R.mesh(R.slope(ROADS * "flat_z.crg"); x = -50.0:10.0:50.0, y = -5.0:5.0:5.0)
     @test all(iszero, flat.height)
     @test all(==(1.0), flat.grip)
-    # Without a height file the road is level and the sampling box is the grip file's alone.
-    grip_only = R.mesh(nothing; grip_file = ice)
+    # Without a height the road is level and the sampling box is the grip's alone.
+    grip_only = R.mesh(nothing; grip = ice)
     @test all(iszero, grip_only.height)
     @test all(extrema(grip_only.x) .≈ R.extent(ice).x)
     @test all(extrema(grip_only.y) .≈ R.extent(ice).y)
-    @test R.extent(R.surface(ice)) == R.extent(ice)
+    # A road fitted with its own default is drawn with it.
+    slush = R.mesh(nothing; grip = R.grip(ROADS * "ice_patch_mu.crg"; default_grip = 0.5),
+        x = [600.0, 700.0], y = [0.0, 1.0])
+    @test all(==(0.5), slush.grip)
     @test_throws ArgumentError R.mesh(nothing)
-    default_axes = R.mesh(ROADS * "hill_across_z.crg")
+    default_axes = R.mesh(R.slope(ROADS * "hill_across_z.crg"))
     @test length(default_axes.vertices) <= 170_000
     @test first(default_axes.x) < -600 && last(default_axes.y) > 140
 end
-
-end # module RoadTests

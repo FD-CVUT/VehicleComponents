@@ -2,7 +2,7 @@
 
 julia_version = "1.13.2"
 manifest_format = "2.1"
-project_hash = "f4de4dd54999e1e3829e8e73c846303d0bfbf017"
+project_hash = "dcc8a2d70d98f026a9bd7eae19af935b396b4ddb"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -2007,7 +2007,7 @@ version = "0.3.2"
     LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
 
 [[deps.VehicleComponents]]
-deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "JSON", "Markdown", "ModelingToolkit", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
+deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "JSON", "LinearAlgebra", "Markdown", "ModelingToolkit", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
 path = "."
 uuid = "8c616c4b-ea35-4d9d-a47e-f6124bcac953"
 version = "0.1.0"
