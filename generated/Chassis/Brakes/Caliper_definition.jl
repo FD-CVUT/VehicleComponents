@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   Caliper(; name, w0, K, p0, V0, K1, K3, __overrides)
+   Caliper(; name, w0, K, p0, V0, K1, K3, p_amb, __overrides)
 
 One axle's hydraulic disc brakes: the caliper's fluid compliance and the friction torque its
 pressure clamps onto the disc.
@@ -14,13 +14,17 @@ The friction, its sine ramp below `w0` and the shaft ports are
 `Chassis.Brakes.PartialFrictionBrake`'s; `support` must be connected. `port` is the brake-fluid
 connection.
 
-The admitted fluid volume V sets the pressure. Up to the clearance take-up volume `V0` the pads
-travel against a soft linear law, p = p0 V/V0, and apply no torque; beyond it they press the disc,
-the stiffness rises cubically, p = p0 + K1 u + K3 u³ with u = V - V0, and the friction torque
-magnitude is K (p - p0).
+Pressures are gauge: the caliper's pressure p is `port.p` less the ambient pressure `p_amb`, since
+HydraulicComponents ports carry absolute pressure. A released circuit at ambient pressure leaves
+the caliper empty and applies no torque. The admitted fluid volume V sets p. Up to the clearance
+take-up volume `V0` the pads travel against a soft linear law, p = p0 V/V0, and apply no torque;
+beyond it they press the disc, the stiffness rises cubically, p = p0 + K1 u + K3 u³ with
+u = V - V0, and the friction torque magnitude is K (p - p0).
 
-Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. The defaults are a
-front axle's (textbook).
+Assumptions: those of `PartialFrictionBrake`; the caliper starts empty, V = 0. `p_amb` defaults
+to 100325 Pa, the reference pressure of `HydraulicComponents.IsothermalCompressible` and of
+`VehicleComponents.DOT4`; set it to the reference of any other medium. The other defaults are a
+front axle's, gauge (textbook).
 
 ## Parameters:
 
@@ -28,10 +32,11 @@ front axle's (textbook).
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `w0`         | Shaft speed below which the friction direction is ramped                         | rad/s  |   0.2 |
 | `K`         | Torque gain [N m/Pa]                         | --  |   49.0e-5 |
-| `p0`         | Pad-contact pressure                         | Pa  |   0.5e5 |
+| `p0`         | Pad-contact pressure, gauge                         | Pa  |   0.5e5 |
 | `V0`         | Clearance take-up volume                         | m3  |   0.5e-6 |
 | `K1`         | Linear pressure-volume coefficient [Pa/m³]                         | --  |   1e12 |
 | `K3`         | Cubic pressure-volume coefficient [Pa/m⁹]                         | --  |   4.8e23 |
+| `p_amb`         | Ambient pressure, which a released caliper sits at                         | Pa  |   100325.0 |
 
 ## Connectors
 
@@ -50,11 +55,11 @@ front axle's (textbook).
 | `w`         | Shaft speed relative to the support                         | rad/s  |
 | `tau_friction`         | Friction torque removed from the shaft line, with the sign of w                         | N.m  |
 | `V`         | Fluid volume admitted to the caliper                         | m3  |
-| `p`         | Caliper pressure                         | Pa  |
+| `p`         | Caliper pressure, gauge: above p_amb                         | Pa  |
 | `rho`         | Fluid density at the caliper pressure                         | kg/m3  |
 | `u`         | Volume beyond the clearance take-up                         | m3  |
 """
-@component function Caliper(; name = nothing, var"w0"=0.2, var"K"=0.00049, var"p0"=Float64(50000.0), var"V0"=5e-7, var"K1"=Float64(1000000000000.0), var"K3"=Float64(4.8e+23), var"continuity__graph0", __overrides = Dict{String, Any}())
+@component function Caliper(; name = nothing, var"w0"=0.2, var"K"=0.00049, var"p0"=Float64(50000.0), var"V0"=5e-7, var"K1"=Float64(1000000000000.0), var"K3"=Float64(4.8e+23), var"p_amb"=Float64(100325.0), var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -79,6 +84,7 @@ front axle's (textbook).
   haskey(__overrides, "V0") && (V0 = pop!(__overrides, "V0"))
   haskey(__overrides, "K1") && (K1 = pop!(__overrides, "K1"))
   haskey(__overrides, "K3") && (K3 = pop!(__overrides, "K3"))
+  haskey(__overrides, "p_amb") && (p_amb = pop!(__overrides, "p_amb"))
 
   ### Structural Parameters (functions)
 
@@ -100,7 +106,7 @@ front axle's (textbook).
   append!(__params, @parameters (K::Real), [description = "Torque gain [N m/Pa]"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, K, __local__K)
   __local__p0 = p0
-  append!(__params, @parameters (p0::Real), [description = "Pad-contact pressure"])
+  append!(__params, @parameters (p0::Real), [description = "Pad-contact pressure, gauge"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, p0, __local__p0)
   __local__V0 = V0
   append!(__params, @parameters (V0::Real), [description = "Clearance take-up volume"])
@@ -111,6 +117,9 @@ front axle's (textbook).
   __local__K3 = K3
   append!(__params, @parameters (K3::Real), [description = "Cubic pressure-volume coefficient [Pa/m⁹]"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, K3, __local__K3)
+  __local__p_amb = p_amb
+  append!(__params, @parameters (p_amb::Real), [description = "Ambient pressure, which a released caliper sits at"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_amb, __local__p_amb)
 
   ### Final Parameters (assignments)
 
@@ -124,7 +133,7 @@ front axle's (textbook).
   append!(__vars, @variables (w(t)::Real), [description = "Shaft speed relative to the support"])
   append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction torque removed from the shaft line, with the sign of w"])
   append!(__vars, @variables (V(t)::Real), [description = "Fluid volume admitted to the caliper"])
-  append!(__vars, @variables (p(t)::Real), [description = "Caliper pressure"])
+  append!(__vars, @variables (p(t)::Real), [description = "Caliper pressure, gauge: above p_amb"])
   append!(__vars, @variables (rho(t)::Real), [description = "Fluid density at the caliper pressure"])
   append!(__vars, @variables (u(t)::Real), [description = "Volume beyond the clearance take-up"])
 
@@ -194,8 +203,8 @@ front axle's (textbook).
   push!(__eqs, spline_b.phi ~ spline_a.phi)
   push!(__eqs, tau_friction ~ tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0)))
   push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
-  push!(__eqs, port.p ~ p)
-  push!(__eqs, rho ~ HydraulicComponents.density(port__medium, p))
+  push!(__eqs, port.p ~ p_amb + p)
+  push!(__eqs, rho ~ HydraulicComponents.density(port__medium, port.p))
   push!(__eqs, ModelingToolkit.D_nounits(V) ~ port.m_flow / rho)
   push!(__eqs, u ~ V - V0)
   push!(__eqs, p ~ ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3))

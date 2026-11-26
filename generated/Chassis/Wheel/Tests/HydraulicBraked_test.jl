@@ -37,7 +37,7 @@ __dyad_run_test_case!(
   abstol=1e-8,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("pressure.k" => 10000000.0),
+  params=Dict{String, Any}("pressure.k" => 10100325.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[

@@ -6,6 +6,27 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Chassis.Brakes.Tests.Caliper,
+  "ambient for VehicleComponents.Chassis.Brakes.Tests.Caliper";
+  case_name="ambient",
+  component_stem="Caliper",
+  module_path=String["Chassis", "Brakes", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-10,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("pressure.k" => 100325.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.caliper.V, "caliper.V", 0, 1e-12, 1e-7),
+    (m -> m.caliper.tau, "caliper.tau", 0, 0.000001, 1e-7),
+    (m -> m.caliper.tau_friction, "caliper.tau_friction", 0, 0.000001, 1e-7),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Chassis.Brakes.Tests.Caliper,
   "clearance for VehicleComponents.Chassis.Brakes.Tests.Caliper";
   case_name="clearance",
   component_stem="Caliper",
@@ -15,7 +36,7 @@ __dyad_run_test_case!(
   abstol=1e-10,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("pressure.k" => 25000.0),
+  params=Dict{String, Any}("pressure.k" => 125325.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[(m -> m.caliper.V, "caliper.V", 0, 1e-12, 1e-7)],
   expected_final=Tuple[

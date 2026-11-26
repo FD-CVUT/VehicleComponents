@@ -8,24 +8,29 @@
    Caliper(; name, __overrides)
 
 One default caliper (K = 49e-5 N m/Pa, p0 = 0.5e5 Pa, V0 = 0.5e-6 m³, K1 = 1e12 Pa/m³,
-K3 = 4.8e23 Pa/m⁹) filled from a constant pressure through a default `Line` (3 mm bore, 1.5 m). It
-brakes a J = 100 kg m² shaft spinning at 100 rad/s, its housing fixed. The pressure is set per
-case.
+K3 = 4.8e23 Pa/m⁹, all gauge, p_amb = 100325 Pa) filled from a constant absolute pressure through
+a default `Line` (3 mm bore, 1.5 m). It brakes a J = 100 kg m² shaft spinning at 100 rad/s, its
+housing fixed. The source pressure is set per case: ambient plus the gauge pressure the case
+applies.
 
-Once the caliper has filled, no fluid flows and it sits at the line pressure p. The line's
-resistance, 128 mu L/(pi D⁴ rho) (see the `Line` rig), and the caliper's compliance rho dV/dp
-fill it with a time constant of 128 mu L V0/(pi D⁴ p0) =
-128 · 0.01045 · 1.5 · 0.5e-6/(pi · 8.1e-11 · 0.5e5) = 0.0788 s below p0, and faster above it. The caliper decelerates the shaft by at most
-4875.5/100 = 48.8 rad/s², so in 2 s it keeps turning above 100 - 97.5 = 2.5 rad/s, well above w0,
-and the full torque acts.
+Once the caliper has filled, no fluid flows and it sits at the line pressure: its gauge pressure p
+is the source's less 100325 Pa. The line's resistance, 128 mu L/(pi D⁴ rho) (see the `Line` rig),
+and the caliper's compliance rho dV/dp fill it with a time constant of 128 mu L V0/(pi D⁴ p0) =
+128 · 0.01045 · 1.5 · 0.5e-6/(pi · 8.1e-11 · 0.5e5) = 0.0788 s below p0, and faster above it.
+The caliper decelerates the shaft by at most 4875.5/100 = 48.8 rad/s², so in 2 s it keeps turning
+above 100 - 97.5 = 2.5 rad/s, well above w0, and the full torque acts.
 
-- `clearance`, 0.25 bar, below p0: the pads have not reached the disc. V = V0 p/p0 = 0.5e-6 ·
-  0.5 = 0.25e-6 m³ and the torque is 0. The fill stays below p0, so it is the one exponential of
-  0.0788 s: by 1 s it is within e^-12.69 = 3.1e-6 of its end, 0.077 Pa and 7.7e-13 m³.
-- `applied`, 100 bar: the pads press the disc, p - p0 = K1 u + K3 u³ = 9.95e6 Pa. Bisection on
-  [0, 1e-4] gives u = 2.49499e-6 m³ (K1 u = 2.49499e6 Pa, K3 u³ = 7.45501e6 Pa), so
-  V = 2.99499e-6 m³. The friction torque is K (p - p0) = 49e-5 · 9.95e6 = 4875.5 N m with the
-  sign of w, positive. By 2 s the fill is complete to within e^-25.
+- `ambient`, 100325 Pa, a released circuit: p = 0 from the start, so no fluid flows, V stays 0
+  and the caliper applies no torque.
+- `clearance`, 125325 Pa, 0.25 bar above ambient and below p0: the pads have not reached the
+  disc. V = V0 p/p0 = 0.5e-6 · 0.5 = 0.25e-6 m³ and the torque is 0. The fill stays below p0, so
+  it is the one exponential of 0.0788 s: by 1 s it is within e^-12.69 = 3.1e-6 of its end,
+  0.077 Pa and 7.7e-13 m³.
+- `applied`, 10100325 Pa, 100 bar above ambient: the pads press the disc,
+  p - p0 = K1 u + K3 u³ = 9.95e6 Pa. Bisection on [0, 1e-4] gives u = 2.49499e-6 m³
+  (K1 u = 2.49499e6 Pa, K3 u³ = 7.45501e6 Pa), so V = 2.99499e-6 m³. The friction torque is
+  K (p - p0) = 49e-5 · 9.95e6 = 4875.5 N m with the sign of w, positive. By 2 s the fill is
+  complete to within e^-25.
 """
 @component function Caliper(; name = nothing, var"medium"=VehicleComponents.DOT4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -77,7 +82,7 @@ and the full torque acts.
   ### Components
   # Subcomponent pressure of type BlockComponents.Sources.Constant
   pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = BlockComponents.Sources.Constant(; k=Float64(10000000.0), __overrides = pressure_overrides))
+  push!(__systems, @named pressure = BlockComponents.Sources.Constant(; k=Float64(10100325.0), __overrides = pressure_overrides))
   # Subcomponent supply of type HydraulicComponents.Sources.BoundaryPressure
   supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
   push!(__systems, @named supply = HydraulicComponents.Sources.BoundaryPressure(; continuity__graph0=medium, __overrides = supply_overrides))
