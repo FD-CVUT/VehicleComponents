@@ -17,8 +17,13 @@ smooth clamps its argument to [0, 1]. Both ends are nodes, which the spline inte
 x = 420 m the first factor is 0 and the grip is 1; at x = 475 m both factors are 1 and the grip
 is 1 - 0.7 = 0.3.
 
-It writes `ramp_z.crg` rising at 2 % along x from x = 0 to 500 m, level across. Along the
-heading 0 the slope is 0.02 at both ends; along the heading pi/2, across the road, it is 0.
+It writes `ramp_z.crg` rising at 2 % along x from x = 0 to 500 m, then easing onto a plateau
+over 500 to 540 m, level across. Neither 420 nor 475 m is a node, but the nodes are 40 m apart
+from 0, so the spline's breaks, midway between nodes, include 500 and 540 m. The height is then
+linear, quadratic and constant between breaks and C1, so it lies in the spline's space and
+interpolation reproduces it exactly: on 0 to 500 m the fitted height is linear with derivative
+0.02. Along the heading 0 the slope is 0.02 at both ends; along the heading pi/2, across the
+level road, it is 0.
 
 ## Parameters:
 

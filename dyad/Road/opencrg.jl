@@ -107,6 +107,11 @@ end
 
 (surface::Surface)(x, y) = lookup(surface, x, y)
 
+# Short form, so a symbolic `lookup(surface, x, y)` in an equation or an error prints one line.
+Base.show(io::IO, s::Surface) = print(io, "Road.Surface(",
+    length(s.u_breaks) + 1, "x", length(s.v_breaks) + 1, " grid, x = ", s.extent.x,
+    ", y = ", s.extent.y, ", default = ", s.default, ")")
+
 "Evaluate a fitted road surface at world x and y."
 function lookup(surface::Surface, x, y)
     dx, dy = x - surface.x0, y - surface.y0

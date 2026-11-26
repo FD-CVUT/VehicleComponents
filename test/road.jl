@@ -156,6 +156,8 @@ end
     @test custom(475.0, 0.0) == ice(475.0, 0.0)
     @test_throws "blend width" R.grip(ROADS * "ice_patch_mu.crg"; blend_width = 0.0)
     ramp = R.surface(ROADS * "ramp_z.crg"; elevation = true)
+    # The ramp's plateau ends the grid 10.4 m up, so past x = 1000 m the road drops to the
+    # default height over the blend.
     @test ramp(1003.0, 0.0) == ramp(250.0, 1003.0) == 0.0
     @test ramp(500.0, 0.0) ≈ 10.0
     for road in (ice, ramp, R.surface(ROADS * "hill_z.crg"; elevation = true))
@@ -243,9 +245,11 @@ end
     @test maximum(abs.(ForwardDiff.gradient(p -> slope(p...), q) .- finite_gradient)) < 1e-7
 end
 
-@testset "Height: no cliff beside a strip or past its end" begin
+@testset "Height: no cliff beside a strip or along it" begin
     # Start heading and lateral offset of the reference line, stations along it, and the grade
-    # the generator writes; the fitted hill overshoots its 0.08 by under 6e-4.
+    # the generator writes; the fitted hill overshoots its 0.08 by under 6e-4. The samples run
+    # 100 m past the last station, which stays inside the ramps' grids: those end high, and the
+    # drop past their end is the blend testset's.
     for (file, phi, offset, stations, max_grade, max_height) in (
             ("hill_z.crg", 0.0, 0.0, (260.0, 320.0, 380.0), 0.08, 4.08),
             ("hill_across_z.crg", pi/2, -280.0, (260.0, 320.0, 380.0), 0.08, 4.08),

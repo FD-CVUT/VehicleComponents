@@ -70,7 +70,9 @@ hill(x) = 240 <= x <= 400 ? (0.08 * 160 / (2pi)) * (1 - cos(2pi*(x-240)/160)) : 
 
 """
 Grade-0.02 rise from height 0 at `start` to `top`, then a quadratic easing over `ease` meters
-onto a level plateau 0.4 m higher, so the road does not end high.
+onto a level plateau 0.4 m higher, so the grade ends without a kink. The plateau holds to the
+grid end, where the road is still high: beyond it the reader blends to its default height, a
+drop over the blend width.
 """
 function ramp(u; start, top, grade = 0.02, ease = 40.0)
     s = clamp(u - top, 0.0, ease)

@@ -8,6 +8,10 @@ road blends over 2 m to grip 1 or height 0.
 
 `generate.jl` writes every file here; rerun it with `julia generate.jl` after changing it.
 
+The reader fits a quadratic spline through the file's nodes, so a sharp corner in the data
+overshoots slightly: the grip patches below reach about 0.01 past their nominal values
+(`right_patch_mu.crg` spans 0.290 to 1.008, `ice_patch_mu.crg` 0.298 to 1.002).
+
 | File | Road |
 |---|---|
 | `uniform_mu.crg` | Grip 1 over x, y = -1000…1000 m |
@@ -17,5 +21,5 @@ road blends over 2 m to grip 1 or height 0.
 | `flat_z.crg` | Level at height 0 |
 | `hill_z.crg` | Raised-cosine hill on x = 240…400 m, peak grade 8 %, level across y = -1000…1000 m |
 | `hill_across_z.crg` | The same hill along y, on y = -40…120 m |
-| `ramp_z.crg` | 2 % climb on x = 0…500 m, eased over 40 m onto a plateau to x = 1000 m |
-| `ramp_hold_z.crg` | 2 % climb on x = -250…250 m, eased onto a plateau to x = 1030 m |
+| `ramp_z.crg` | 2 % climb on x = 0…500 m, eased over 40 m onto a 10.4 m plateau to x = 1000 m; past the grid end the road drops to 0 over the 2 m blend |
+| `ramp_hold_z.crg` | 2 % climb on x = -250…250 m, eased onto a 10.4 m plateau to x = 1030 m; past the grid end the road drops to 0 over the 2 m blend |

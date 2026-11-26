@@ -61,4 +61,5 @@ The OpenCRG reader moved from the package root into the `Road` submodule.
 | `road_axes` | `Road.sample_axes` | |
 | `road_mesh` | `Road.mesh` | |
 | `read_road` | `Road.read_grid` | |
-| `road_path` | `Road.asset_path` | Resolves any `dyad://` URI through `DyadData`, not only this package's. |
+| `road_dimension` | `Road.spline_dimension` | |
+| `road_path` | `Road.asset_path` | Resolves any `dyad://` URI through `DyadData`, not only this package's, and like `Driver.DriveCycle` finds the package through `Base.find_package`: a `dyad://VehicleComponents/...` path fails when `VehicleComponents` is only an indirect dependency of the active environment. |
