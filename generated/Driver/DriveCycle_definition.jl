@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   DriveCycle(; name, file, column, dataset, to_kmh, __overrides)
+   DriveCycle(; name, file, column, dataset, __overrides)
 
 Target vehicle speed from a drive cycle: a time-series CSV of time `t_s` in seconds and a speed
 column.
@@ -13,23 +13,23 @@ column.
 Port: `y`, the target vehicle speed in km/h. The default is the packaged WLTC class 3b trace
 (Regulation (EU) 2017/1151). Linear interpolation follows the prescribed straight ramps between
 its 1 Hz points, and constant extrapolation keeps the endpoint defined. Table time starts at
-t = 0. The speed column `column` is scaled by `to_kmh`, which is 1.609344 for `v_mph` (the
-packaged EPA cycles) and 1 for any other column, read as km/h.
+t = 0. The speed column `column` must be `v_kmh` (km/h) or `v_mph` (mph, as in the packaged EPA
+cycles); the column alone sets the factor to km/h. Any other column gives factor 0, which the
+assertion rejects once a state depends on `y`; a model without one sees a constant 0.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `file`         | CSV with a `t_s` column and the speed column `column`                         | --  |   "dyad://Veh...lass3b.csv" |
-| `column`         | Speed column: `v_kmh` in km/h, or `v_mph` in mph                         | --  |   "v_kmh" |
+| `column`         | Speed column: `v_kmh` in km/h or `v_mph` in mph; no other column is accepted                         | --  |   "v_kmh" |
 | `dataset`         |                          | --  |   DyadData.Dy...s=[column]) |
-| `to_kmh`         | Factor from the column's unit to km/h                         | --  |   ifelse(colu...09344, 1.0) |
 
 ## Connectors
 
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function DriveCycle(; name = nothing, var"file"="dyad://VehicleComponents/data/drive_cycles/wltc_class3b.csv", var"column"="v_kmh", var"dataset"=nothing, var"to_kmh"=nothing, __overrides = Dict{String, Any}())
+@component function DriveCycle(; name = nothing, var"file"="dyad://VehicleComponents/data/drive_cycles/wltc_class3b.csv", var"column"="v_kmh", var"dataset"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -51,11 +51,9 @@ packaged EPA cycles) and 1 for any other column, read as km/h.
   haskey(__overrides, "file") && (file = pop!(__overrides, "file"))
   haskey(__overrides, "column") && (column = pop!(__overrides, "column"))
   haskey(__overrides, "dataset") && (dataset = pop!(__overrides, "dataset"))
-  haskey(__overrides, "to_kmh") && (to_kmh = pop!(__overrides, "to_kmh"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
   isnothing(dataset) && (dataset = DyadData.DyadTimeseries(file; independent_var="t_s", dependent_vars=[column]))
-  isnothing(to_kmh) && (to_kmh = ifelse(column == "v_mph", 1.609344, 1.0))
 
   ### Structural Parameters (functions)
 
@@ -66,15 +64,14 @@ packaged EPA cycles) and 1 for any other column, read as km/h.
   ### Path Parameters (non-final)
 
   ### Final Parameters (declarations)
+  append!(__params, @parameters (to_kmh::Real), [description = "Factor from the column's unit to km/h; 0 marks an unsupported column", misc = "final"])
 
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__to_kmh = to_kmh
-  append!(__params, @parameters (to_kmh::Real), [description = "Factor from the column's unit to km/h"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, to_kmh, __local__to_kmh)
 
   ### Final Parameters (assignments)
+  __bindings[to_kmh] = ifelse(column == "v_mph", 1.609344, ifelse(column == "v_kmh", 1.0, 0.0))
 
   ### Final Path Parameters
   append!(__vars, @variables (y(t)::Real), [output = true])
@@ -106,6 +103,7 @@ packaged EPA cycles) and 1 for any other column, read as km/h.
 
   ### Assertions
   __assertions = []
+  push!(__assertions, (to_kmh > 0 => "DriveCycle: column must be \"v_kmh\" or \"v_mph\" (at DriveCycle.dyad:32:3)"))
 
   ### Equations
   push!(__eqs, connect(clock.y, interpolation.u))

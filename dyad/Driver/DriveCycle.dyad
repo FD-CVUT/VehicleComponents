@@ -5,18 +5,19 @@ column.
 Port: `y`, the target vehicle speed in km/h. The default is the packaged WLTC class 3b trace
 (Regulation (EU) 2017/1151). Linear interpolation follows the prescribed straight ramps between
 its 1 Hz points, and constant extrapolation keeps the endpoint defined. Table time starts at
-t = 0. The speed column `column` is scaled by `to_kmh`, which is 1.609344 for `v_mph` (the
-packaged EPA cycles) and 1 for any other column, read as km/h.
+t = 0. The speed column `column` must be `v_kmh` (km/h) or `v_mph` (mph, as in the packaged EPA
+cycles); the column alone sets the factor to km/h. Any other column gives factor 0, which the
+assertion rejects once a state depends on `y`; a model without one sees a constant 0.
 """
 component DriveCycle
   "Target vehicle speed [km/h]"
   y = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
   "CSV with a `t_s` column and the speed column `column`"
   structural parameter file::String = "dyad://VehicleComponents/data/drive_cycles/wltc_class3b.csv"
-  "Speed column: `v_kmh` in km/h, or `v_mph` in mph"
+  "Speed column: `v_kmh` in km/h or `v_mph` in mph; no other column is accepted"
   structural parameter column::String = "v_kmh"
-  "Factor from the column's unit to km/h"
-  parameter to_kmh::Real = ifelse(column == "v_mph", 1.609344, 1.0)
+  "Factor from the column's unit to km/h; 0 marks an unsupported column"
+  final parameter to_kmh::Real = ifelse(column == "v_mph", 1.609344, ifelse(column == "v_kmh", 1.0, 0.0))
   structural parameter dataset::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "t_s", dependent_vars = [column])
   clock = BlockComponents.Sources.ContinuousClock() {
     "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}
@@ -28,6 +29,7 @@ component DriveCycle
     "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 450, "y2": 550}}}
   }
 relations
+  assert(to_kmh > 0, "DriveCycle: column must be \"v_kmh\" or \"v_mph\"")
   connect(clock.y, interpolation.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(interpolation.y, conversion.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(conversion.y, y) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
