@@ -92,8 +92,8 @@ C1 quadratic B-spline road surface of world `(x, y)`, taking the value `default`
 grid. World points are rotated by the start heading (`c`, `s`) about the reference-line start
 `(x0, y0)` into along-road `u` (offset by `u0`) and lateral `v`. Empty `center` and `heading`
 mean a straight reference line; otherwise they are spline coefficients over `u_breaks` of the
-reference line's lateral offset and heading in the start frame, and `v` is measured from that
-line along its normal. `extent` is the world bounding box `(; x = (xmin, xmax), y = (ymin,
+reference line's lateral offset and heading in the start frame, a point's station is the one
+whose normal passes through it, and `v` is its distance from the line along that normal. `extent` is the world bounding box `(; x = (xmin, xmax), y = (ymin,
 ymax))` of the file's grid. Within `blend` meters outside the grid, in `u` or `v`, the surface
 fades from the spline, continued along its edge tangent, to `default` with
 [`blend_weight`](@ref). Calls with numbers run the spline; calls with symbolic arguments stay
@@ -122,16 +122,35 @@ Base.show(io::IO, s::Surface) = print(io, "Road.Surface(",
     length(s.u_breaks) + 1, "x", length(s.v_breaks) + 1, " grid, x = ", s.extent.x,
     ", y = ", s.extent.y, ", default = ", s.default, ")")
 
+"Heading and lateral offset of a curved surface's reference line at the spline weights `a0..a2` from coefficient `i`."
+@inline function reference_line(surface::Surface, i, a0, a1, a2)
+    center, heading = surface.center, surface.heading
+    @inbounds return a0 * heading[i] + a1 * heading[i+1] + a2 * heading[i+2],
+        a0 * center[i] + a1 * center[i+1] + a2 * center[i+2]
+end
+
 "Evaluate a fitted road surface at world x and y."
 function lookup(surface::Surface, x, y)
     dx, dy = x - surface.x0, y - surface.y0
     u = surface.c * dx + surface.s * dy + surface.u0
     v = -surface.s * dx + surface.c * dy
-    i, a0, a1, a2, beyond_u = quadratic_basis(surface.u_breaks, u)
-    if !isempty(surface.center)
-        center, heading = surface.center, surface.heading
-        @inbounds v = cos(a0 * heading[i] + a1 * heading[i+1] + a2 * heading[i+2]) *
-            (v - (a0 * center[i] + a1 * center[i+1] + a2 * center[i+2]))
+    if isempty(surface.center)
+        i, a0, a1, a2, beyond_u = quadratic_basis(surface.u_breaks, u)
+    else
+        # Find the center-line station whose normal passes through the point: a point off the
+        # line projects onto the start frame's x axis away from its station by about
+        # v sin(heading). Each step moves along the tangent by the point's offset along it; the
+        # error shrinks by about curvature x offset per step, so a fixed count converges for any
+        # point inside the road's radius of curvature and keeps the lookup allocation-free.
+        station = u
+        for _ in 1:6
+            i, a0, a1, a2, _ = quadratic_basis(surface.u_breaks, station)
+            theta, offset = reference_line(surface, i, a0, a1, a2)
+            station += ((u - station) * cos(theta) + (v - offset) * sin(theta)) * cos(theta)
+        end
+        i, a0, a1, a2, beyond_u = quadratic_basis(surface.u_breaks, station)
+        theta, offset = reference_line(surface, i, a0, a1, a2)
+        v = (v - offset) * cos(theta) - (u - station) * sin(theta)
     end
     j, b0, b1, b2, beyond_v = quadratic_basis(surface.v_breaks, v)
     C = surface.coefficients
@@ -145,17 +164,30 @@ end
 
 Symbolics.@register_symbolic lookup(surface::Surface, x, y)
 
-"Run `f`, prefixing any error it raises with the road file's name."
+"An error raised while reading or fitting the road file `file`; `cause` is the original."
+struct RoadFileError <: Exception
+    file::String
+    cause::Any
+end
+
+Base.showerror(io::IO, e::RoadFileError) = (print(io, e.file, ": "); showerror(io, e.cause))
+
+"Run `f`, wrapping any error it raises in a [`RoadFileError`](@ref) naming `file`."
 function with_file(f, file)
     try
         f()
     catch e
-        error("$file: $(sprint(showerror, e))")
+        e isa InterruptException && rethrow()
+        throw(RoadFileError(file, e))
     end
 end
 
 # OpenCRG.jl 0.1 reads the standard _S/_B start keys, not these spelled-out aliases.
-const START_ALIAS = r"(?im)^\s*REFERENCE_LINE_START_(?:SLOPE|BANKING)\s*=\s*([^\s!]*)"
+const START_ALIAS = r"(?im)^[ \t]*REFERENCE_LINE_START_(?:SLOPE|BANKING)[ \t]*=[ \t]*([^\s!]*)"
+
+"The `\$ROAD_CRG` blocks of a CRG header, where the reference-line keys live."
+road_crg_blocks(header) =
+    (m.captures[1] for m in eachmatch(r"(?ims)^\$ROAD_CRG[ \t]*\r?\n(.*?)(?=^\$)", header))
 
 """
     surface(file; fill_missing = nothing, elevation = false,
@@ -186,7 +218,8 @@ function surface(file::AbstractString; fill_missing = nothing, elevation = false
         replace!(data.phi, NaN => data.refline.start_phi)
         u, v, X, Y, z = OpenCRG.road_surface_grid(data)
         r = data.refline
-        for m in eachmatch(START_ALIAS, readuntil(path, "\$\$\$\$"))
+        header = readuntil(path, "\$\$\$\$")
+        for block in road_crg_blocks(header), m in eachmatch(START_ALIAS, block)
             elevation && error("unsupported start slope/banking alias; use REFERENCE_LINE_START_S or REFERENCE_LINE_START_B")
             tryparse(Float64, m.captures[1]) == 0.0 ||
                 error("elevation data (slope or banking start value) is not grip")
@@ -211,8 +244,11 @@ function surface(file::AbstractString; fill_missing = nothing, elevation = false
         all(>(0), diff(xaxis)) || error("reference line turns back in its start frame")
         v_breaks, across = spline_dimension(v)
         # A straight road keeps its file's arc-length axis, so the spline matches the file's
-        # nodes exactly.
-        straight = maximum(abs, center) <= 1e-12 * max(1.0, last(xaxis))
+        # nodes exactly. An end point (REFERENCE_LINE_END_X/Y) can stretch a straight line off
+        # that axis; then it is fitted on its world stations like a curved one.
+        tolerance = 1e-12 * max(1.0, last(xaxis))
+        straight = maximum(abs, center) <= tolerance &&
+            maximum(abs, xaxis .- (u .- first(u))) <= tolerance
         u_breaks, along = spline_dimension(straight ? u : xaxis)
         coefficients = permutedims(across \ permutedims(along \ z))
         if straight

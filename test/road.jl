@@ -12,6 +12,44 @@ gradient(f, x, y) = ForwardDiff.gradient(q -> f(q[1], q[2]), [x, y])
 "LDFI data records, one per row of values, in 20-character fields."
 crg_rows(rows) = join((join(lpad(value, 20) for value in row) for row in rows), '\n') * "\n"
 
+"""
+Write a grip file on stations 0..100 m every 2 m and v = -3, 0, 3 m whose grip rises along the
+road, 0.5 + 0.004 u, and does not vary across it. `phi(u)` gives the reference-line heading,
+written as a heading channel; `extra` adds reference-line keys.
+"""
+function rising_grip(path; phi = nothing, extra = "")
+    write(path, """
+        \$CT
+        Grip rising along the road.
+        \$!
+        \$ROAD_CRG
+        REFERENCE_LINE_START_U = 0.0
+        REFERENCE_LINE_END_U = 100.0
+        REFERENCE_LINE_INCREMENT = 2.0
+        REFERENCE_LINE_START_X = 0
+        REFERENCE_LINE_START_Y = 0
+        REFERENCE_LINE_START_PHI = 0
+        $(extra)\$!
+        \$KD_DEFINITION
+        #:LDFI
+        $(phi === nothing ? "" : "D:reference line phi,rad\n")D:long section at v = -3.0,m
+        D:long section at v = 0.0,m
+        D:long section at v = 3.0,m
+        \$!
+        \$\$\$\$
+        """ * crg_rows(((phi === nothing ? () : (string(phi(u)),))...,
+            (string(0.5 + 0.004u) for _ in 1:3)...) for u in 0.0:2.0:100.0))
+    return path
+end
+
+"Largest difference between `road` and the file's own grid values at its world grid nodes."
+function node_error(road, path)
+    data = OpenCRG.read_crg(path)
+    replace!(data.phi, NaN => data.refline.start_phi)
+    _, _, X, Y, z = OpenCRG.road_surface_grid(data)
+    return maximum(abs(road(X[i,j], Y[i,j]) - z[i,j]) for i in axes(z,1), j in axes(z,2))
+end
+
 @testset "Grip: finite nodes and rejected unsupported geometry" begin
     for file in ("handmade_straight.crg", "handmade_straight_double.crg")
         path = joinpath(OPENCRG, file)
@@ -35,12 +73,16 @@ crg_rows(rows) = join((join(lpad(value, 20) for value in row) for row in rows), 
     @test maximum(abs(curved_grip(X[i,center], Y[i,center]) - z[i,center]) for i in axes(z,1)) < 1e-9
     errors = [isfinite(z[i,j]) ? abs(curved_grip(X[i,j],Y[i,j])-z[i,j]) : -Inf
               for i in axes(z,1), j in axes(z,2)]
-    # The spline is fitted along the reference line, so off-line nodes of a curved road carry an
-    # approximation error, measured at 0.001690.
-    @test maximum(errors) < 0.002
+    # Off-line nodes carry only the error of the fitted heading and center line, measured at
+    # 1.6e-6.
+    @test maximum(errors) < 1e-5
     @test_throws r"road filename is empty" R.grip("")
     @test_throws r"absent_mu.crg.*does not exist" R.grip("absent_mu.crg")
     @test_throws r"handmade_straight.crg.*NaN" R.grip(joinpath(OPENCRG, "handmade_straight.crg"))
+    # The file's name wraps the original error, and an interrupt passes through unwrapped.
+    wrapped = try R.grip(joinpath(OPENCRG, "handmade_straight.crg")) catch e e end
+    @test wrapped isa R.RoadFileError && wrapped.cause isa ErrorException
+    @test_throws InterruptException R.with_file(() -> throw(InterruptException()), "any.crg")
     mktempdir() do dir
         original = read(R.asset_path(ROADS * "ice_patch_mu.crg"), String)
         modified = joinpath(dir, "modified_mu.crg")
@@ -78,6 +120,25 @@ crg_rows(rows) = join((join(lpad(value, 20) for value in row) for row in rows), 
         for (x, y) in ((450.0, 0.2), (470.0, -0.4), (496.0, 0.0))
             @test rotated_grip(cos(angle)*x-sin(angle)*y, sin(angle)*x+cos(angle)*y) ≈ base(x,y) atol=1e-9
         end
+        # A line turning to 60 degrees: a node 3 m off the line sits about 2.6 m along the start
+        # frame from its station, so the lookup has to find the station whose normal passes
+        # through it. The residual is the fitted heading's.
+        turning = R.grip(rising_grip(joinpath(dir, "turning_mu.crg"); phi = u -> pi/3 * u / 100))
+        @test node_error(turning, joinpath(dir, "turning_mu.crg")) < 1e-6
+        # 3 m along the tangent past the last station and 3 m to its left is beyond the 2 m blend.
+        tangent, normal = (cos(pi/3), sin(pi/3)), (-sin(pi/3), cos(pi/3))
+        ending = R.extent(turning; margin = 0.0)
+        last_station = (ending.x[2] + 3 * sin(pi/3), ending.y[2] - 3 * cos(pi/3))
+        @test turning((last_station .+ 3 .* tangent .+ 3 .* normal)...) == 1.0
+        # An end point stretches a straight line by 10 %, off the file's arc-length axis.
+        stretched = joinpath(dir, "stretched_mu.crg")
+        rising_grip(stretched; extra = "REFERENCE_LINE_END_X = 110\nREFERENCE_LINE_END_Y = 0\n")
+        @test node_error(R.grip(stretched), stretched) < 1e-9
+        # Header keys only count inside the \$ROAD_CRG block, not in a comment.
+        commented = joinpath(dir, "commented_mu.crg")
+        write(commented, replace(uniform, "\$CT\n" => "\$CT\nREFERENCE_LINE_START_SLOPE = 1\n"))
+        @test R.grip(commented)(0.0, 0.0) ≈ 1.0
+        @test only(match(R.START_ALIAS, "REFERENCE_LINE_START_SLOPE =\nREFERENCE_LINE_START_X = 0").captures) == ""
         back = joinpath(dir, "turning_back.crg")
         write(back, header * "\$\$\$\$\n" *
             crg_rows((string(phi), "1.0", "1.0", "1.0") for phi in (0.0, 0.8, 1.8)))
@@ -101,7 +162,18 @@ function reference_surface(road)
     return (x, y) -> begin
         u = road.c * (x - road.x0) + road.s * (y - road.y0) + road.u0
         v = -road.s * (x - road.x0) + road.c * (y - road.y0)
-        v = curved ? cos(heading(u)) * (v - center(u)) : v
+        if curved
+            # The station whose normal passes through the point, iterated to convergence.
+            station = u
+            for _ in 1:100
+                step = ((u - station) * cos(heading(station)) + (v - center(station)) *
+                    sin(heading(station))) * cos(heading(station))
+                station += step
+                abs(step) < 1e-14 * max(1.0, abs(station)) && break
+            end
+            u, v = station, (v - center(station)) * cos(heading(station)) -
+                (u - station) * sin(heading(station))
+        end
         on_grid = road.u_breaks[1] <= u <= road.u_breaks[end] &&
             road.v_breaks[1] <= v <= road.v_breaks[end]
         on_grid ? surface(u, v) : NaN
@@ -144,6 +216,13 @@ lookup_allocations(f, args...) = (f(args...); @allocated f(args...))
         @test lookup_allocations(slope, 470.3, y, 0.2) == 0
         @test lookup_allocations(slope, dual, y, 0.2) == 0
     end
+    # The station search on a curved line allocates nothing either.
+    curved = fitted["handmade_curved.crg"]
+    @test !isempty(curved.center)
+    near = ForwardDiff.Dual{typeof(ForwardDiff.Tag(sin, Float64))}(curved.x0 + 10.0, 1.0)
+    @test lookup_allocations(curved, curved.x0 + 10.0, curved.y0 + 1.0) == 0
+    @test lookup_allocations(curved, near, curved.y0 + 1.0) == 0
+    @test lookup_allocations(R.SurfaceSlope(curved), near, curved.y0 + 1.0, 0.2) == 0
 end
 
 @testset "Beyond the grid: C1 blend to the default value" begin
