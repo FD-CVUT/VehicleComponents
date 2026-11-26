@@ -5,8 +5,9 @@ pressure clamps onto the disc.
 The caliper sits in the shaft line between `spline_a` and `spline_b` and passes its reaction to
 the `support` housing; the disc is rigid with the shaft, so both splines share one angle.
 
-Ports: `spline_a`, `spline_b` the shaft ends; `support` the housing (hub carrier); `port` the
-brake-fluid connection.
+Ports: `spline_a`, `spline_b` the shaft ends; `port` the brake-fluid connection; `support` the
+housing, which takes the brake reaction. `support` must be connected, to the hub carrier or a
+`Fixed`: an open housing takes no torque, so the caliper would apply none.
 
 The admitted fluid volume V sets the pressure. Up to the clearance take-up volume `V0` the pads
 travel against a soft linear law, p = p0 V/V0; beyond it they press the disc and the stiffness

@@ -5,27 +5,17 @@
 
 
 @doc Markdown.doc"""
-   Slip(; name, sAdhesion, sSlide, mu_A, mu_S, radius, F_z, v_eps, __overrides)
+   Slip(; name, sAdhesion, sSlide, mu_A, mu_S, radius, v_eps, F_z, __overrides)
 
-Tire contact of a wheel rolling in a straight line, with longitudinal slip-dependent friction.
+Tire contact of a wheel rolling in a straight line, with longitudinal slip-dependent friction,
+under the constant normal load `F_z`.
 
-The slip ratio is kappa = (omega r - v) / max(|v|, v_eps), positive when the wheel spins faster
-than the road passes under it. The tire force on the body is F_x = mu_scale mu(kappa) F_n, where
-mu is the tire friction law it extends, `TireFriction`, and F_n the normal load, here the constant
-`F_z`; `LoadedSlip` takes it from a flange instead.
+Everything but the normal load is `PartialSlip`'s: slip definition, friction law, sign
+conventions and the `spline`, `flange`, `mu_scale` and `kappa` ports. `LoadedSlip` takes the
+normal load from a flange instead.
 
-Ports:
-- `spline` the wheel shaft; positive rotation drives positive travel. It takes the tire's
-  reaction torque, -r F_x.
-- `flange` attaches to the vehicle body and pushes it forward with F_x.
-- `mu_scale` multiplies the curve for the road: 1 for the road the curve describes, about 0.2 on
-  ice.
-- `kappa` the slip ratio, negative while braking.
-
-Assumptions: the force follows the slip instantly (no relaxation length), and the tire has no
-rolling resistance; the body's road load carries it. Below `v_eps` the slip is measured against
-`v_eps`, which keeps it finite at standstill. The default `F_z` is half the weight of a 1400 kg
-car, one driven axle's share; the other defaults are a car tire on dry asphalt (assumed).
+Assumptions: those of `PartialSlip`. The default `F_z` is half the weight of a 1400 kg car, one
+driven axle's share (assumed).
 
 ## Parameters:
 
@@ -36,8 +26,8 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
 | `mu_A`         | Peak adhesion coefficient                         | --  |   1.0 |
 | `mu_S`         | Sliding friction coefficient                         | --  |   0.7 |
 | `radius`         | Rolling radius                         | m  |   0.31 |
-| `F_z`         | Normal load                         | N  |   6864.655 |
 | `v_eps`         | Speed below which the slip is measured against v_eps                         | m/s  |   0.5 |
+| `F_z`         | Normal load                         | N  |   6864.655 |
 
 ## Connectors
 
@@ -57,10 +47,10 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
 | `omega`         | Wheel angular speed                         | rad/s  |
 | `v`         | Vehicle speed                         | m/s  |
 | `mu`         | Friction coefficient after road scaling                         | --  |
-| `F_n`         | Normal load pressing the tire onto the road                         | N  |
+| `F_n`         | Normal load pressing the tire onto the road; negative when the tire lifts                         | N  |
 | `F_x`         | Longitudinal tire force on the body                         | N  |
 """
-@component function Slip(; name = nothing, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, var"radius"=0.31, var"F_z"=6864.655, var"v_eps"=0.5, __overrides = Dict{String, Any}())
+@component function Slip(; name = nothing, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, var"radius"=0.31, var"v_eps"=0.5, var"F_z"=6864.655, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -84,8 +74,8 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
   haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
   haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
-  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
   haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
+  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
 
   ### Structural Parameters (functions)
 
@@ -115,12 +105,12 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Rolling radius"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
-  __local__F_z = F_z
-  append!(__params, @parameters (F_z::Real), [description = "Normal load"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Speed below which the slip is measured against v_eps"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
+  __local__F_z = F_z
+  append!(__params, @parameters (F_z::Real), [description = "Normal load"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
 
   ### Final Parameters (assignments)
 
@@ -136,7 +126,7 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
   append!(__vars, @variables (omega(t)::Real), [description = "Wheel angular speed"])
   append!(__vars, @variables (v(t)::Real), [description = "Vehicle speed"])
   append!(__vars, @variables (mu(t)::Real), [description = "Friction coefficient after road scaling"])
-  append!(__vars, @variables (F_n(t)::Real), [description = "Normal load pressing the tire onto the road"])
+  append!(__vars, @variables (F_n(t)::Real), [description = "Normal load pressing the tire onto the road; negative when the tire lifts"])
   append!(__vars, @variables (F_x(t)::Real), [description = "Longitudinal tire force on the body"])
 
   ### Variables (assignments)
@@ -161,8 +151,7 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
   __ovr_mu = pop!(__overrides, "mu", nothing); isnothing(__ovr_mu) || push!(__eqs, mu ~ __ovr_mu)
   __ovr_mu__initial = pop!(__overrides, "mu.initial", nothing); isnothing(__ovr_mu__initial) || (__initial_conditions[mu] = __ovr_mu__initial)
   __ovr_mu__guess = pop!(__overrides, "mu.guess", nothing)
-  __ovr_F_n = pop!(__overrides, "F_n", nothing); __eq_F_n = @something(__ovr_F_n, F_z)
-  ismissing(__eq_F_n) || push!(__eqs, F_n ~ __eq_F_n)
+  __ovr_F_n = pop!(__overrides, "F_n", nothing); isnothing(__ovr_F_n) || push!(__eqs, F_n ~ __ovr_F_n)
   __ovr_F_n__initial = pop!(__overrides, "F_n.initial", nothing); isnothing(__ovr_F_n__initial) || (__initial_conditions[F_n] = __ovr_F_n__initial)
   __ovr_F_n__guess = pop!(__overrides, "F_n.guess", nothing)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
@@ -204,9 +193,10 @@ car, one driven axle's share; the other defaults are a car tire on dry asphalt (
   push!(__eqs, kappa ~ (omega * radius - v) / max(abs(v), v_eps))
   push!(__eqs, s ~ kappa)
   push!(__eqs, mu ~ mu_scale * mu_ref)
-  push!(__eqs, F_x ~ mu * F_n)
+  push!(__eqs, F_x ~ mu * max(F_n, 0.0))
   push!(__eqs, flange.f ~ -F_x)
   push!(__eqs, 0 ~ spline.tau + radius * flange.f)
+  push!(__eqs, F_n ~ F_z)
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

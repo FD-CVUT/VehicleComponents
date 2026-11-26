@@ -7,7 +7,8 @@ master cylinder drives it through brake lines.
 
 Ports:
 - `spline` the inboard shaft end; open when nothing drives the wheel.
-- `support` takes both calipers' reaction (hub carrier).
+- `support` takes both calipers' reaction. It must be connected, to the hub carrier or a
+  `Fixed`: an open support takes no torque, so the calipers would apply none.
 - `flange` attaches to the vehicle body.
 - `front`, `rear` the front- and rear-circuit brake-fluid connections.
 - `mu_scale` the road-friction multiplier, to the `Slip` tire.
@@ -21,7 +22,7 @@ axles (textbook).
 component HydraulicBraked
   "Inboard shaft"
   spline = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
-  "Brake reaction support (hub carrier)"
+  "Brake reaction support; must be connected, to the hub carrier or a Fixed"
   support = Spline() {
     "Dyad": {
       "placement": {"icon": {"iconName": "support", "x1": 250, "x2": 350, "y1": 950, "y2": 1050}}

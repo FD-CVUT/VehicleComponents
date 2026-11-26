@@ -22,8 +22,10 @@ r mu_A F_z = 0.31 · 13729.31 = 4256.1 N m.
   decelerates at -4.549759 m/s².
 - `lock_up`, 100 bar: 68.9e-5 · 9.95e6 = 6855.55 N m, above the ceiling, so the wheel locks and
   the tire slides: the mass decelerates at -0.7 · 13729.31/1400 = -6.864655 m/s². Both calipers
-  ramp with the same w0, so the locked wheel turns at
-  w = (2 · 0.2/pi) asin(0.31 · 9610.517/6855.55) = 0.0572408 rad/s.
+  ramp with the same w0, so the locked wheel creeps at
+  w = (2 · 0.2/pi) asin(0.31 · 9610.517/6855.55) = 0.0572 rad/s. The mass decelerates at most at
+  mu_A g, so by 2 s it still moves at 25 - 2 · 9.81 = 5.4 m/s or more, and kappa = -1 + w r/v
+  is within 0.0572 · 0.31/5.4 = 0.0033 of -1.
 """
 @component function HydraulicBraked(; name = nothing, var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

@@ -12,7 +12,8 @@ order torque travels: shaft, inertia, brake, tire, road.
 
 Ports:
 - `spline` the inboard shaft end; open when nothing drives the wheel.
-- `support` takes the brake reaction (hub carrier).
+- `support` takes the brake reaction. It must be connected, to the hub carrier or a `Fixed`: an
+  open support takes no torque, so the brake would apply none.
 - `flange` attaches to the vehicle body.
 - `tau_cmd` the requested brake torque, to the `BrakeActuator`.
 - `mu_scale` the road-friction multiplier, to the `Slip` tire.

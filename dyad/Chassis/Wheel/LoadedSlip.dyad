@@ -1,17 +1,20 @@
 """
-`Slip` tire contact whose normal load arrives at a flange, so weight transfer and downforce change
-the grip while the vehicle moves.
+Tire contact of a wheel rolling in a straight line, with longitudinal slip-dependent friction,
+whose normal load arrives at a flange, so weight transfer and downforce change the grip while the
+vehicle moves.
 
-Everything but the normal load is `Slip`'s: slip definition, friction curve, sign conventions and
-the `spline`, `flange`, `mu_scale` and `kappa` ports.
+Everything but the normal load is `PartialSlip`'s: slip definition, friction law, sign
+conventions and the `spline`, `flange`, `mu_scale` and `kappa` ports.
 
 `load` takes the normal load with the planar wheels' convention: a positive force presses the tire
-onto the road, and the wheel holds the flange at zero travel. It wires straight to
-`Body.Longitudinal.AxleLoad.load`, or to a `TranslationalComponents.Sources.ConstantForce` for a
-fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange.
+onto the road, and the wheel holds the flange at zero travel. It must be connected: it wires
+straight to `Body.Longitudinal.AxleLoad.load`, or to a
+`TranslationalComponents.Sources.ConstantForce` for a fixed load.
+
+Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no force.
 """
 component LoadedSlip
-  extends VehicleComponents.Chassis.Wheel.Slip(F_n = missing, final F_z = 0.0)
+  extends VehicleComponents.Chassis.Wheel.PartialSlip
   "Normal load; positive presses the tire onto the road"
   load = Flange() {^load}
 relations

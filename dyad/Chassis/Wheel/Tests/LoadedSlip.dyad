@@ -2,7 +2,8 @@
 The `Slip` launch with the normal load from a `Body.Longitudinal.AxleLoad` (m = 1400 kg,
 share = 0.55, h/L = 0.17) wired straight to the tire's `load` flange: 600 N m drives a
 J = 1 kg m² wheel inertia, and the tire pushes a 1400 kg mass that the axle load also follows.
-The road multiplier is set per case; `downforce` stays open, so there is none.
+The road multiplier is set per case, and so is the force `lift` pushes on the axle's
+`downforce` flange: none but in `lifted`.
 
 Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L with a = F_x/m:
 
@@ -16,17 +17,19 @@ Once the 0.1 s pitch lag has settled, the axle carries F_z = 0.55 m g + m a h/L 
   F_x = (tau r/J)/(r²/J + (1 + kappa)/m), now with mu(kappa) = F_x/F_z and
   F_z = 0.55 m g + F_x h/L. Iterating from kappa = 0 settles at kappa = 0.0065620,
   F_x = 1921.111 N and F_z = 7877.709 N, so a = 1.372222 m/s².
+- `lifted`, 20000 N of lift on a dry road: the axle's static share alone is
+  0.55 (1400 · 9.80665 - 20000) = -3448.8795 N, so the tire is off the road and passes no force.
+  The mass stays at rest, a = 0, so no weight transfers and F_z stays -3448.8795 N, while the
+  whole 600 N m spins up the wheel at 600 rad/s². A tire that passed mu F_n with the negative load
+  would instead pull the mass backward, at more than 0.7 · 3448.9/1400 = 1.7 m/s² once the
+  backward acceleration moves still more load off the axle.
 """
 test component LoadedSlip
   drive = RotationalComponents.Sources.ConstantTorque(tau_constant = 600.0) {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 300, "y2": 400, "rot": 270}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 200, "y2": 300}}}
   }
   housing = RotationalComponents.Components.Fixed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 300, "y2": 400, "rot": 270}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
   }
   inertia = RotationalComponents.Components.Inertia(J = 1.0, phi = initial 0.0, w = initial 0.0) {
     "Dyad": {
@@ -35,38 +38,56 @@ test component LoadedSlip
   }
   wheel = VehicleComponents.Chassis.Wheel.LoadedSlip() {
     "Dyad": {
-      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550, "rot": 90}}
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 500, "y2": 600, "rot": 90}}
     }
   }
   body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 600, "y2": 700}}}
   }
   axle = VehicleComponents.Body.Longitudinal.AxleLoad(m = 1400.0, share = 0.55, h_over_L = 0.17) {
     "Dyad": {
-      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 550, "y2": 650, "rot": 180}}
+      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800, "rot": 90}}
     }
+  }
+  "Downforce, negative for lift; overridden per case"
+  lift = TranslationalComponents.Sources.ConstantForce(f_constant = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1300, "x2": 1200, "y1": 700, "y2": 800}}}
+  }
+  ground = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 950, "y2": 1050}}}
   }
   "Road-friction multiplier, overridden per case"
   road = BlockComponents.Sources.Constant(k = 1.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
   }
 relations
-  connect(drive.spline, inertia.spline_a) {
-    "Dyad": {"edges": [{"S": 1, "M": [{"x": 1000, "y": 250}], "E": 2}], "path": {}}
-  }
+  connect(drive.spline, inertia.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(drive.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(inertia.spline_b, wheel.spline) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 250}], "E": 2}], "path": {}}}
-  connect(wheel.flange, body.flange_a) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 600}], "E": 2}], "path": {}}}
-  connect(body.flange_b, axle.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(axle.load, wheel.load) {
+  connect(wheel.flange, body.flange_a) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 650}], "E": 2}], "path": {}}}
+  connect(body.flange_b, axle.flange) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 980.0000000000001, "y": 500}], "E": 2}],
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 850, "y": 650}, {"x": 850, "y": 850}, {"x": 1000, "y": 850}],
+          "E": 2
+        }
+      ],
       "path": {}
     }
   }
+  connect(axle.load, wheel.load) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 770}, {"x": 900, "y": 550}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(lift.flange, axle.downforce) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(lift.support, ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(road.y, wheel.mu_scale) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 475}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 550}, {"x": 400, "y": 525}], "E": 2}],
       "path": {}
     }
   }
@@ -97,6 +118,17 @@ metadata {
         "reltol": 1e-8,
         "atol": {"wheel.kappa": 1e-6, "wheel.F_n": 0.001, "body.a": 1e-5},
         "expect": {"final": {"wheel.kappa": 0.006562, "wheel.F_n": 7877.709, "body.a": 1.372222}}
+      },
+      "lifted": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"lift.f_constant": -20000.0},
+        "atol": {"axle.F_z": 0.001, "wheel.F_x": 1e-6, "body.a": 1e-6, "inertia.a": 1e-4},
+        "expect": {
+          "final": {"axle.F_z": -3448.8795, "wheel.F_x": 0.0, "body.a": 0.0, "inertia.a": 600.0}
+        }
       }
     }
   }

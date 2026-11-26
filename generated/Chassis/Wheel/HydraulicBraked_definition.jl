@@ -15,7 +15,8 @@ master cylinder drives it through brake lines.
 
 Ports:
 - `spline` the inboard shaft end; open when nothing drives the wheel.
-- `support` takes both calipers' reaction (hub carrier).
+- `support` takes both calipers' reaction. It must be connected, to the hub carrier or a
+  `Fixed`: an open support takes no torque, so the calipers would apply none.
 - `flange` attaches to the vehicle body.
 - `front`, `rear` the front- and rear-circuit brake-fluid connections.
 - `mu_scale` the road-friction multiplier, to the `Slip` tire.

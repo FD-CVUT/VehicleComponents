@@ -13,8 +13,9 @@ The brake sits in the shaft line between `spline_a` and `spline_b` and passes it
 `support` housing. The disc is rigid with the shaft, so both splines share one angle and the brake
 adds no rotation state; `spline_b.tau` is the torque passed on downstream.
 
-Ports: `spline_a`, `spline_b` the shaft ends; `support` the housing (hub carrier); `tau_cmd` the
-requested brake torque.
+Ports: `spline_a`, `spline_b` the shaft ends; `tau_cmd` the requested brake torque; `support` the
+housing, which takes the brake reaction. `support` must be connected, to the hub carrier or a
+`Fixed`: an open housing takes no torque, so the brake would apply none.
 
 The request is clamped to [0, `tau_max`] and lags through the actuator time constant `T` to the
 applied magnitude `tau_actual`, which acts against the shaft's rotation, so the brake decelerates

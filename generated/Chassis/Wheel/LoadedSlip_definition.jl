@@ -7,16 +7,19 @@
 @doc Markdown.doc"""
    LoadedSlip(; name, sAdhesion, sSlide, mu_A, mu_S, radius, v_eps, __overrides)
 
-`Slip` tire contact whose normal load arrives at a flange, so weight transfer and downforce change
-the grip while the vehicle moves.
+Tire contact of a wheel rolling in a straight line, with longitudinal slip-dependent friction,
+whose normal load arrives at a flange, so weight transfer and downforce change the grip while the
+vehicle moves.
 
-Everything but the normal load is `Slip`'s: slip definition, friction curve, sign conventions and
-the `spline`, `flange`, `mu_scale` and `kappa` ports.
+Everything but the normal load is `PartialSlip`'s: slip definition, friction law, sign
+conventions and the `spline`, `flange`, `mu_scale` and `kappa` ports.
 
 `load` takes the normal load with the planar wheels' convention: a positive force presses the tire
-onto the road, and the wheel holds the flange at zero travel. It wires straight to
-`Body.Longitudinal.AxleLoad.load`, or to a `TranslationalComponents.Sources.ConstantForce` for a
-fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange.
+onto the road, and the wheel holds the flange at zero travel. It must be connected: it wires
+straight to `Body.Longitudinal.AxleLoad.load`, or to a
+`TranslationalComponents.Sources.ConstantForce` for a fixed load.
+
+Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no force.
 
 ## Parameters:
 
@@ -48,7 +51,7 @@ fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange
 | `omega`         | Wheel angular speed                         | rad/s  |
 | `v`         | Vehicle speed                         | m/s  |
 | `mu`         | Friction coefficient after road scaling                         | --  |
-| `F_n`         | Normal load pressing the tire onto the road                         | N  |
+| `F_n`         | Normal load pressing the tire onto the road; negative when the tire lifts                         | N  |
 | `F_x`         | Longitudinal tire force on the body                         | N  |
 """
 @component function LoadedSlip(; name = nothing, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, var"radius"=0.31, var"v_eps"=0.5, __overrides = Dict{String, Any}())
@@ -86,7 +89,6 @@ fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange
   ### Path Parameters (non-final)
 
   ### Final Parameters (declarations)
-  append!(__params, @parameters (F_z::Real), [description = "Normal load", misc = "final"])
 
   ### Deferred assignment (default values that depend on final parameters)
 
@@ -111,7 +113,6 @@ fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
 
   ### Final Parameters (assignments)
-  __bindings[F_z] = 0.0
 
   ### Final Path Parameters
   append!(__vars, @variables (mu_scale(t)::Real), [input = true])
@@ -125,7 +126,7 @@ fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange
   append!(__vars, @variables (omega(t)::Real), [description = "Wheel angular speed"])
   append!(__vars, @variables (v(t)::Real), [description = "Vehicle speed"])
   append!(__vars, @variables (mu(t)::Real), [description = "Friction coefficient after road scaling"])
-  append!(__vars, @variables (F_n(t)::Real), [description = "Normal load pressing the tire onto the road"])
+  append!(__vars, @variables (F_n(t)::Real), [description = "Normal load pressing the tire onto the road; negative when the tire lifts"])
   append!(__vars, @variables (F_x(t)::Real), [description = "Longitudinal tire force on the body"])
 
   ### Variables (assignments)
@@ -150,8 +151,7 @@ fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange
   __ovr_mu = pop!(__overrides, "mu", nothing); isnothing(__ovr_mu) || push!(__eqs, mu ~ __ovr_mu)
   __ovr_mu__initial = pop!(__overrides, "mu.initial", nothing); isnothing(__ovr_mu__initial) || (__initial_conditions[mu] = __ovr_mu__initial)
   __ovr_mu__guess = pop!(__overrides, "mu.guess", nothing)
-  __ovr_F_n = pop!(__overrides, "F_n", nothing); __eq_F_n = @something(__ovr_F_n, missing)
-  ismissing(__eq_F_n) || push!(__eqs, F_n ~ __eq_F_n)
+  __ovr_F_n = pop!(__overrides, "F_n", nothing); isnothing(__ovr_F_n) || push!(__eqs, F_n ~ __ovr_F_n)
   __ovr_F_n__initial = pop!(__overrides, "F_n.initial", nothing); isnothing(__ovr_F_n__initial) || (__initial_conditions[F_n] = __ovr_F_n__initial)
   __ovr_F_n__guess = pop!(__overrides, "F_n.guess", nothing)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
@@ -194,7 +194,7 @@ fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange
   push!(__eqs, kappa ~ (omega * radius - v) / max(abs(v), v_eps))
   push!(__eqs, s ~ kappa)
   push!(__eqs, mu ~ mu_scale * mu_ref)
-  push!(__eqs, F_x ~ mu * F_n)
+  push!(__eqs, F_x ~ mu * max(F_n, 0.0))
   push!(__eqs, flange.f ~ -F_x)
   push!(__eqs, 0 ~ spline.tau + radius * flange.f)
   push!(__eqs, load.s ~ 0)

@@ -22,11 +22,11 @@ kappa = -0.0125894 and F_x = -6267.617 N, so the mass decelerates at -6267.617/1
 -4.476869 m/s².
 
 `lock_up`, 6000 N m, above the ceiling: the wheel locks. The tire slides at -mu_S F_z, so the mass
-decelerates at -0.7 · 13729.31/1400 = -6.864655 m/s². The locked wheel turns only as fast as the
-brake's sine ramp lets it hold that tire torque, tau_b sin(pi/2 w/w0) = r mu_S F_z:
-w = (2 · 0.2/pi) asin(0.31 · 9610.517/6000) = 0.127324 asin(0.496543) = 0.0661591 rad/s. The
-mass decelerates at most at mu_A g, so by 2 s it still moves at 25 - 2 · 9.81 = 5.4 m/s or more,
-and kappa = -1 + w r/v is within 0.0038 of -1.
+decelerates at -0.7 · 13729.31/1400 = -6.864655 m/s². The locked wheel still creeps as fast as the
+brake's sine ramp needs to hold that tire torque, tau_b sin(pi/2 w/w0) = r mu_S F_z, so
+w = (2 · 0.2/pi) asin(0.31 · 9610.517/6000) = 0.0662 rad/s. The mass decelerates at most at
+mu_A g, so by 2 s it still moves at 25 - 2 · 9.81 = 5.4 m/s or more, and kappa = -1 + w r/v is
+within 0.0662 · 0.31/5.4 = 0.0038 of -1.
 """
 @component function Braked(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

@@ -4,7 +4,8 @@ order torque travels: shaft, inertia, brake, tire, road.
 
 Ports:
 - `spline` the inboard shaft end; open when nothing drives the wheel.
-- `support` takes the brake reaction (hub carrier).
+- `support` takes the brake reaction. It must be connected, to the hub carrier or a `Fixed`: an
+  open support takes no torque, so the brake would apply none.
 - `flange` attaches to the vehicle body.
 - `tau_cmd` the requested brake torque, to the `BrakeActuator`.
 - `mu_scale` the road-friction multiplier, to the `Slip` tire.
@@ -22,7 +23,7 @@ doubles the stopping distance. Values are assumed.
 component Braked
   "Inboard shaft"
   spline = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
-  "Brake reaction support (hub carrier)"
+  "Brake reaction support; must be connected, to the hub carrier or a Fixed"
   support = Spline() {
     "Dyad": {
       "placement": {"icon": {"iconName": "support", "x1": 250, "x2": 350, "y1": 950, "y2": 1050}}
@@ -45,15 +46,13 @@ component Braked
     "Dyad": {"placement": {"icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270}}}
   }
   inertia = RotationalComponents.Components.Inertia(J = J_w, phi = initial 0.0, w = initial 0.0) {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 650, "x2": 750, "y1": 550, "y2": 650, "rot": 270}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 300, "y2": 400}}}
   }
   brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
   }
   tire = VehicleComponents.Chassis.Wheel.Slip(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {
-    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
   }
   "Rolling radius"
   parameter radius::Length = 0.31
@@ -78,13 +77,7 @@ component Braked
 relations
   connect(spline, inertia.spline_a) {
     "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 350, "y": 500}, {"x": 350, "y": 700}, {"x": 700, "y": 700}],
-          "E": 2
-        }
-      ],
+      "edges": [{"S": 1, "M": [{"x": 350, "y": 500}, {"x": 350, "y": 350}], "E": 2}],
       "path": {}
     }
   }
@@ -93,7 +86,12 @@ relations
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 700, "y": 500}, {"x": 400, "y": 500}, {"x": 400, "y": 350}],
+          "M": [
+            {"x": 700, "y": 350},
+            {"x": 700, "y": 450},
+            {"x": 400, "y": 450},
+            {"x": 400, "y": 600}
+          ],
           "E": 2
         }
       ],
@@ -109,26 +107,20 @@ relations
   }
   connect(tire.flange, flange) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 950, "y": 350}, {"x": 950, "y": 500}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 950, "y": 600}, {"x": 950, "y": 500}], "E": 2}],
       "path": {}
     }
   }
   connect(tau_cmd, brake.tau_cmd) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 300, "y": 250}, {"x": 500, "y": 250}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(mu_scale, tire.mu_scale) {
-    "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 700, "y": 750},
-            {"x": 850, "y": 750},
-            {"x": 850, "y": 450},
-            {"x": 775, "y": 450}
+            {"x": 300, "y": 200},
+            {"x": 750, "y": 200},
+            {"x": 750, "y": 500},
+            {"x": 500, "y": 500}
           ],
           "E": 2
         }
@@ -136,9 +128,15 @@ relations
       "path": {}
     }
   }
+  connect(mu_scale, tire.mu_scale) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 700, "y": 700}, {"x": 725, "y": 700}], "E": 2}],
+      "path": {}
+    }
+  }
   connect(tire.kappa, kappa) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 825, "y": 250}, {"x": 800, "y": 250}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 775, "y": 500}, {"x": 800, "y": 500}], "E": 2}],
       "path": {}
     }
   }

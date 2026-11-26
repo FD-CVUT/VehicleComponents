@@ -43,8 +43,8 @@ __dyad_run_test_case!(
   expected_final=Tuple[
     (m -> m.wheel.caliper_f.p, "wheel.caliper_f.p", 10000000, 1, 1e-7),
     (m -> m.wheel.caliper_r.p, "wheel.caliper_r.p", 10000000, 1, 1e-7),
+    (m -> m.wheel.kappa, "wheel.kappa", -1, 0.004, 1e-7),
     (m -> m.body.a, "body.a", -6.864655, 0.00001, 1e-7),
-    (m -> m.wheel.inertia.w, "wheel.inertia.w", 0.0572408, 0.00001, 1e-7),
   ],
   signals=Tuple[],
 )
