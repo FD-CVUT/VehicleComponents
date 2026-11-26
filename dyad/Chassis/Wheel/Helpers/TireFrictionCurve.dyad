@@ -1,0 +1,22 @@
+"""
+The tire friction law of `Chassis.Wheel.TireFriction` as a signal block: the friction coefficient
+`y` against the longitudinal slip ratio `u`, to plot the characteristic or feed a controller model.
+
+Ports: `u` the slip ratio, negative while braking; `y` the friction coefficient for the reference
+road, with the sign of the slip.
+
+Assumptions: those of `Chassis.Wheel.TireFriction`, whose parameters and defaults it shares with
+the `Slip` tire.
+"""
+component TireFrictionCurve
+  extends BlockComponents.Interfaces.SISO
+  extends VehicleComponents.Chassis.Wheel.TireFriction
+relations
+  s = u
+  y = mu_ref
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Chassis/Wheel/Helpers/TireFrictionCurve.svg"}
+  }
+}
+end

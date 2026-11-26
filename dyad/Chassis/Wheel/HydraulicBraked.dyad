@@ -1,0 +1,246 @@
+"""
+Braked road wheel with hydraulic disc brakes: rotating inertia, a front-axle and a rear-axle
+`Chassis.Brakes.Caliper` in the shaft line, and slip tire contact.
+
+It is `Braked` with the commanded brake replaced by two calipers, one per brake circuit, so a
+master cylinder drives it through brake lines.
+
+Ports:
+- `spline` the inboard shaft end; open when nothing drives the wheel.
+- `support` takes both calipers' reaction (hub carrier).
+- `flange` attaches to the vehicle body.
+- `front`, `rear` the front- and rear-circuit brake-fluid connections.
+- `mu_scale` the road-friction multiplier, to the `Slip` tire.
+- `kappa` the tire's slip ratio, negative while braking; no sensor dynamics.
+
+Assumptions: the wheel starts at rest and both calipers empty; give another start at the
+declaration, `HydraulicBraked(inertia(w = initial 80.0))`. Like `Braked`, the defaults lump the
+whole 1400 kg car onto one equivalent wheel. The caliper defaults are a compact car's front and rear
+axles (textbook).
+"""
+component HydraulicBraked
+  "Inboard shaft"
+  spline = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  "Brake reaction support (hub carrier)"
+  support = Spline() {
+    "Dyad": {
+      "placement": {"icon": {"iconName": "support", "x1": 250, "x2": 350, "y1": 950, "y2": 1050}}
+    }
+  }
+  "Longitudinal connection to the vehicle body"
+  flange = Flange() {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  "Front brake-circuit fluid connection"
+  front = HydraulicComponents.Interfaces.Port() {
+    "Dyad": {
+      "placement": {
+        "icon": {
+          "iconName": "hydraulic_port_a",
+          "x1": 150,
+          "x2": 250,
+          "y1": -50,
+          "y2": 50,
+          "rot": 270
+        }
+      }
+    }
+  }
+  "Rear brake-circuit fluid connection"
+  rear = HydraulicComponents.Interfaces.Port() {
+    "Dyad": {
+      "placement": {
+        "icon": {
+          "iconName": "hydraulic_port_a",
+          "x1": 350,
+          "x2": 450,
+          "y1": -50,
+          "y2": 50,
+          "rot": 270
+        }
+      }
+    }
+  }
+  "Road-friction multiplier"
+  mu_scale = RealInput() {
+    "Dyad": {
+      "placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 270}}
+    }
+  }
+  "Tire slip ratio, negative while braking"
+  kappa = RealOutput() {
+    "Dyad": {"placement": {"icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270}}}
+  }
+  inertia = RotationalComponents.Components.Inertia(J = J_w, phi = initial 0.0, w = initial 0.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 400, "y2": 500, "rot": 270}}
+    }
+  }
+  caliper_f = VehicleComponents.Chassis.Brakes.Caliper(K = K_f, p0 = p0, V0 = V0_f, K1 = K1_f, K3 = K3_f, w0 = w0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 250, "y2": 350, "rot": 180}}
+    }
+  }
+  caliper_r = VehicleComponents.Chassis.Brakes.Caliper(K = K_r, p0 = p0, V0 = V0_r, K1 = K1_r, K3 = K3_r, w0 = w0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 250, "y2": 350, "rot": 180}}
+    }
+  }
+  tire = VehicleComponents.Chassis.Wheel.Slip(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400, "rot": 180}}
+    }
+  }
+  "Rolling radius"
+  parameter radius::Length = 0.31
+  "Rotating inertia; four road wheels"
+  parameter J_w::MomentOfInertia = 4.0
+  "Normal load; the full weight of a 1400 kg car"
+  parameter F_z::Force = 13729.31
+  "Shaft speed below which the calipers' friction direction is ramped"
+  parameter w0::AngularVelocity = 0.2
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+  "Front-axle torque gain [N m/Pa]"
+  parameter K_f::Real = 49.0e-5
+  "Rear-axle torque gain [N m/Pa]"
+  parameter K_r::Real = 19.9e-5
+  "Pad-contact pressure"
+  parameter p0::Pressure = 0.5e5
+  "Front clearance take-up volume"
+  parameter V0_f::Volume = 0.5e-6
+  "Rear clearance take-up volume"
+  parameter V0_r::Volume = 0.3e-6
+  "Front linear pressure-volume coefficient [Pa/m³]"
+  parameter K1_f::Real = 1e12
+  "Rear linear pressure-volume coefficient [Pa/m³]"
+  parameter K1_r::Real = 2.5e12
+  "Front cubic pressure-volume coefficient [Pa/m⁹]"
+  parameter K3_f::Real = 4.8e23
+  "Rear cubic pressure-volume coefficient [Pa/m⁹]"
+  parameter K3_r::Real = 7.5e24
+relations
+  connect(spline, inertia.spline_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 150, "y": 500}, {"x": 150, "y": 700}, {"x": 1250, "y": 700}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(inertia.spline_b, caliper_f.spline_a) {
+    "Dyad": {"edges": [{"S": 1, "M": [{"x": 1250, "y": 300}], "E": 2}], "path": {}}
+  }
+  connect(caliper_f.spline_b, caliper_r.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(caliper_r.spline_b, tire.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 600, "y": 300}, {"x": 600, "y": 350}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(caliper_f.support, caliper_r.support) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 1000, "y": 200}, {"x": 750, "y": 200}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(caliper_r.support, support) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 750, "y": 150},
+            {"x": 1350, "y": 150},
+            {"x": 1350, "y": 950},
+            {"x": 300, "y": 950}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(caliper_f.port, front) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 1000, "y": 450},
+            {"x": 1050, "y": 450},
+            {"x": 1050, "y": 650},
+            {"x": 200, "y": 650}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(caliper_r.port, rear) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 750, "y": 500}, {"x": 400, "y": 500}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(tire.flange, flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 350, "y": 350}, {"x": 350, "y": 550}, {"x": 1000, "y": 550}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(mu_scale, tire.mu_scale) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 700, "y": 600},
+            {"x": 300, "y": 600},
+            {"x": 300, "y": 250},
+            {"x": 525, "y": 250}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.kappa, kappa) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 475, "y": 450},
+            {"x": 650, "y": 450},
+            {"x": 650, "y": 50},
+            {"x": 800, "y": 50}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Chassis/Wheel/HydraulicBraked.svg"}
+  }
+}
+end

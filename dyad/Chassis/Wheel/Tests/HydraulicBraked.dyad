@@ -1,0 +1,173 @@
+"""
+A straight-line stop from 25 m/s: the default `HydraulicBraked` wheel (r = 0.31 m, J_w = 4 kg m²,
+F_z = 13729.31 N, w0 = 0.2 rad/s), rolling at 25/0.31 = 80.645161 rad/s, retards a 1400 kg mass
+on a dry road. One line pressure, set per case, feeds both circuits, each through a default
+`Chassis.Brakes.Line`.
+
+Once the calipers have filled, no fluid flows, each caliper sits at the line pressure p and the two
+together apply (K_f + K_r)(p - p0) = 68.9e-5 (p - 0.5e5) N m. The tire can pass at most
+r mu_A F_z = 0.31 · 13729.31 = 4256.1 N m.
+
+- `rolling`, 30 bar: 68.9e-5 · 2.95e6 = 2032.55 N m, below the ceiling. As in the `Braked` rig,
+  steady slip gives F_x = -(tau_b r/J)/(r²/J + (1 + kappa)/m) with -F_x = mu(kappa) F_z;
+  iterating from kappa = 0 settles at kappa = -0.0128098 and F_x = -6369.663 N, so the mass
+  decelerates at -4.549759 m/s².
+- `lock_up`, 100 bar: 68.9e-5 · 9.95e6 = 6855.55 N m, above the ceiling, so the wheel locks and
+  the tire slides: the mass decelerates at -0.7 · 13729.31/1400 = -6.864655 m/s². Both calipers
+  ramp with the same w0, so the locked wheel turns at
+  w = (2 · 0.2/pi) asin(0.31 · 9610.517/6855.55) = 0.0572408 rad/s.
+"""
+test component HydraulicBraked
+  "Line pressure, overridden per case"
+  pressure = BlockComponents.Sources.Constant(k = 3.0e6) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 250, "y2": 350}}}
+  }
+  supply = HydraulicComponents.Sources.BoundaryPressure() {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 250, "y2": 350}}}
+  }
+  line_f = VehicleComponents.Chassis.Brakes.Line() {
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 200, "y2": 300}}}
+  }
+  line_r = VehicleComponents.Chassis.Brakes.Line() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 750, "x2": 850, "y1": 450, "y2": 550, "rot": 180}}
+    }
+  }
+  "Dry road"
+  road = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 500, "y2": 600}}}
+  }
+  wheel = VehicleComponents.Chassis.Wheel.HydraulicBraked(inertia(w = initial 80.645161)) {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 550, "y2": 650}}}
+  }
+  hub = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 800, "y2": 900}}}
+  }
+  body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 25.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 700, "y2": 800}}}
+  }
+  "DOT 4 brake fluid"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(pressure.y, supply.p) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(supply.port, line_f.port_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 700, "y": 300}, {"x": 700, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(supply.port, line_r.port_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 650, "y": 300},
+            {"x": 650, "y": 400},
+            {"x": 900, "y": 400},
+            {"x": 900, "y": 500}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(line_f.port_b, wheel.front) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 900, "y": 250},
+            {"x": 900, "y": 150},
+            {"x": 200, "y": 150},
+            {"x": 200, "y": 450},
+            {"x": 520, "y": 450}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(line_r.port_b, wheel.rear) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540, "y": 500}], "E": 2}], "path": {}}}
+  continuity(medium, supply.port.medium)
+  connect(road.y, wheel.mu_scale) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 550},
+            {"x": 350, "y": 950},
+            {"x": 600, "y": 950},
+            {"x": 600, "y": 700},
+            {"x": 570, "y": 700}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(wheel.support, hub.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 530, "y": 700}, {"x": 500, "y": 700}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(wheel.flange, body.flange_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 600}, {"x": 650, "y": 750}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "rolling": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {
+          "wheel.caliper_f.p": 1.0,
+          "wheel.caliper_r.p": 1.0,
+          "wheel.kappa": 1e-6,
+          "body.a": 1e-5
+        },
+        "expect": {
+          "final": {
+            "wheel.caliper_f.p": 3.0e6,
+            "wheel.caliper_r.p": 3.0e6,
+            "wheel.kappa": -0.0128098,
+            "body.a": -4.549759
+          }
+        }
+      },
+      "lock_up": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"pressure.k": 1.0e7},
+        "atol": {
+          "wheel.caliper_f.p": 1.0,
+          "wheel.caliper_r.p": 1.0,
+          "body.a": 1e-5,
+          "wheel.inertia.w": 1e-5
+        },
+        "expect": {
+          "final": {
+            "wheel.caliper_f.p": 1.0e7,
+            "wheel.caliper_r.p": 1.0e7,
+            "body.a": -6.864655,
+            "wheel.inertia.w": 0.0572408
+          }
+        }
+      }
+    }
+  }
+}
+end

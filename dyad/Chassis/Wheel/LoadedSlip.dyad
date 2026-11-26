@@ -1,0 +1,26 @@
+"""
+`Slip` tire contact whose normal load arrives at a flange, so weight transfer and downforce change
+the grip while the vehicle moves.
+
+Everything but the normal load is `Slip`'s: slip definition, friction curve, sign conventions and
+the `spline`, `flange`, `mu_scale` and `kappa` ports.
+
+`load` takes the normal load with the planar wheels' convention: a positive force presses the tire
+onto the road, and the wheel holds the flange at zero travel. It wires straight to
+`Body.Longitudinal.AxleLoad.load`, or to a `TranslationalComponents.Sources.ConstantForce` for a
+fixed load. `F_z` is locked at 0 and unused: the load comes only from the flange.
+"""
+component LoadedSlip
+  extends VehicleComponents.Chassis.Wheel.Slip(F_n = missing, final F_z = 0.0)
+  "Normal load; positive presses the tire onto the road"
+  load = Flange() {^load}
+relations
+  load.s = 0
+  F_n = load.f
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Wheel/LoadedSlip.svg"}},
+  "_links": {
+    "load": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}}}}
+  }
+}
+end

@@ -1,0 +1,148 @@
+"""
+Braked road wheel: rotating inertia, in-line friction brake and slip tire contact, wired in the
+order torque travels: shaft, inertia, brake, tire, road.
+
+Ports:
+- `spline` the inboard shaft end; open when nothing drives the wheel.
+- `support` takes the brake reaction (hub carrier).
+- `flange` attaches to the vehicle body.
+- `tau_cmd` the requested brake torque, to the `BrakeActuator`.
+- `mu_scale` the road-friction multiplier, to the `Slip` tire.
+- `kappa` the tire's slip ratio, negative while braking. It carries no sensor dynamics: a
+  controller reads wheel speed through a sensor and estimates slip from it, and that lag belongs
+  between this output and the controller.
+
+Assumptions: the wheel starts at rest; give another start at the declaration,
+`Braked(inertia(w = initial 80.0))`. The defaults lump the whole vehicle onto one equivalent wheel,
+the configuration a straight-line braking study needs: `J_w` is four road wheels, `F_z` the full
+weight of a 1400 kg car and `tau_max` the four brakes together. Loading the equivalent wheel with
+one axle's share while it still retards the whole mass halves the friction ceiling and roughly
+doubles the stopping distance. Values are assumed.
+"""
+component Braked
+  "Inboard shaft"
+  spline = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  "Brake reaction support (hub carrier)"
+  support = Spline() {
+    "Dyad": {
+      "placement": {"icon": {"iconName": "support", "x1": 250, "x2": 350, "y1": 950, "y2": 1050}}
+    }
+  }
+  "Longitudinal connection to the vehicle body"
+  flange = Flange() {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  "Requested brake torque"
+  tau_cmd = RealInput() {
+    "Dyad": {"placement": {"icon": {"x1": 250, "x2": 350, "y1": -50, "y2": 50, "rot": 90}}}
+  }
+  "Road-friction multiplier"
+  mu_scale = RealInput() {
+    "Dyad": {
+      "placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 270}}
+    }
+  }
+  "Tire slip ratio, negative while braking"
+  kappa = RealOutput() {
+    "Dyad": {"placement": {"icon": {"x1": 750, "x2": 850, "y1": -50, "y2": 50, "rot": 270}}}
+  }
+  inertia = RotationalComponents.Components.Inertia(J = J_w, phi = initial 0.0, w = initial 0.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 650, "x2": 750, "y1": 550, "y2": 650, "rot": 270}}
+    }
+  }
+  brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+  }
+  tire = VehicleComponents.Chassis.Wheel.Slip(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 300, "y2": 400}}}
+  }
+  "Rolling radius"
+  parameter radius::Length = 0.31
+  "Rotating inertia; four road wheels"
+  parameter J_w::MomentOfInertia = 4.0
+  "Normal load; the full weight of a 1400 kg car"
+  parameter F_z::Force = 13729.31
+  "Maximum brake torque, all brakes together"
+  parameter tau_max::Torque = 6000.0
+  "Brake actuator time constant"
+  parameter T_brake::Time = 0.03
+  "Shaft speed below which the brake's friction direction is ramped"
+  parameter w0::AngularVelocity = 0.2
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+relations
+  connect(spline, inertia.spline_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 350, "y": 500}, {"x": 350, "y": 700}, {"x": 700, "y": 700}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(inertia.spline_b, brake.spline_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 700, "y": 500}, {"x": 400, "y": 500}, {"x": 400, "y": 350}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(brake.spline_b, tire.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(brake.support, support) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 500, "y": 950}, {"x": 300, "y": 950}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(tire.flange, flange) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 950, "y": 350}, {"x": 950, "y": 500}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(tau_cmd, brake.tau_cmd) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 300, "y": 250}, {"x": 500, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(mu_scale, tire.mu_scale) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 700, "y": 750},
+            {"x": 850, "y": 750},
+            {"x": 850, "y": 450},
+            {"x": 775, "y": 450}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(tire.kappa, kappa) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 825, "y": 250}, {"x": 800, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Wheel/Braked.svg"}}
+}
+end

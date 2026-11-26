@@ -1,0 +1,90 @@
+"""
+A straight-line stop from 25 m/s: the default `Braked` wheel (r = 0.31 m, J_w = 4 kg m²,
+F_z = 13729.31 N, w0 = 0.2 rad/s), rolling at 25/0.31 = 80.645161 rad/s, retards a 1400 kg mass
+on a dry road. The brake command is set per case; the actuator reaches it within 20 T = 0.6 s.
+The tire can pass at most r mu_A F_z = 0.31 · 13729.31 = 4256.1 N m.
+
+`rolling`, 2000 N m, below that ceiling: the wheel rolls at a steady slip kappa. Steady slip
+means r dw/dt = (1 + kappa) dv/dt; with m dv/dt = F_x and J dw/dt = -tau_b - r F_x this gives
+
+    F_x = -(tau_b r/J) / (r²/J + (1 + kappa)/m)
+
+and -F_x = mu(kappa) F_z on the rising cubic. Iterating from kappa = 0 settles at
+kappa = -0.0125894 and F_x = -6267.617 N, so the mass decelerates at -6267.617/1400 =
+-4.476869 m/s².
+
+`lock_up`, 6000 N m, above the ceiling: the wheel locks. The tire slides at -mu_S F_z, so the mass
+decelerates at -0.7 · 13729.31/1400 = -6.864655 m/s². The locked wheel turns only as fast as the
+brake's sine ramp lets it hold that tire torque, tau_b sin(pi/2 w/w0) = r mu_S F_z:
+w = (2 · 0.2/pi) asin(0.31 · 9610.517/6000) = 0.127324 asin(0.496543) = 0.0661591 rad/s. The
+mass decelerates at most at mu_A g, so by 2 s it still moves at 25 - 2 · 9.81 = 5.4 m/s or more,
+and kappa = -1 + w r/v is within 0.0038 of -1.
+"""
+test component Braked
+  "Brake torque request, overridden per case"
+  command = BlockComponents.Sources.Constant(k = 2000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  "Dry road"
+  road = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 650, "y2": 750}}}
+  }
+  wheel = VehicleComponents.Chassis.Wheel.Braked(inertia(w = initial 80.645161)) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+  }
+  hub = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  }
+  body = TranslationalComponents.Components.Mass(m = 1400.0, s = initial 0.0, v = initial 25.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 300, "y2": 400}}}
+  }
+relations
+  connect(command.y, wheel.tau_cmd) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 250}], "E": 2}], "path": {}}}
+  connect(road.y, wheel.mu_scale) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 600, "y": 700}, {"x": 600, "y": 450}, {"x": 520, "y": 450}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(wheel.support, hub.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 480, "y": 450}, {"x": 500, "y": 450}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(wheel.flange, body.flange_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "rolling": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"wheel.kappa": 1e-6, "body.a": 1e-5},
+        "expect": {
+          "initial": {"wheel.kappa": 0.0, "body.v": 25.0},
+          "final": {"wheel.kappa": -0.0125894, "body.a": -4.476869}
+        }
+      },
+      "lock_up": {
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"command.k": 6000.0},
+        "atol": {"wheel.kappa": 0.004, "body.a": 1e-5, "wheel.inertia.w": 1e-5},
+        "expect": {
+          "final": {"wheel.kappa": -1.0, "body.a": -6.864655, "wheel.inertia.w": 0.0661591}
+        }
+      }
+    }
+  }
+}
+end

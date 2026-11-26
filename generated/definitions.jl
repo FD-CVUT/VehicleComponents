@@ -21,6 +21,14 @@ let api = isdefined(BlockComponents, :__dyad_constructor_api) ? BlockComponents.
 end
 import DyadData
 import DyadInterface
+import HydraulicComponents
+let api = isdefined(HydraulicComponents, :__dyad_constructor_api) ? HydraulicComponents.__dyad_constructor_api : 1
+  api == 2 || error("HydraulicComponents was generated with Dyad constructor API version $api, but VehicleComponents requires version 2 (the `__overrides` dict override channel). Regenerate HydraulicComponents with the same Dyad compiler that generated VehicleComponents.")
+end
+import RotationalComponents
+let api = isdefined(RotationalComponents, :__dyad_constructor_api) ? RotationalComponents.__dyad_constructor_api : 1
+  api == 2 || error("RotationalComponents was generated with Dyad constructor API version $api, but VehicleComponents requires version 2 (the `__overrides` dict override channel). Regenerate RotationalComponents with the same Dyad compiler that generated VehicleComponents.")
+end
 import TranslationalComponents
 let api = isdefined(TranslationalComponents, :__dyad_constructor_api) ? TranslationalComponents.__dyad_constructor_api : 1
   api == 2 || error("TranslationalComponents was generated with Dyad constructor API version $api, but VehicleComponents requires version 2 (the `__overrides` dict override channel). Regenerate TranslationalComponents with the same Dyad compiler that generated VehicleComponents.")

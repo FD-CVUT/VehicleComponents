@@ -1,0 +1,36 @@
+"""
+Brake line: laminar flow of brake fluid through a round pipe.
+
+Ports: `port_a`, `port_b` the two fluid connections. Mass flow from `port_a` to `port_b` drops the
+pressure by the Hagen-Poiseuille law,
+
+    port_a.p - port_b.p = 128 nu L m_flow / (pi D⁴)
+
+Assumptions: the flow stays laminar and the fluid in the line has no inertia and no compliance;
+the volume it fills belongs to the caliper or master cylinder at its ends. Viscosity is a
+parameter, not the medium's: DOT 4 fluid is 10e-6 m²/s at 20 °C and about 1800e-6 m²/s at
+-40 °C. Default dimensions are a passenger car's line to the front axle (assumed).
+"""
+component Line
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Internal diameter"
+  parameter D::Length = 3e-3
+  "Line length"
+  parameter L::Length = 1.5
+  "Brake-fluid kinematic viscosity"
+  parameter nu::KinematicViscosity = 10e-6
+relations
+  m_flow = port_a.m_flow
+  Δp = 128 * nu * L * m_flow / (π * D ^ 4)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Chassis/Brakes/Line.svg"}},
+  "_links": {
+    "port_a": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "port_b": {
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end
