@@ -22,6 +22,9 @@ At 21 s the net force is -(6176.5197 + 0.378 * 6.6231²) = -6193.1007 N, so the 
 -6193.1007 / 1500 = -4.1287 m/s². The closed forms skip the rolling-resistance ramp of the first
 few milliseconds, which raises the model's end speed by about 7e-5 m/s, inside the 1e-3 tolerance.
 
+The case pins abstol and reltol at 1e-9: the solver gets no event at the pedal table's steps at 9 s
+and 19 s, so at 1e-6 it steps across them and ends about 2e-4 m/s low.
+
 Assumptions: the platform's brake is an ideal force, so the run ends at 21 s, while the car still
 moves.
 """
