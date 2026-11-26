@@ -17,7 +17,10 @@ conventions and the `spline`, `flange`, `mu_scale` and `kappa` ports.
 `load` takes the normal load with the planar wheels' convention: a positive force presses the tire
 onto the road, and the wheel holds the flange at zero travel. It must be connected: it wires
 straight to `Body.Longitudinal.AxleLoad.load`, or to a
-`TranslationalComponents.Sources.ConstantForce` for a fixed load.
+`TranslationalComponents.Sources.ConstantForce` for a fixed load. One load flange takes exactly
+one wheel, and never a `Fixed`: the wheel holds the flange's position, so a second wheel or a
+`Fixed` on the same flange states it twice, and how the load splits between them is undetermined.
+Give each wheel its own load source.
 
 Assumptions: those of `PartialSlip`; a negative load, a lifted tire, passes no force.
 

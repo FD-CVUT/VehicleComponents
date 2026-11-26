@@ -14,8 +14,8 @@ case.
 
 Once the caliper has filled, no fluid flows and it sits at the line pressure p. The line's
 resistance, 128 mu L/(pi D⁴ rho) (see the `Line` rig), and the caliper's compliance rho dV/dp
-fill it with a time constant of 128 mu L V0/(pi D⁴ p0) = 128 · 0.01045 · 1.5 · 1e-11/(pi · 8.1e-11
-· 0.5e5) = 0.0788 s below p0, and faster above it. The caliper decelerates the shaft by at most
+fill it with a time constant of 128 mu L V0/(pi D⁴ p0) =
+128 · 0.01045 · 1.5 · 0.5e-6/(pi · 8.1e-11 · 0.5e5) = 0.0788 s below p0, and faster above it. The caliper decelerates the shaft by at most
 4875.5/100 = 48.8 rad/s², so in 2 s it keeps turning above 100 - 97.5 = 2.5 rad/s, well above w0,
 and the full torque acts.
 
