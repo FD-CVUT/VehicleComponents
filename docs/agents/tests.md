@@ -14,8 +14,11 @@ preset that adds parts or equations needs its own rig.
   `"solver": "Auto"` is the pin; name an algorithm only where `Auto` fails or drifts, with a
   comment saying why. To check one component at several inputs, wire one instance to constant
   sources and give each case its own `params` (`{"voltage.k": 400.0}`), rather than placing
-  several instances that share sources. A start every case shares goes on the part's declaration;
-  a start that differs between cases goes in each case's `initial` (`{"body.mass.v": 10.0}`).
+  several instances that share sources. A String parameter (a data file, a column name) cannot go
+  in `params`: the compiler stops with `urn:mtkir:unrenderable-param-value`. A case that needs
+  another String value places its own instance, with no source shared with the first. A start
+  every case shares goes on the part's declaration; a start that differs between cases goes in
+  each case's `initial` (`{"body.mass.v": 10.0}`).
 - **Second seam: plain Julia test sets** against the public Julia API, only for what a test model
   cannot express (OpenCRG reading, CAN frame encoding and decoding, the realtime drive headless).
 
