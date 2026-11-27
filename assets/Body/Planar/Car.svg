@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
   <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M0 250 H170 M0 350 H170 M0 750 H170 M0 850 H170"/>
-    <path d="M1000 250 H830 M1000 350 H830 M1000 750 H830 M1000 850 H830"/>
-    <path d="M0 150 H170 M0 650 H170 M1000 150 H830 M1000 650 H830" stroke-width="30"/>
+    <path d="M0 250 H170 M0 750 H170"/>
+    <path d="M1000 250 H830 M1000 750 H830"/>
     <path d="M500 0 V70 M500 930 V1000"/>
     <path d="M290 250 H330 M710 250 H670 M290 750 H330 M710 750 H670"/>
     <path d="M0 450 H330 M0 550 H330" stroke-width="30"/>

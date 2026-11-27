@@ -27,7 +27,6 @@ Ports:
   an open steering shaft leaves its angle undetermined.
 - `chassis` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the model's
   own.
-- `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` the wheel-center frames.
 - `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft, where a brake or a drive
   attaches; open when nothing acts on the wheel. The car has no brakes: a model places a
   `Chassis.Wheel.BrakeActuator` or a `Chassis.Brakes.Caliper` on each shaft it brakes.
@@ -35,7 +34,7 @@ Ports:
   `RoadGrade` on `chassis`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
   asphalt).
 - `bus` everything measured about the car (`CarBus` lists the fields); read it with a `BusOut`.
-  The wheel and steering ports stay open to other sensors a model places itself.
+  Other sensors a model places itself attach to `chassis`, `steering` and the `spin_*` shafts.
 
 Assumptions: no suspension, so no roll, pitch or camber; the road load acts at the center of mass
 along the heading (`RoadLoad`); gravity enters only through the wheel loads and the road load,
@@ -77,14 +76,6 @@ wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are 
 
  * `steering` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `chassis` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
-All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
- * `wheel_fl` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
-All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
- * `wheel_fr` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
-All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
- * `wheel_rl` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
-All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
- * `wheel_rr` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin_fl` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `spin_fr` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
@@ -220,10 +211,6 @@ side by side would both drive the same signals, and the compiler does not reject
   ### Components
   push!(__systems, @named steering = __Dyad__Spline())
   push!(__systems, @named chassis = __Dyad__Frame2D())
-  push!(__systems, @named wheel_fl = __Dyad__Frame2D())
-  push!(__systems, @named wheel_fr = __Dyad__Frame2D())
-  push!(__systems, @named wheel_rl = __Dyad__Frame2D())
-  push!(__systems, @named wheel_rr = __Dyad__Frame2D())
   push!(__systems, @named spin_fl = __Dyad__Spline())
   push!(__systems, @named spin_fr = __Dyad__Spline())
   push!(__systems, @named spin_rl = __Dyad__Spline())
@@ -351,11 +338,11 @@ side by side would both drive the same signals, and the compiler does not reject
   push!(__eqs, connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a))
   push!(__eqs, connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a))
   push!(__eqs, connect(arm_fl.frame_b, kingpin_fl.frame_a))
-  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, wheel_fl, slip_fl.frame_a))
+  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, slip_fl.frame_a))
   push!(__eqs, connect(arm_fr.frame_b, kingpin_fr.frame_a))
-  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, wheel_fr, slip_fr.frame_a))
-  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, wheel_rl, slip_rl.frame_a))
-  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, wheel_rr, slip_rr.frame_a))
+  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, slip_fr.frame_a))
+  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, slip_rl.frame_a))
+  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, slip_rr.frame_a))
   push!(__eqs, connect(steering, column.spline_a, steering_angle.spline))
   push!(__eqs, connect(column.spline_b, linkage.spline_in))
   push!(__eqs, connect(linkage.spline_left, kingpin_fl.flange_a))
