@@ -10,8 +10,8 @@ one port, each field in its own unit (SI; the slip ratios dimensionless). It is 
 bus, not a model of a vehicle network.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it. Two `CarBus` ports
-side by side would both drive the same signals, and the compiler does not reject that wiring.
+the component that holds it. Two `CarBus` ports side by side would both drive the same signals,
+and the compiler does not reject that wiring.
 """
 @connector function CarBus(; name=nothing)
   isnothing(name) && throw(ArgumentError("""

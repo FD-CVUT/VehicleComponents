@@ -18,8 +18,8 @@ one port, each field in its own unit (SI; the slip ratios dimensionless). It is 
 bus, not a model of a vehicle network.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it. Two `CarBus` ports
-side by side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
+the component that holds it. Two `CarBus` ports side by side would both drive the same signals,
+and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
 @component function Bus(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

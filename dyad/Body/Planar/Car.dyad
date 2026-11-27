@@ -34,9 +34,8 @@ and the model must hold one planar `World` with `g = 0`, since the car lies in t
 The car starts at rest at the world origin heading along x, with every wheel at rest; give
 another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
-planar car (a mid-size sedan, assumed). The wheel frames must take no torque about the kingpin:
-the steering column and linkage react on a fixed housing, so a steering reaction would go to the
-ground, not the chassis.
+planar car (a mid-size sedan, assumed). The steering column and linkage react on a fixed
+housing, not on the chassis.
 
 Limit on Dyad 3.5.0: once the car yaws, the test harness's default code optimization gives
 wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are unaffected.
@@ -181,9 +180,9 @@ metadata {
     "slip_fr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 620, "x2": 1200, "y2": 720}}}},
     "slip_rr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 1220, "x2": 1200, "y2": 1320}}}},
     "bus": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1370, "y1": 1620, "x2": 1430, "y2": 1680}}}},
-    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 675, "x2": 400, "y2": 775}}}},
-    "f_r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 400, "x2": 50, "y2": 500}, "diagram": {"x1": -30, "y1": 670, "x2": 30, "y2": 730}}}},
-    "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 500, "x2": 50, "y2": 600}, "diagram": {"x1": -30, "y1": 740, "x2": 30, "y2": 800}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 775, "x2": 400, "y2": 875}}}},
+    "f_r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 400, "x2": 50, "y2": 500}, "diagram": {"x1": -30, "y1": 770, "x2": 30, "y2": 830}}}},
+    "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 500, "x2": 50, "y2": 600}, "diagram": {"x1": -30, "y1": 840, "x2": 30, "y2": 900}}}},
     "steering": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 250, "y1": -30, "x2": 350, "y2": 70}}}},
     "chassis": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 970, "y1": 1370, "x2": 1030, "y2": 1430}}}},
     "spin_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -30, "y1": 520, "x2": 30, "y2": 580}}}},
@@ -207,7 +206,7 @@ metadata {
     "fr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 500, "x2": 1200, "y2": 600}}}},
     "rl": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 1100, "x2": 200, "y2": 1200}}}},
     "rr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 1100, "x2": 1200, "y2": 1200}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1000, "y": 935}], "E": 5}, {"S": -1, "M": [{"x": 640, "y": 860}, {"x": 640, "y": 725}], "E": 6}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1020, "y": 935}, {"x": 1020, "y": 830}], "E": 7}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1020, "y": 935}, {"x": 1020, "y": 950}], "E": 8}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1020, "y": 935}, {"x": 1020, "y": 1070}], "E": 9}], "junctions": [{"x": 700, "y": 860}]}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1000, "y": 935}], "E": 5}, {"S": -1, "M": [{"x": 640, "y": 860}, {"x": 640, "y": 790}, {"x": 450, "y": 790}, {"x": 450, "y": 825}], "E": 6}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1020, "y": 935}, {"x": 1020, "y": 830}], "E": 7}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1020, "y": 935}, {"x": 1020, "y": 950}], "E": 8}, {"S": -1, "M": [{"x": 700, "y": 935}, {"x": 1020, "y": 935}, {"x": 1020, "y": 1070}], "E": 9}], "junctions": [{"x": 700, "y": 860}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 530}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 1130}]}},
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -230,7 +229,7 @@ metadata {
     "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [{"x": 50, "y": 1150}, {"x": 50, "y": 1290}], "E": 3}]}},
     "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [{"x": 1350, "y": 1150}, {"x": 1350, "y": 1290}], "E": 3}]}},
     "w27": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w28": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 770}, {"x": 250, "y": 725}], "E": 2}]}}
+    "w28": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 870}, {"x": 250, "y": 825}], "E": 2}]}}
   }
 }
 end

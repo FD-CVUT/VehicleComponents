@@ -8,13 +8,14 @@
    PlanarCoast(; name, x0, vx0, vy0, __overrides)
 
 Straight-line runs of the planar car on the 2 % ramp road, steering wheel held straight by
-`column`, no drive: a coast up the ramp and a braked stop with load transfer on the level road.
+`column`, no drive: a coast up the ramp, a braked stop with load transfer on the level road, and
+the start of a backward slide.
 The car's road load reads the grade from a `RoadGrade` under the chassis; the assertions read
 the car's own bus. The model holds the planar `World`, gravity off. It has no ports.
 
 The car is the default `Body.Planar.Car` of `m` = 1500 kg with its CG `h_cg` = 0.55 m above the
-road and load transfer on. Each case starts on the road's center line, heading along x, at
-25 m/s with every wheel rolling at 25/0.31 rad/s, from x = `x0`.
+road and load transfer on. Each case starts on the road's center line, heading along x, from
+x = `x0`; `climb` and `braking` start at 25 m/s with every wheel rolling at 25/0.31 rad/s.
 
 `ramp_z.crg` climbs at exactly 2 % on 0 to 500 m (`Body.Planar.Tests.RoadGrade` derives it).
 Before its grid starts at x = 0 the road blends over 2 m to height 0 and is level below -2 m,

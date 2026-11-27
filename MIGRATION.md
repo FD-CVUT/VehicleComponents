@@ -74,7 +74,7 @@ pushes a rod toward +s and builds pressure; a chain of the library's own parts b
 | `Vehicle.Planar.CarBus` | `Body.Planar.CarBus` | Each field has its unit type (`Velocity`, `AngularVelocity`, `Acceleration`, `Position`, `Angle`) instead of `Real`; the slip ratios stay dimensionless. |
 | `Vehicle.Planar.CarBusIn` | `Body.Planar.CarBusIn` | Typed as `CarBus`. |
 | `Vehicle.Planar.PlanarCarSensors` | not in the library | `Body.Planar.Car` fills its own `bus`: its sensors sit on its diagram and its equations set the bus fields. |
-| `Vehicle.Planar.WheelSlipSensor` | `Sensors.WheelSlip` | Part `vel` is now `velocity`. The output `v_long` is gone: read the wheel-center speed from a `MultibodyComponents.PlanarMechanics.AbsoluteVelocity` on the wheel frame. |
+| `Vehicle.Planar.WheelSlipSensor` | `Sensors.WheelSlip` | Part `vel` is now `velocity`. The output `v_long` is gone: read the wheel-center speed from a `MultibodyComponents.PlanarMechanics.AbsoluteVelocity` on the wheel frame of a standalone `Wheel`; the car exposes no wheel frame. |
 | `Vehicle.Planar.BusMotion` | `Body.Planar.BusOut` | One block unpacks every field; outputs a model does not use stay open. |
 | `Vehicle.Planar.BusSlip` | `Body.Planar.BusOut` | One block unpacks every field; outputs a model does not use stay open. |
 | `Vehicle.Planar.BusSlipAngle` | `Body.Planar.BusOut` | One block unpacks every field; outputs a model does not use stay open. |

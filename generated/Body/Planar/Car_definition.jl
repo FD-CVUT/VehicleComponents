@@ -42,9 +42,8 @@ and the model must hold one planar `World` with `g = 0`, since the car lies in t
 The car starts at rest at the world origin heading along x, with every wheel at rest; give
 another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
-planar car (a mid-size sedan, assumed). The wheel frames must take no torque about the kingpin:
-the steering column and linkage react on a fixed housing, so a steering reaction would go to the
-ground, not the chassis.
+planar car (a mid-size sedan, assumed). The steering column and linkage react on a fixed
+housing, not on the chassis.
 
 Limit on Dyad 3.5.0: once the car yaws, the test harness's default code optimization gives
 wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are unaffected.
@@ -88,8 +87,8 @@ one port, each field in its own unit (SI; the slip ratios dimensionless). It is 
 bus, not a model of a vehicle network.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it. Two `CarBus` ports
-side by side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
+the component that holds it. Two `CarBus` ports side by side would both drive the same signals,
+and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
 @component function Car(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
