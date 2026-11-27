@@ -1,80 +1,206 @@
 """
-`PlanarCar`, the planar car's sensor cluster, read back through the four bus readers
-`BusMotion`, `BusSlip`, `BusSlipAngle` and `BusWheelSpeed`.
+`PlanarCar`, the planar car's sensor cluster, on a chassis whose motion is prescribed: every
+reading differs, so a swapped wheel, a swapped axis or a reading in the wrong frame fails.
 
-The chassis frame starts at the world origin heading along x and moves at a prescribed constant
-20 m/s forward and 1 m/s to the left, with its heading held. The four wheel centers sit on the
-chassis frame, so each moves as the chassis does. One prescribed constant speed of 72 rad/s
-spins all four wheel shafts; the cluster's radius is 0.25 m, so each wheel rolls at 18 m/s. The
-steering wheel is held at 0.5 rad.
+The chassis point starts at the world origin with velocity (18, 8) m/s and accelerates at a
+constant (1, -0.5) m/s² in the world frame. A revolute joint on it turns the chassis frame at a
+constant yaw rate r = 0.2 rad/s from the heading 0.5 rad. The wheel centers sit on the chassis at
+(1.2, ±0.775) m front and (-1.5, ±0.775) m rear, left positive, unsteered. Each wheel shaft turns
+at its own constant speed, 60, 62, 64 and 66 rad/s for fl, fr, rl, rr, each source on its own
+mount; the cluster's radius is 0.25 m, so they roll at 15, 15.5, 16 and 16.5 m/s. The steering wheel is held at 0.3 rad.
 
-At t = 1 s:
+At t = 1 s the heading is psi = 0.7 rad, the world velocity (19, 7.5) m/s and the position
+(18.5, 7.75) m. In the chassis frame, with c = cos 0.7 = 0.7648422 and s = sin 0.7 = 0.6442177:
 
-- motion: vx = 20 m/s, vy = 1 m/s, r = 0, ax = ay = 0, x = 20 m, y = 1 m, psi = 0,
-  delta_sw = 0.5 rad, and beta = atan(1/max(20, 1)) = atan(0.05) = 0.0499584 rad;
-- each wheel: kappa = (18 - 20)/20 = -0.1, alpha = atan(1/20) = 0.0499584 rad,
-  omega = 72 rad/s.
+- vx = 19 c + 7.5 s = 19.363634 m/s, vy = -19 s + 7.5 c = -6.503820 m/s, r = 0.2 rad/s;
+- ax = 1 c - 0.5 s = 0.442733 m/s² and ay = -1 s - 0.5 c = -1.026639 m/s²: the point's
+  acceleration is the prescribed one, resolved in the turning frame;
+- beta = atan(vy/max(vx, 1)) = atan(-6.503820/19.363634) = -0.324039 rad;
+- x = 18.5 m, y = 7.75 m, psi = 0.7 rad and delta_sw = 0.3 rad.
+
+A wheel at (p_x, p_y) moves at vx - r p_y along its heading and vy + r p_x across it:
+
+| wheel | v_x [m/s] | v_y [m/s] | kappa = (r w - v_x)/v_x | alpha = atan(v_y/v_x) |
+|---|---|---|---|---|
+| fl | 19.208634 | -6.263820 | (15 - 19.208634)/19.208634 = -0.219101 | -0.315221 |
+| fr | 19.518634 | -6.263820 | (15.5 - 19.518634)/19.518634 = -0.205887 | -0.310533 |
+| rl | 19.208634 | -6.803820 | (16 - 19.208634)/19.208634 = -0.167041 | -0.340417 |
+| rr | 19.518634 | -6.803820 | (16.5 - 19.518634)/19.518634 = -0.154654 | -0.335410 |
 """
 test component PlanarCar
-  forward = BlockComponents.Sources.Constant(k = 20.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 181.25, "y2": 281.25}}}
+  forward = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 2350, "y2": 2450}}}
   }
-  sideways = BlockComponents.Sources.Constant(k = 1.0) {
+  sideways = BlockComponents.Sources.Constant(k = -0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 2600, "y2": 2700}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedAcceleration(v_start = [18.0, 8.0]) {
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 2600, "y2": 2700}}}
+  }
+  turn = MultibodyComponents.PlanarMechanics.Revolute(render = false) {
+    "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 2400, "y2": 2500}}}
+  }
+  yaw = RotationalComponents.Sources.ConstantVelocity(w_fixed = 0.2, phi = initial 0.5) {
+    "Dyad": {"placement": {"diagram": {"x1": 1000, "x2": 1100, "y1": 150, "y2": 250}}}
+  }
+  yaw_mount = RotationalComponents.Components.Fixed() {
     "Dyad": {
-      "placement": {"diagram": {"x1": 500, "x2": 600, "y1": 431.25, "y2": 531.25, "rot": 270}}
+      "placement": {"diagram": {"x1": 765.385, "x2": 865.385, "y1": 1100, "y2": 1200}}
     }
   }
-  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 250, "y2": 350}}}
-  }
-  spin = RotationalComponents.Sources.ConstantVelocity(w_fixed = 72.0, phi = initial 0.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1450, "y2": 1550}}}
-  }
-  steer = BlockComponents.Sources.Constant(k = 0.5) {
+  mount_fl = RotationalComponents.Components.Fixed() {
     "Dyad": {
-      "placement": {"diagram": {"x1": 206.25, "x2": 306.25, "y1": 681.25, "y2": 781.25}}
+      "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 1126.925, "y2": 1226.925}}
     }
+  }
+  mount_fr = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 1915.3849999999998,
+          "x2": 2015.3849999999998,
+          "y1": 1126.925,
+          "y2": 1226.925
+        }
+      }
+    }
+  }
+  mount_rl = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 1726.925, "y2": 1826.925}}
+    }
+  }
+  mount_rr = RotationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 1915.3849999999998,
+          "x2": 2015.3849999999998,
+          "y1": 1726.925,
+          "y2": 1826.925
+        }
+      }
+    }
+  }
+  steering_mount = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 3350, "y2": 3450}}}
+  }
+  arm_fl = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [1.2, 0.775], render = false) {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 1015.385,
+          "x2": 1115.385,
+          "y1": 776.9250000000001,
+          "y2": 876.9249999999998
+        }
+      }
+    }
+  }
+  arm_fr = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [1.2, -0.775], render = false) {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 2015.3849999999998,
+          "x2": 1915.3849999999998,
+          "y1": 776.9250000000001,
+          "y2": 876.9249999999998
+        }
+      }
+    }
+  }
+  arm_rl = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [-1.5, 0.775], render = false) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 1376.925, "y2": 1476.925}}
+    }
+  }
+  arm_rr = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [-1.5, -0.775], render = false) {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 2015.3849999999998,
+          "x2": 1915.3849999999998,
+          "y1": 1376.925,
+          "y2": 1476.925
+        }
+      }
+    }
+  }
+  spin_fl = RotationalComponents.Sources.ConstantVelocity(w_fixed = 60.0, phi = initial 0.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 976.925, "y2": 1076.925}}
+    }
+  }
+  spin_fr = RotationalComponents.Sources.ConstantVelocity(w_fixed = 62.0, phi = initial 0.0) {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 2015.3849999999998,
+          "x2": 1915.3849999999998,
+          "y1": 976.925,
+          "y2": 1076.925
+        }
+      }
+    }
+  }
+  spin_rl = RotationalComponents.Sources.ConstantVelocity(w_fixed = 64.0, phi = initial 0.0) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 1576.925, "y2": 1676.925}}
+    }
+  }
+  spin_rr = RotationalComponents.Sources.ConstantVelocity(w_fixed = 66.0, phi = initial 0.0) {
+    "Dyad": {
+      "placement": {
+        "diagram": {
+          "x1": 2015.3849999999998,
+          "x2": 1915.3849999999998,
+          "y1": 1576.925,
+          "y2": 1676.925
+        }
+      }
+    }
+  }
+  steer = BlockComponents.Sources.Constant(k = 0.3) {
+    "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 3100, "y2": 3200}}}
   }
   steering = RotationalComponents.Sources.Position(ref_type = RotationalComponents.Sources.ReferenceType.Exact()) {
-    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 250, "y2": 350}}}
-  }
-  housing = RotationalComponents.Components.Fixed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 856.25, "x2": 756.25, "y1": 1131.25, "y2": 1231.25}}
-    }
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 3100, "y2": 3200}}}
   }
   sensors = VehicleComponents.Sensors.PlanarCar(radius = 0.25) {
-    "Dyad": {"placement": {"diagram": {"x1": 975, "x2": 1225, "y1": 775, "y2": 1025}}}
-  }
-  body = VehicleComponents.Sensors.BusMotion() {
     "Dyad": {
-      "placement": {"diagram": {"x1": 1306.25, "x2": 1406.25, "y1": 281.25, "y2": 381.25}}
-    }
-  }
-  slips = VehicleComponents.Sensors.BusSlip() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1375, "x2": 1475, "y1": 531.25, "y2": 631.25, "rot": 270}}
-    }
-  }
-  angles = VehicleComponents.Sensors.BusSlipAngle() {
-    "Dyad": {"placement": {"diagram": {"x1": 1375, "x2": 1475, "y1": 781.25, "y2": 881.25}}}
-  }
-  speeds = VehicleComponents.Sensors.BusWheelSpeed() {
-    "Dyad": {
-      "placement": {"diagram": {"x1": 1375, "x2": 1475, "y1": 1031.25, "y2": 1131.25, "rot": 90}}
+      "placement": {"diagram": {"x1": 1265.385, "x2": 1765.385, "y1": 976.925, "y2": 1476.925}}
     }
   }
 relations
-  connect(forward.y, motion.v_x) {
+  connect(forward.y, motion.a_x) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 300, "y": 2400}, {"x": 300, "y": 2630}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.a_y) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 300, "y": 2650}, {"x": 300, "y": 2670}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, turn.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 700, "y": 2650}, {"x": 700, "y": 2450}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(yaw.spline, turn.flange_a) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 650, "y": 231.25},
-            {"x": 650, "y": 150},
-            {"x": 200, "y": 150},
-            {"x": 200, "y": 280}
+            {"x": 1150, "y": 200},
+            {"x": 1150, "y": 100},
+            {"x": 700, "y": 100},
+            {"x": 700, "y": 2350},
+            {"x": 800, "y": 2350}
           ],
           "E": 2
         }
@@ -82,42 +208,17 @@ relations
       "path": {}
     }
   }
-  connect(sideways.y, motion.v_y) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 550, "y": 400}, {"x": 200, "y": 400}, {"x": 200, "y": 320}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(motion.frame_b, sensors.chassis) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 950, "y": 300}, {"x": 950, "y": 800}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(motion.frame_b, sensors.wheel_fl) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 950, "y": 300}, {"x": 950, "y": 825}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(motion.frame_b, sensors.wheel_fr) {
+  connect(turn.frame_b, sensors.chassis) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 650, "y": 300},
-            {"x": 650, "y": 650},
-            {"x": 550, "y": 650},
-            {"x": 550, "y": 950},
-            {"x": 700, "y": 950},
-            {"x": 700, "y": 875}
+            {"x": 950, "y": 2450},
+            {"x": 950, "y": 750},
+            {"x": 1600, "y": 750},
+            {"x": 1600, "y": 950},
+            {"x": 1615.3849999999998, "y": 950}
           ],
           "E": 2
         }
@@ -125,18 +226,22 @@ relations
       "path": {}
     }
   }
-  connect(motion.frame_b, sensors.wheel_rl) {
+  connect(turn.frame_b, arm_fl.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 950, "y": 2450}, {"x": 950, "y": 826.925}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(turn.frame_b, arm_fr.frame_a) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 650, "y": 300},
-            {"x": 650, "y": 650},
-            {"x": 550, "y": 650},
-            {"x": 550, "y": 1050},
-            {"x": 800, "y": 1050},
-            {"x": 800, "y": 925}
+            {"x": 2100, "y": 2450},
+            {"x": 2100, "y": 850},
+            {"x": 2050, "y": 850},
+            {"x": 2050, "y": 826.925}
           ],
           "E": 2
         }
@@ -144,20 +249,28 @@ relations
       "path": {}
     }
   }
-  connect(motion.frame_b, sensors.wheel_rr) {
+  connect(turn.frame_b, arm_rl.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 950, "y": 2450}, {"x": 950, "y": 1426.925}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(turn.frame_b, arm_rr.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 2050, "y": 2450}, {"x": 2050, "y": 1426.925}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(arm_fl.frame_b, sensors.wheel_fl) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 650, "y": 300},
-            {"x": 650, "y": 650},
-            {"x": 400, "y": 650},
-            {"x": 400, "y": 1350},
-            {"x": 150, "y": 1350},
-            {"x": 150, "y": 1700},
-            {"x": 900, "y": 1700},
-            {"x": 900, "y": 975}
+            {"x": 1150, "y": 826.925},
+            {"x": 1150, "y": 850},
+            {"x": 1200, "y": 850},
+            {"x": 1200, "y": 1126.925}
           ],
           "E": 2
         }
@@ -165,16 +278,16 @@ relations
       "path": {}
     }
   }
-  connect(spin.spline, sensors.spin_fl) {
+  connect(arm_fr.frame_b, sensors.wheel_fr) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 500, "y": 1500},
-            {"x": 500, "y": 900},
-            {"x": 650, "y": 900},
-            {"x": 650, "y": 850}
+            {"x": 1850, "y": 826.925},
+            {"x": 1850, "y": 850},
+            {"x": 1800, "y": 850},
+            {"x": 1800, "y": 1126.925}
           ],
           "E": 2
         }
@@ -182,16 +295,16 @@ relations
       "path": {}
     }
   }
-  connect(spin.spline, sensors.spin_fr) {
+  connect(arm_rl.frame_b, sensors.wheel_rl) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 700, "y": 1500},
-            {"x": 700, "y": 1000},
-            {"x": 750, "y": 1000},
-            {"x": 750, "y": 900}
+            {"x": 1150, "y": 1426.925},
+            {"x": 1150, "y": 1300},
+            {"x": 1200, "y": 1300},
+            {"x": 1200, "y": 1276.925}
           ],
           "E": 2
         }
@@ -199,20 +312,16 @@ relations
       "path": {}
     }
   }
-  connect(spin.spline, sensors.spin_rl) {
+  connect(arm_rr.frame_b, sensors.wheel_rr) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 400, "y": 1500},
-            {"x": 400, "y": 1400},
-            {"x": 200, "y": 1400},
-            {"x": 200, "y": 1650},
-            {"x": 950, "y": 1650},
-            {"x": 950, "y": 1100},
-            {"x": 850, "y": 1100},
-            {"x": 850, "y": 950}
+            {"x": 1850, "y": 1426.925},
+            {"x": 1850, "y": 1300},
+            {"x": 1800, "y": 1300},
+            {"x": 1800, "y": 1276.925}
           ],
           "E": 2
         }
@@ -220,18 +329,16 @@ relations
       "path": {}
     }
   }
-  connect(spin.spline, sensors.spin_rr) {
+  connect(spin_fl.spline, sensors.spin_fl) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 400, "y": 1500},
-            {"x": 400, "y": 1400},
-            {"x": 200, "y": 1400},
-            {"x": 200, "y": 1650},
-            {"x": 950, "y": 1650},
-            {"x": 950, "y": 1000}
+            {"x": 1150, "y": 1026.925},
+            {"x": 1150, "y": 1150},
+            {"x": 1200, "y": 1150},
+            {"x": 1200, "y": 1176.925}
           ],
           "E": 2
         }
@@ -239,18 +346,16 @@ relations
       "path": {}
     }
   }
-  connect(steer.y, steering.phi_ref) {
+  connect(spin_fr.spline, sensors.spin_fr) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 350, "y": 731.25},
-            {"x": 350, "y": 450},
-            {"x": 150, "y": 450},
-            {"x": 150, "y": 100},
-            {"x": 1000, "y": 100},
-            {"x": 1000, "y": 300}
+            {"x": 1850, "y": 1026.925},
+            {"x": 1850, "y": 1150},
+            {"x": 1800, "y": 1150},
+            {"x": 1800, "y": 1176.925}
           ],
           "E": 2
         }
@@ -258,28 +363,52 @@ relations
       "path": {}
     }
   }
+  connect(spin_rl.spline, sensors.spin_rl) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 1150, "y": 1626.925},
+            {"x": 1150, "y": 1600},
+            {"x": 1200, "y": 1600},
+            {"x": 1200, "y": 1326.925}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(spin_rr.spline, sensors.spin_rr) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 1850, "y": 1626.925},
+            {"x": 1850, "y": 1600},
+            {"x": 1800, "y": 1600},
+            {"x": 1800, "y": 1326.925}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(steer.y, steering.phi_ref) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(steering.spline, sensors.steering) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 1200, "y": 300}, {"x": 1200, "y": 750}, {"x": 1100, "y": 750}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(spin.support, housing.spline) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
           "M": [
-            {"x": 300, "y": 1600},
-            {"x": 750, "y": 1600},
-            {"x": 750, "y": 1100},
-            {"x": 806.25, "y": 1100}
+            {"x": 2150, "y": 3150},
+            {"x": 2150, "y": 700},
+            {"x": 1400, "y": 700},
+            {"x": 1400, "y": 950},
+            {"x": 1415.385, "y": 950}
           ],
           "E": 2
         }
@@ -287,16 +416,16 @@ relations
       "path": {}
     }
   }
-  connect(steering.support, housing.spline) {
+  connect(yaw.support, yaw_mount.spline) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
           "M": [
-            {"x": 1100, "y": 700},
-            {"x": 600, "y": 700},
-            {"x": 600, "y": 1100},
-            {"x": 806.25, "y": 1100}
+            {"x": 1050, "y": 700},
+            {"x": 850, "y": 700},
+            {"x": 850, "y": 1050},
+            {"x": 815.385, "y": 1050}
           ],
           "E": 2
         }
@@ -304,109 +433,67 @@ relations
       "path": {}
     }
   }
-  connect(sensors.bus, body.bus) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [
-            {"x": 1300, "y": 900},
-            {"x": 1300, "y": 350},
-            {"x": 1250, "y": 350},
-            {"x": 1250, "y": 331.25}
-          ],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(sensors.bus, slips.bus) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 1300, "y": 900}, {"x": 1300, "y": 700}, {"x": 1425, "y": 700}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
-  connect(sensors.bus, angles.bus) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 1350, "y": 900}, {"x": 1350, "y": 831.25}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(sensors.bus, speeds.bus) {
-    "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 1300, "y": 900}, {"x": 1300, "y": 1000}, {"x": 1425, "y": 1000}],
-          "E": 2
-        }
-      ],
-      "path": {}
-    }
-  }
+  connect(spin_fl.support, mount_fl.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(spin_fr.support, mount_fr.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(spin_rl.support, mount_rl.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(spin_rr.support, mount_rr.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(steering.support, steering_mount.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {
       "moving": {
         "stop": 1,
         "solver": "Auto",
-        "abstol": 1e-8,
-        "reltol": 1e-8,
+        "abstol": 1e-9,
+        "reltol": 1e-9,
         "atol": {
-          "body.vx": 1e-9,
-          "body.vy": 1e-9,
-          "body.r": 1e-9,
-          "body.ax": 1e-9,
-          "body.ay": 1e-9,
-          "body.x": 1e-6,
-          "body.y": 1e-6,
-          "body.psi": 1e-9,
-          "body.delta_sw": 1e-9,
-          "body.beta": 1e-7,
-          "slips.kappa_fl": 1e-9,
-          "slips.kappa_fr": 1e-9,
-          "slips.kappa_rl": 1e-9,
-          "slips.kappa_rr": 1e-9,
-          "angles.alpha_fl": 1e-7,
-          "angles.alpha_fr": 1e-7,
-          "angles.alpha_rl": 1e-7,
-          "angles.alpha_rr": 1e-7,
-          "speeds.omega_fl": 1e-9,
-          "speeds.omega_fr": 1e-9,
-          "speeds.omega_rl": 1e-9,
-          "speeds.omega_rr": 1e-9
+          "sensors.bus.vx": 1e-5,
+          "sensors.bus.vy": 1e-5,
+          "sensors.bus.r": 1e-7,
+          "sensors.bus.ax": 1e-5,
+          "sensors.bus.ay": 1e-5,
+          "sensors.bus.x": 1e-5,
+          "sensors.bus.y": 1e-5,
+          "sensors.bus.psi": 1e-7,
+          "sensors.bus.delta_sw": 1e-9,
+          "sensors.bus.beta": 1e-5,
+          "sensors.bus.kappa_fl": 1e-5,
+          "sensors.bus.kappa_fr": 1e-5,
+          "sensors.bus.kappa_rl": 1e-5,
+          "sensors.bus.kappa_rr": 1e-5,
+          "sensors.bus.alpha_fl": 1e-5,
+          "sensors.bus.alpha_fr": 1e-5,
+          "sensors.bus.alpha_rl": 1e-5,
+          "sensors.bus.alpha_rr": 1e-5,
+          "sensors.bus.omega_fl": 1e-7,
+          "sensors.bus.omega_fr": 1e-7,
+          "sensors.bus.omega_rl": 1e-7,
+          "sensors.bus.omega_rr": 1e-7
         },
         "expect": {
           "final": {
-            "body.vx": 20.0,
-            "body.vy": 1.0,
-            "body.r": 0.0,
-            "body.ax": 0.0,
-            "body.ay": 0.0,
-            "body.x": 20.0,
-            "body.y": 1.0,
-            "body.psi": 0.0,
-            "body.delta_sw": 0.5,
-            "body.beta": 0.0499584,
-            "slips.kappa_fl": -0.1,
-            "slips.kappa_fr": -0.1,
-            "slips.kappa_rl": -0.1,
-            "slips.kappa_rr": -0.1,
-            "angles.alpha_fl": 0.0499584,
-            "angles.alpha_fr": 0.0499584,
-            "angles.alpha_rl": 0.0499584,
-            "angles.alpha_rr": 0.0499584,
-            "speeds.omega_fl": 72.0,
-            "speeds.omega_fr": 72.0,
-            "speeds.omega_rl": 72.0,
-            "speeds.omega_rr": 72.0
+            "sensors.bus.vx": 19.363634,
+            "sensors.bus.vy": -6.503820,
+            "sensors.bus.r": 0.2,
+            "sensors.bus.ax": 0.442733,
+            "sensors.bus.ay": -1.026639,
+            "sensors.bus.x": 18.5,
+            "sensors.bus.y": 7.75,
+            "sensors.bus.psi": 0.7,
+            "sensors.bus.delta_sw": 0.3,
+            "sensors.bus.beta": -0.324039,
+            "sensors.bus.kappa_fl": -0.219101,
+            "sensors.bus.kappa_fr": -0.205887,
+            "sensors.bus.kappa_rl": -0.167041,
+            "sensors.bus.kappa_rr": -0.154654,
+            "sensors.bus.alpha_fl": -0.315221,
+            "sensors.bus.alpha_fr": -0.310533,
+            "sensors.bus.alpha_rl": -0.340417,
+            "sensors.bus.alpha_rr": -0.335410,
+            "sensors.bus.omega_fl": 60.0,
+            "sensors.bus.omega_fr": 62.0,
+            "sensors.bus.omega_rl": 64.0,
+            "sensors.bus.omega_rr": 66.0
           }
         }
       }

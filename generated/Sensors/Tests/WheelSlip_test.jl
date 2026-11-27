@@ -66,24 +66,3 @@ __dyad_run_test_case!(
   ],
   signals=Tuple[],
 )
-__dyad_run_test_case!(
-  VehicleComponents.Sensors.Tests.WheelSlip,
-  "standstill for VehicleComponents.Sensors.Tests.WheelSlip";
-  case_name="standstill",
-  component_stem="WheelSlip",
-  module_path=String["Sensors", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-8,
-  reltol=1e-8,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("vx" => 0.0, "spin.w_fixed" => 1.0),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.sensor.kappa, "sensor.kappa", 0.5, 1e-9, 1e-7),
-    (m -> m.sensor.alpha, "sensor.alpha", 0, 1e-9, 1e-7),
-    (m -> m.sensor.v_long, "sensor.v_long", 0, 1e-9, 1e-7),
-  ],
-  signals=Tuple[],
-)

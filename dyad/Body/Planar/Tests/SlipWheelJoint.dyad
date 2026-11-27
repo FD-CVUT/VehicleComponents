@@ -1,0 +1,158 @@
+"""
+`SlipWheelJoint` with every slip prescribed: the wheel center moves at a constant velocity with its
+heading held at `h` = 0.7 rad off the world x axis, the shaft turns at the constant speed `w`, a
+constant 4000 N presses the tire onto the road and `mu_scale` is a constant.
+
+The center's world velocity is the heading's 20 m/s forward and `vy` to the left, rotated by h,
+so in the wheel's own frame v_long = 20 m/s and v_lat = `vy` whatever h is; a wrong sign or a
+swapped sine in the joint's frame resolution would change both. The radius is the default
+0.31 m, so the shaft speed 20/0.31 rad/s rolls at 20 m/s and 19/0.31 rad/s at 19 m/s.
+
+Below the adhesion slip speed vAdhesion = 0.12 r w the friction is mu_A c(x), c(x) = -x³/2 + 3x/2
+with x the slip speed over vAdhesion, and the tire pushes the vehicle against the slip velocity
+with mu_scale · mu · F_z:
+
+- `lateral`: v_long - r w = 0 and v_lat = 1.2 m/s, vAdhesion = 2.4 m/s, x = 0.5, c = 0.6875:
+  F_y = -0.6875 · 4000 = -2750 N, F_x = 0 and no torque on the shaft.
+- `combined`: r w = 19 m/s, so the longitudinal slip speed is 1 m/s and the lateral 1.2 m/s; the
+  slip speed is sqrt(1 + 1.44) = 1.5620499 m/s against vAdhesion = 2.28 m/s, x = 0.6851096,
+  c = 0.8668777, so the force is 3467.5108 N along the slip velocity: F_x = -3467.5108/1.5620499
+  = -2219.8463 N, F_y = -3467.5108 · 1.2/1.5620499 = -2663.8156 N. The road pushes the wheel's
+  shaft with -r F_x the other way: the shaft takes -0.31 · 2219.8463 = -688.1524 N m.
+- `scaled`: as `lateral` with mu_scale = 0.5, F_y = -1375 N.
+- `lifted`: a -1000 N load lifts the tire, F_z = 0 and F_y = 0.
+"""
+test component SlipWheelJoint
+  "Heading of the wheel off the world x axis"
+  parameter h::Angle = 0.7
+  "Lateral speed of the wheel center in its own frame"
+  parameter vy::Velocity = 1.2
+  forward = BlockComponents.Sources.Constant(k = 20.0 * cos(h) - vy * sin(h)) {
+    "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 100, "y2": 200}}}
+  }
+  sideways = BlockComponents.Sources.Constant(k = 20.0 * sin(h) + vy * cos(h)) {
+    "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 250, "y2": 350}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 150, "y2": 250}}}
+  }
+  heading = MultibodyComponents.PlanarMechanics.FixedRotation(alpha = h, render = false) {
+    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 150, "y2": 250}}}
+  }
+  spin = RotationalComponents.Sources.ConstantVelocity(w_fixed = 20.0 / 0.31, phi = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 650, "y2": 750}}}
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 850, "y2": 950}}}
+  }
+  load = TranslationalComponents.Sources.ConstantForce(f_constant = 4000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1000, "x2": 900, "y1": 650, "y2": 750}}}
+  }
+  ground = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 900, "x2": 1000, "y1": 850, "y2": 950}}}
+  }
+  grip = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 400, "y2": 500}}}
+  }
+  tire = VehicleComponents.Body.Planar.SlipWheelJoint() {
+    "Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 650, "y2": 750}}}
+  }
+relations
+  connect(forward.y, motion.v_x) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 250, "y": 150}, {"x": 250, "y": 180}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.v_y) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 250, "y": 300}, {"x": 250, "y": 220.00000000000003}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, heading.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(heading.frame_b, tire.frame_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 650, "y": 200}, {"x": 650, "y": 600}, {"x": 670, "y": 600}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(spin.spline, tire.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(spin.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(load.flange, tire.load) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(load.support, ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(grip.y, tire.mu_scale) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 600, "y": 450}, {"x": 600, "y": 600}, {"x": 625, "y": 600}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "lateral": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"tire.F_x": 1e-4, "tire.F_y": 1e-4, "tire.F_z": 1e-6, "tire.spline.tau": 1e-4},
+        "expect": {
+          "final": {
+            "tire.F_x": 0.0,
+            "tire.F_y": -2750.0,
+            "tire.F_z": 4000.0,
+            "tire.spline.tau": 0.0
+          }
+        }
+      },
+      "combined": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"spin.w_fixed": 61.29032258064516},
+        "atol": {"tire.F_x": 0.001, "tire.F_y": 0.001, "tire.spline.tau": 0.001},
+        "expect": {
+          "final": {"tire.F_x": -2219.8463, "tire.F_y": -2663.8156, "tire.spline.tau": -688.1524}
+        }
+      },
+      "scaled": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"grip.k": 0.5},
+        "atol": {"tire.F_y": 1e-4},
+        "expect": {"final": {"tire.F_y": -1375.0}}
+      },
+      "lifted": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"load.f_constant": -1000.0},
+        "atol": {"tire.F_y": 1e-6, "tire.F_z": 1e-6},
+        "expect": {"final": {"tire.F_y": 0.0, "tire.F_z": 0.0}}
+      }
+    }
+  }
+}
+end

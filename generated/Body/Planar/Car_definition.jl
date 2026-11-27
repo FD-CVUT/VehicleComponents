@@ -18,7 +18,9 @@ linkage turns the front wheels on revolute joints. `QuasiStaticLoads` pushes eac
 load onto its tire, and every `Wheel` reads its grip from the road `grip`.
 
 Ports:
-- `steering` the steering-wheel shaft; its angle steers the car, positive to the left.
+- `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
+  be held or driven (a `Fixed`, or a position source): the wheels carry no aligning torque, so
+  an open steering shaft leaves its angle undetermined.
 - `chassis` the chassis frame at the center of mass, for the road load and the road grade.
 - `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` the wheel-center frames.
 - `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft behind its brake, where a drive
@@ -32,6 +34,10 @@ gravity is off. The car starts at rest at the world origin heading along x, with
 rest and every brake released; give another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
 planar car (a mid-size sedan, assumed).
+
+Limit on Dyad 3.5.0: once the car yaws, the test harness's default code optimization gives
+wrong results (JuliaComputing/DyadCompilerPasses.jl#43, fixed in DyadCompilerPasses 0.3.14,
+which dyad 3.6 ships); straight-line runs are unaffected.
 
 ## Parameters:
 

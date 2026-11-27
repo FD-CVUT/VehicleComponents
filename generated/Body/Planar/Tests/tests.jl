@@ -21,5 +21,6 @@ include("QuasiStaticLoads_test.jl")
 include("RoadGrade_test.jl")
 include("RoadGrip_test.jl")
 include("RoadLoad_test.jl")
+include("SlipWheelJoint_test.jl")
 include("Wheel_test.jl")
 end

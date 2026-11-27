@@ -27,3 +27,14 @@ component listed here.
 | Component | Computes |
 |---|---|
 | `Chassis.Brakes.Line` | Laminar Hagen-Poiseuille pressure drop of a brake line |
+
+## Slip wheel joint → MultibodyComponents `SlipBasedWheelJoint`
+
+MultibodyComponents 0.3.0 regularizes the slip-speed magnitude outside the square root,
+`sqrt(v_slip_long^2 + v_slip_lat^2) + 0.0001`, so its Jacobian is infinite at zero slip, where a
+free-rolling wheel sits. A MultibodyComponents release that regularizes inside the root replaces
+the copied equations; the load flange and the `mu_scale` input stay the library's.
+
+| Component | Computes |
+|---|---|
+| `Body.Planar.SlipWheelJoint` | Combined-slip planar tire contact, with the slip speed regularized inside the square root |

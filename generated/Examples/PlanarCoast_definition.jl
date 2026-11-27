@@ -5,37 +5,68 @@
 
 
 @doc Markdown.doc"""
-   PlanarCoast(; name, m, x0, __overrides)
+   PlanarCoast(; name, m, x0, f_r, __overrides)
 
-Straight-line coast of the planar car on the planar platform: the steering wheel held straight
-by `column`, no brake request from `release`, no drive, on the 2 % ramp road. The car starts at
-`x0` on the road's center line, heading along x, at 25 m/s, with every wheel rolling at
-25/0.31 rad/s. It has no ports.
+Straight-line runs of the planar car on the 2 % ramp road, steering wheel held straight by
+`column`, no drive: two coasts and a braked stop with load transfer. The car's chassis carries
+its `RoadLoad`, which reads the grade from a `RoadGrade` under the chassis. It has no ports.
 
-`ramp_z.crg` is level at height 0 for x below -2 m and climbs at exactly 2 % on 0 to 500 m
-(`Body.Planar.Tests.RoadGrade` derives both).
+The car is the default `Body.Planar.Car` of `m` = 1500 kg with its CG `h_cg` = 0.55 m above the
+road and load transfer on. Each case starts on the road's center line, heading along x, at
+25 m/s with every wheel rolling at 25/0.31 rad/s, from x = `x0`; `brake.k` is each wheel's brake
+request.
 
-- `flat` starts at x0 = -300 m and stays below -50 m, on the level road.
-- `climb` starts at x0 = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
+`ramp_z.crg` climbs at exactly 2 % on 0 to 500 m (`Body.Planar.Tests.RoadGrade` derives it).
+Before its grid starts at x = 0 the road blends over 2 m to height 0 and is level below -2 m,
+so its slope there is exactly 0.
+
+- `flat` starts at x = -300 m and stays below -50 m, on the level road.
+- `climb` starts at x = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
   cos(alpha) = 1/sqrt(1.0004) = 0.99980006 and sin(alpha) = 0.01999600.
+- `braking` starts at x = -300 m, on the level road, with 250 N m on every brake.
 
-The wheels turn with the chassis, so the four wheel inertias add J/r² each to the mass the road
-load decelerates: m_eff = 1500 + 4 · 1/0.31² = 1541.6233 kg. The tires slip only the few mm/s
-that spin the wheels down, so the car follows m_eff dv/dt = -(c v² + A) with
-c = rho CdA/2 = 0.378 kg/m and A the speed-independent part of the road load:
+The wheels turn with the chassis, so the four wheel inertias add J/r² each to the mass the
+forces decelerate: m_eff = 1500 + 4 · 1/0.31² = 1541.6233 kg. Coasting, the tires slip only the
+few mm/s that spin the wheels down, so the car follows m_eff dv/dt = -(c v² + A) with
+c = rho CdA/2 = 0.378 kg/m and A the speed-independent part of the force:
 
 - flat: A = f_r m g = 0.012 · 1500 · 9.80665 = 176.5197 N;
 - climb: A = m g (f_r cos(alpha) + sin(alpha)) = 14709.975 · (0.0119976 + 0.0199960) =
-  470.6251 N.
+  470.6251 N;
+- braking: A = 176.5197 + 4 · 250/0.31 = 176.5197 + 3225.8065 = 3402.3262 N, once the brakes'
+  0.03 s actuator lag has passed. The lag delivers the brake force's full impulse 0.03 s late,
+  so the run is the flat coast for 0.03 s followed by the braked law for 1.97 s; the drag's
+  change over the lag is below 1e-4 m/s.
 
-With s = sqrt(A/c), k = sqrt(A c)/m_eff and theta0 = atan(25/s), the speed is
-v(t) = s tan(theta0 - k t) and the distance (m_eff/c) ln(cos(theta0 - k t)/cos(theta0)). At
-10 s:
+With s = sqrt(A/c), k = sqrt(A c)/m_eff and theta0 = atan(v0/s), the speed is
+v(t) = s tan(theta0 - k t) and the distance (m_eff/c) ln(cos(theta0 - k t)/cos(theta0)):
 
-- flat: s = 21.609797 m/s, k = 0.0052986 1/s, theta0 = 0.858006, v = 22.474921 m/s after
+- flat, 10 s: s = 21.609797 m/s, k = 0.0052986 1/s, theta0 = 0.858006, v = 22.474921 m/s after
   237.129915 m, so x = -62.870085 m;
-- climb: s = 35.285123 m/s, k = 0.0086518 1/s, theta0 = 0.616417, v = 20.669387 m/s after
-  227.943473 m, so x = 237.943473 m.
+- climb, 10 s: s = 35.285123 m/s, k = 0.0086518 1/s, theta0 = 0.616417, v = 20.669387 m/s
+  after 227.943473 m, so x = 237.943473 m;
+- braking, 2 s: the flat coast's first 0.03 s ends at 24.991969 m/s after 0.749880 m; then
+  s = 94.872877 m/s, k = 0.0232625 1/s and theta0 = atan(24.991969/s) = 0.257574 give
+  20.394800 m/s after another 44.689427 m, at -(0.378 · 20.394800² + 3402.3262)/1541.6233 =
+  -2.308965 m/s².
+
+Braking, the tires carry the brake torque at a slip that is not small. Each wheel's tire force is
+F = T/r + J a/r² = 806.45 - 24.03 = 782.42 N (the wheel decelerates with the car), and its
+longitudinal slip speed v_sl solves F = F_z c(x) with x = v_sl/(s_A (v - v_sl)), s_A = 0.12
+front and 0.09 rear; with the loads below, x = 0.118049 front and 0.180846 rear, so
+v_sl = 0.284891 m/s front and 0.326641 m/s rear. The wheels spin that much slower than rolling,
+so the car keeps the wheels' missing angular momentum: its speed is higher by
+J Σv_sl/(r² m_eff) = 1 · 1.223064/(0.0961 · 1541.6233) = 0.008256 m/s, v = 20.403056 m/s. The
+slip shrinks with the speed (v_sl ∝ v at a constant force), which adds J Σv_sl a/(v r² m_eff) =
+-0.000935 m/s² to the acceleration, a = -2.309900 m/s², and over the braking phase the speed
+offset adds 0.008256 · 44.689427/20.394800 = 0.018091 m to the distance, x = -254.542602 m.
+
+The braked case's wheel loads: at rest each front wheel carries m g b/(2 L) = 4086.1042 N and
+each rear wheel m g a/(2 L) = 3268.8833 N (a = 1.2 m, b = 1.5 m, L = 2.7 m). The loads see the
+acceleration through the 0.05 s suspension lag, which trails a ramp of slope
+da/dt = -2 c v a/m_eff = 0.023093 m/s³ by 0.05 · 0.023093 = 0.001155 m/s², so they see
+-2.311055 m/s² and move m · 2.311055 · 0.55/(2 · 2.7) = 353.0778 N onto each front wheel:
+4439.1820 N front and 2915.8055 N rear.
 
 Straight ahead on a level-across road with equal loads left and right, nothing turns the car: it
 keeps y = 0 and no yaw rate. The straight run is neutrally stable sideways, so rounding drifts y
@@ -46,9 +77,10 @@ by up to about 1e-5 m over the run, which its tolerance allows.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `m`         | Vehicle mass, for the car and its road load                         | kg  |   1500.0 |
-| `x0`         | Start position along the road                         | m  |   -300.0 |
+| `x0`         | Start position along the road. The compiler takes no per-case start for an array state such as `car.body.r`, so the cases set this instead                         | m  |   -300.0 |
+| `f_r`         | Rolling resistance coefficient, a car tire on asphalt                         | --  |   0.012 |
 """
-@component function PlanarCoast(; name = nothing, var"m"=Float64(1500.0), var"x0"=-300.0, __overrides = Dict{String, Any}())
+@component function PlanarCoast(; name = nothing, var"m"=Float64(1500.0), var"x0"=-300.0, var"f_r"=0.012, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,6 +101,7 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   ### Keyword argument overrides
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "x0") && (x0 = pop!(__overrides, "x0"))
+  haskey(__overrides, "f_r") && (f_r = pop!(__overrides, "f_r"))
 
   ### Structural Parameters (functions)
 
@@ -87,8 +120,11 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   append!(__params, @parameters (m::Real), [description = "Vehicle mass, for the car and its road load", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__x0 = x0
-  append!(__params, @parameters (x0::Real), [description = "Start position along the road"])
+  append!(__params, @parameters (x0::Real), [description = "Start position along the road. The compiler takes no per-case start for an array state such as\n  `car.body.r`, so the cases set this instead"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, x0, __local__x0)
+  __local__f_r = f_r
+  append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient, a car tire on asphalt"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f_r, __local__f_r)
 
   ### Final Parameters (assignments)
 
@@ -112,7 +148,7 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   car_dict["rl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(25.0 / 0.31)
   car_dict["rr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(25.0 / 0.31)
   merge!(car_dict, car_overrides)
-  push!(__systems, @named car = VehicleComponents.Body.Planar.Car(; m=m, __overrides = car_dict))
+  push!(__systems, @named car = VehicleComponents.Body.Planar.Car(; m=m, h_cg=0.55, load_transfer=true, __overrides = car_dict))
   # Subcomponent roadload of type VehicleComponents.Body.Planar.RoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleComponents.Body.Planar.RoadLoad(; m=m, __overrides = roadload_overrides))
@@ -121,13 +157,13 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   push!(__systems, @named road = VehicleComponents.Body.Planar.RoadGrade(; road=VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg"), __overrides = road_overrides))
   # Subcomponent tire of type BlockComponents.Sources.Constant
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
-  push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=0.012, __overrides = tire_overrides))
+  push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=f_r, __overrides = tire_overrides))
   # Subcomponent column of type RotationalComponents.Components.Fixed
   column_overrides = __pop_subcomponent_overrides!(__overrides, "column")
   push!(__systems, @named column = RotationalComponents.Components.Fixed(; __overrides = column_overrides))
-  # Subcomponent release of type BlockComponents.Sources.Constant
-  release_overrides = __pop_subcomponent_overrides!(__overrides, "release")
-  push!(__systems, @named release = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = release_overrides))
+  # Subcomponent brake of type BlockComponents.Sources.Constant
+  brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
+  push!(__systems, @named brake = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = brake_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -144,7 +180,7 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   push!(__eqs, connect(road.grade, roadload.grade))
   push!(__eqs, connect(tire.y, roadload.f_r))
   push!(__eqs, connect(column.spline, car.steering))
-  push!(__eqs, connect(release.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr))
+  push!(__eqs, connect(brake.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -130,3 +130,43 @@ __dyad_run_test_case!(
   ],
   signals=Tuple[],
 )
+__dyad_run_test_case!(
+  VehicleComponents.Body.Planar.Tests.Wheel,
+  "heading for VehicleComponents.Body.Planar.Tests.Wheel";
+  case_name="heading",
+  component_stem="Wheel",
+  module_path=String["Body", "Planar", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("vy" => 1.2, "h" => 0.7),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.wheel.F_y, "wheel.F_y", -2750, 0.1, 1e-5),
+    (m -> m.icy.F_y, "icy.F_y", -825, 0.1, 1e-5),
+  ],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Body.Planar.Tests.Wheel,
+  "braking_cornering for VehicleComponents.Body.Planar.Tests.Wheel";
+  case_name="braking_cornering",
+  component_stem="Wheel",
+  module_path=String["Body", "Planar", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("vy" => 1.2, "tau" => 1000.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.wheel.F_x, "wheel.F_x", -3225.81, 0.1, 1e-5),
+    (m -> m.wheel.F_y, "wheel.F_y", -2321.5, 0.1, 1e-5),
+  ],
+  signals=Tuple[],
+)

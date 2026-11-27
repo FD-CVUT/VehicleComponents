@@ -7,21 +7,33 @@
 @doc Markdown.doc"""
    PlanarCar(; name, __overrides)
 
-`PlanarCar`, the planar car's sensor cluster, read back through the four bus readers
-`BusMotion`, `BusSlip`, `BusSlipAngle` and `BusWheelSpeed`.
+`PlanarCar`, the planar car's sensor cluster, on a chassis whose motion is prescribed: every
+reading differs, so a swapped wheel, a swapped axis or a reading in the wrong frame fails.
 
-The chassis frame starts at the world origin heading along x and moves at a prescribed constant
-20 m/s forward and 1 m/s to the left, with its heading held. The four wheel centers sit on the
-chassis frame, so each moves as the chassis does. One prescribed constant speed of 72 rad/s
-spins all four wheel shafts; the cluster's radius is 0.25 m, so each wheel rolls at 18 m/s. The
-steering wheel is held at 0.5 rad.
+The chassis point starts at the world origin with velocity (18, 8) m/s and accelerates at a
+constant (1, -0.5) m/s² in the world frame. A revolute joint on it turns the chassis frame at a
+constant yaw rate r = 0.2 rad/s from the heading 0.5 rad. The wheel centers sit on the chassis at
+(1.2, ±0.775) m front and (-1.5, ±0.775) m rear, left positive, unsteered. Each wheel shaft turns
+at its own constant speed, 60, 62, 64 and 66 rad/s for fl, fr, rl, rr, each source on its own
+mount; the cluster's radius is 0.25 m, so they roll at 15, 15.5, 16 and 16.5 m/s. The steering wheel is held at 0.3 rad.
 
-At t = 1 s:
+At t = 1 s the heading is psi = 0.7 rad, the world velocity (19, 7.5) m/s and the position
+(18.5, 7.75) m. In the chassis frame, with c = cos 0.7 = 0.7648422 and s = sin 0.7 = 0.6442177:
 
-- motion: vx = 20 m/s, vy = 1 m/s, r = 0, ax = ay = 0, x = 20 m, y = 1 m, psi = 0,
-  delta_sw = 0.5 rad, and beta = atan(1/max(20, 1)) = atan(0.05) = 0.0499584 rad;
-- each wheel: kappa = (18 - 20)/20 = -0.1, alpha = atan(1/20) = 0.0499584 rad,
-  omega = 72 rad/s.
+- vx = 19 c + 7.5 s = 19.363634 m/s, vy = -19 s + 7.5 c = -6.503820 m/s, r = 0.2 rad/s;
+- ax = 1 c - 0.5 s = 0.442733 m/s² and ay = -1 s - 0.5 c = -1.026639 m/s²: the point's
+  acceleration is the prescribed one, resolved in the turning frame;
+- beta = atan(vy/max(vx, 1)) = atan(-6.503820/19.363634) = -0.324039 rad;
+- x = 18.5 m, y = 7.75 m, psi = 0.7 rad and delta_sw = 0.3 rad.
+
+A wheel at (p_x, p_y) moves at vx - r p_y along its heading and vy + r p_x across it:
+
+| wheel | v_x [m/s] | v_y [m/s] | kappa = (r w - v_x)/v_x | alpha = atan(v_y/v_x) |
+|---|---|---|---|---|
+| fl | 19.208634 | -6.263820 | (15 - 19.208634)/19.208634 = -0.219101 | -0.315221 |
+| fr | 19.518634 | -6.263820 | (15.5 - 19.518634)/19.518634 = -0.205887 | -0.310533 |
+| rl | 19.208634 | -6.803820 | (16 - 19.208634)/19.208634 = -0.167041 | -0.340417 |
+| rr | 19.518634 | -6.803820 | (16.5 - 19.518634)/19.518634 = -0.154654 | -0.335410 |
 """
 @component function PlanarCar(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -69,43 +81,85 @@ At t = 1 s:
   ### Components
   # Subcomponent forward of type BlockComponents.Sources.Constant
   forward_overrides = __pop_subcomponent_overrides!(__overrides, "forward")
-  push!(__systems, @named forward = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = forward_overrides))
+  push!(__systems, @named forward = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = forward_overrides))
   # Subcomponent sideways of type BlockComponents.Sources.Constant
   sideways_overrides = __pop_subcomponent_overrides!(__overrides, "sideways")
-  push!(__systems, @named sideways = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = sideways_overrides))
-  # Subcomponent motion of type MultibodyComponents.PlanarMechanics.PrescribedVelocity
+  push!(__systems, @named sideways = BlockComponents.Sources.Constant(; k=-0.5, __overrides = sideways_overrides))
+  # Subcomponent motion of type MultibodyComponents.PlanarMechanics.PrescribedAcceleration
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
-  push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; __overrides = motion_overrides))
-  # Subcomponent spin of type RotationalComponents.Sources.ConstantVelocity
-  spin_overrides = __pop_subcomponent_overrides!(__overrides, "spin")
-  spin_dict = Dict{String, Any}()
-  spin_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
-  merge!(spin_dict, spin_overrides)
-  push!(__systems, @named spin = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(72.0), __overrides = spin_dict))
+  push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedAcceleration(; v_start=[Float64(18.0), Float64(8.0)], __overrides = motion_overrides))
+  # Subcomponent turn of type MultibodyComponents.PlanarMechanics.Revolute
+  turn_overrides = __pop_subcomponent_overrides!(__overrides, "turn")
+  push!(__systems, @named turn = MultibodyComponents.PlanarMechanics.Revolute(; render=false, __overrides = turn_overrides))
+  # Subcomponent yaw of type RotationalComponents.Sources.ConstantVelocity
+  yaw_overrides = __pop_subcomponent_overrides!(__overrides, "yaw")
+  yaw_dict = Dict{String, Any}()
+  yaw_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.5)
+  merge!(yaw_dict, yaw_overrides)
+  push!(__systems, @named yaw = RotationalComponents.Sources.ConstantVelocity(; w_fixed=0.2, __overrides = yaw_dict))
+  # Subcomponent yaw_mount of type RotationalComponents.Components.Fixed
+  yaw_mount_overrides = __pop_subcomponent_overrides!(__overrides, "yaw_mount")
+  push!(__systems, @named yaw_mount = RotationalComponents.Components.Fixed(; __overrides = yaw_mount_overrides))
+  # Subcomponent mount_fl of type RotationalComponents.Components.Fixed
+  mount_fl_overrides = __pop_subcomponent_overrides!(__overrides, "mount_fl")
+  push!(__systems, @named mount_fl = RotationalComponents.Components.Fixed(; __overrides = mount_fl_overrides))
+  # Subcomponent mount_fr of type RotationalComponents.Components.Fixed
+  mount_fr_overrides = __pop_subcomponent_overrides!(__overrides, "mount_fr")
+  push!(__systems, @named mount_fr = RotationalComponents.Components.Fixed(; __overrides = mount_fr_overrides))
+  # Subcomponent mount_rl of type RotationalComponents.Components.Fixed
+  mount_rl_overrides = __pop_subcomponent_overrides!(__overrides, "mount_rl")
+  push!(__systems, @named mount_rl = RotationalComponents.Components.Fixed(; __overrides = mount_rl_overrides))
+  # Subcomponent mount_rr of type RotationalComponents.Components.Fixed
+  mount_rr_overrides = __pop_subcomponent_overrides!(__overrides, "mount_rr")
+  push!(__systems, @named mount_rr = RotationalComponents.Components.Fixed(; __overrides = mount_rr_overrides))
+  # Subcomponent steering_mount of type RotationalComponents.Components.Fixed
+  steering_mount_overrides = __pop_subcomponent_overrides!(__overrides, "steering_mount")
+  push!(__systems, @named steering_mount = RotationalComponents.Components.Fixed(; __overrides = steering_mount_overrides))
+  # Subcomponent arm_fl of type MultibodyComponents.PlanarMechanics.FixedTranslation
+  arm_fl_overrides = __pop_subcomponent_overrides!(__overrides, "arm_fl")
+  push!(__systems, @named arm_fl = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[1.2, 0.775], render=false, __overrides = arm_fl_overrides))
+  # Subcomponent arm_fr of type MultibodyComponents.PlanarMechanics.FixedTranslation
+  arm_fr_overrides = __pop_subcomponent_overrides!(__overrides, "arm_fr")
+  push!(__systems, @named arm_fr = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[1.2, -0.775], render=false, __overrides = arm_fr_overrides))
+  # Subcomponent arm_rl of type MultibodyComponents.PlanarMechanics.FixedTranslation
+  arm_rl_overrides = __pop_subcomponent_overrides!(__overrides, "arm_rl")
+  push!(__systems, @named arm_rl = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[-1.5, 0.775], render=false, __overrides = arm_rl_overrides))
+  # Subcomponent arm_rr of type MultibodyComponents.PlanarMechanics.FixedTranslation
+  arm_rr_overrides = __pop_subcomponent_overrides!(__overrides, "arm_rr")
+  push!(__systems, @named arm_rr = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[-1.5, -0.775], render=false, __overrides = arm_rr_overrides))
+  # Subcomponent spin_fl of type RotationalComponents.Sources.ConstantVelocity
+  spin_fl_overrides = __pop_subcomponent_overrides!(__overrides, "spin_fl")
+  spin_fl_dict = Dict{String, Any}()
+  spin_fl_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(spin_fl_dict, spin_fl_overrides)
+  push!(__systems, @named spin_fl = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(60.0), __overrides = spin_fl_dict))
+  # Subcomponent spin_fr of type RotationalComponents.Sources.ConstantVelocity
+  spin_fr_overrides = __pop_subcomponent_overrides!(__overrides, "spin_fr")
+  spin_fr_dict = Dict{String, Any}()
+  spin_fr_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(spin_fr_dict, spin_fr_overrides)
+  push!(__systems, @named spin_fr = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(62.0), __overrides = spin_fr_dict))
+  # Subcomponent spin_rl of type RotationalComponents.Sources.ConstantVelocity
+  spin_rl_overrides = __pop_subcomponent_overrides!(__overrides, "spin_rl")
+  spin_rl_dict = Dict{String, Any}()
+  spin_rl_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(spin_rl_dict, spin_rl_overrides)
+  push!(__systems, @named spin_rl = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(64.0), __overrides = spin_rl_dict))
+  # Subcomponent spin_rr of type RotationalComponents.Sources.ConstantVelocity
+  spin_rr_overrides = __pop_subcomponent_overrides!(__overrides, "spin_rr")
+  spin_rr_dict = Dict{String, Any}()
+  spin_rr_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
+  merge!(spin_rr_dict, spin_rr_overrides)
+  push!(__systems, @named spin_rr = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(66.0), __overrides = spin_rr_dict))
   # Subcomponent steer of type BlockComponents.Sources.Constant
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.5, __overrides = steer_overrides))
+  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.3, __overrides = steer_overrides))
   # Subcomponent steering of type RotationalComponents.Sources.Position
   steering_overrides = __pop_subcomponent_overrides!(__overrides, "steering")
   push!(__systems, @named steering = RotationalComponents.Sources.Position(; ref_type=RotationalComponents.Sources.ReferenceType.Exact(), __overrides = steering_overrides))
-  # Subcomponent housing of type RotationalComponents.Components.Fixed
-  housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
   # Subcomponent sensors of type VehicleComponents.Sensors.PlanarCar
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleComponents.Sensors.PlanarCar(; radius=0.25, __overrides = sensors_overrides))
-  # Subcomponent body of type VehicleComponents.Sensors.BusMotion
-  body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleComponents.Sensors.BusMotion(; __overrides = body_overrides))
-  # Subcomponent slips of type VehicleComponents.Sensors.BusSlip
-  slips_overrides = __pop_subcomponent_overrides!(__overrides, "slips")
-  push!(__systems, @named slips = VehicleComponents.Sensors.BusSlip(; __overrides = slips_overrides))
-  # Subcomponent angles of type VehicleComponents.Sensors.BusSlipAngle
-  angles_overrides = __pop_subcomponent_overrides!(__overrides, "angles")
-  push!(__systems, @named angles = VehicleComponents.Sensors.BusSlipAngle(; __overrides = angles_overrides))
-  # Subcomponent speeds of type VehicleComponents.Sensors.BusWheelSpeed
-  speeds_overrides = __pop_subcomponent_overrides!(__overrides, "speeds")
-  push!(__systems, @named speeds = VehicleComponents.Sensors.BusWheelSpeed(; __overrides = speeds_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -118,25 +172,31 @@ At t = 1 s:
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(forward.y, motion.v_x))
-  push!(__eqs, connect(sideways.y, motion.v_y))
-  push!(__eqs, connect(motion.frame_b, sensors.chassis))
-  push!(__eqs, connect(motion.frame_b, sensors.wheel_fl))
-  push!(__eqs, connect(motion.frame_b, sensors.wheel_fr))
-  push!(__eqs, connect(motion.frame_b, sensors.wheel_rl))
-  push!(__eqs, connect(motion.frame_b, sensors.wheel_rr))
-  push!(__eqs, connect(spin.spline, sensors.spin_fl))
-  push!(__eqs, connect(spin.spline, sensors.spin_fr))
-  push!(__eqs, connect(spin.spline, sensors.spin_rl))
-  push!(__eqs, connect(spin.spline, sensors.spin_rr))
+  push!(__eqs, connect(forward.y, motion.a_x))
+  push!(__eqs, connect(sideways.y, motion.a_y))
+  push!(__eqs, connect(motion.frame_b, turn.frame_a))
+  push!(__eqs, connect(yaw.spline, turn.flange_a))
+  push!(__eqs, connect(turn.frame_b, sensors.chassis))
+  push!(__eqs, connect(turn.frame_b, arm_fl.frame_a))
+  push!(__eqs, connect(turn.frame_b, arm_fr.frame_a))
+  push!(__eqs, connect(turn.frame_b, arm_rl.frame_a))
+  push!(__eqs, connect(turn.frame_b, arm_rr.frame_a))
+  push!(__eqs, connect(arm_fl.frame_b, sensors.wheel_fl))
+  push!(__eqs, connect(arm_fr.frame_b, sensors.wheel_fr))
+  push!(__eqs, connect(arm_rl.frame_b, sensors.wheel_rl))
+  push!(__eqs, connect(arm_rr.frame_b, sensors.wheel_rr))
+  push!(__eqs, connect(spin_fl.spline, sensors.spin_fl))
+  push!(__eqs, connect(spin_fr.spline, sensors.spin_fr))
+  push!(__eqs, connect(spin_rl.spline, sensors.spin_rl))
+  push!(__eqs, connect(spin_rr.spline, sensors.spin_rr))
   push!(__eqs, connect(steer.y, steering.phi_ref))
   push!(__eqs, connect(steering.spline, sensors.steering))
-  push!(__eqs, connect(spin.support, housing.spline))
-  push!(__eqs, connect(steering.support, housing.spline))
-  push!(__eqs, connect(sensors.bus, body.bus))
-  push!(__eqs, connect(sensors.bus, slips.bus))
-  push!(__eqs, connect(sensors.bus, angles.bus))
-  push!(__eqs, connect(sensors.bus, speeds.bus))
+  push!(__eqs, connect(yaw.support, yaw_mount.spline))
+  push!(__eqs, connect(spin_fl.support, mount_fl.spline))
+  push!(__eqs, connect(spin_fr.support, mount_fr.spline))
+  push!(__eqs, connect(spin_rl.support, mount_rl.spline))
+  push!(__eqs, connect(spin_rr.support, mount_rr.spline))
+  push!(__eqs, connect(steering.support, steering_mount.spline))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

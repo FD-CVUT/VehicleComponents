@@ -27,7 +27,7 @@ __dyad_run_test_case!(
     (m -> m.car.bus.y, "car.bus.y", 0, 0.001, 1e-6),
     (m -> m.car.bus.r, "car.bus.r", 0, 0.000001, 1e-6),
   ],
-  signals=Tuple[(m -> m.car.bus.vx, "car.bus.vx", 0.001, 1e-6)],
+  signals=Tuple[],
 )
 __dyad_run_test_case!(
   VehicleComponents.Examples.PlanarCoast,
@@ -53,5 +53,32 @@ __dyad_run_test_case!(
     (m -> m.car.bus.r, "car.bus.r", 0, 0.000001, 1e-6),
     (m -> m.road.grade, "road.grade", 0.02, 1e-9, 1e-6),
   ],
-  signals=Tuple[(m -> m.car.bus.vx, "car.bus.vx", 0.001, 1e-6)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Examples.PlanarCoast,
+  "braking for VehicleComponents.Examples.PlanarCoast";
+  case_name="braking",
+  component_stem="PlanarCoast",
+  module_path=String["Examples"],
+  start=0e+0,
+  stop=2e+0,
+  abstol=1e-7,
+  reltol=1e-7,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("brake.k" => 250.0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.car.bus.vx, "car.bus.vx", 20.403056, 0.002, 1e-6),
+    (m -> m.car.bus.x, "car.bus.x", -254.542602, 0.01, 1e-6),
+    (m -> m.car.bus.ax, "car.bus.ax", -2.3099, 0.001, 1e-6),
+    (m -> m.car.fl.F_z, "car.fl.F_z", 4439.182, 0.5, 1e-6),
+    (m -> m.car.fr.F_z, "car.fr.F_z", 4439.182, 0.5, 1e-6),
+    (m -> m.car.rl.F_z, "car.rl.F_z", 2915.8055, 0.5, 1e-6),
+    (m -> m.car.rr.F_z, "car.rr.F_z", 2915.8055, 0.5, 1e-6),
+    (m -> m.car.bus.y, "car.bus.y", 0, 0.001, 1e-6),
+    (m -> m.car.bus.r, "car.bus.r", 0, 0.000001, 1e-6),
+  ],
+  signals=Tuple[],
 )

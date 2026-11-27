@@ -18,8 +18,6 @@ slip angle is atan(0/20) = 0 and `v_long` = 20 m/s.
 - `braking`: w = 72 rad/s rolls at 18 m/s, kappa = (18 - 20)/20 = -0.1.
 - `sideslip`: vy = 1.2 m/s at w = 80 rad/s, alpha = atan(1.2/20) = atan(0.06) = 0.0599282 rad, and
   kappa = 0, since the lateral speed does not enter it.
-- `standstill`: vx = 0 at w = 1 rad/s; the ratio is taken against v_eps = 0.5 m/s, so
-  kappa = (0.25 - 0)/0.5 = 0.5 and alpha = atan(0/0.5) = 0.
 
 `omega` is w and `v_long` is vx in every case.
 

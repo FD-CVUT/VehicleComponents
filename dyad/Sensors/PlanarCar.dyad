@@ -17,202 +17,143 @@ the wheel ratios against `WheelSlip`'s `v_eps`, which keeps them finite at stand
 """
 component PlanarCar
   "Chassis frame"
-  chassis = Frame2D() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 60, "x2": 40, "y2": 140},
-        "diagram": {"x1": -50, "y1": 350, "x2": 50, "y2": 450}
-      }
-    }
-  }
+  chassis = Frame2D() {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50}}}}
   "Steering-wheel shaft"
-  steering = Spline() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50},
-        "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}
-      }
-    }
-  }
+  steering = Spline() {"Dyad": {"placement": {"icon": {"x1": 250, "y1": -50, "x2": 350, "y2": 50}}}}
   "Front-left wheel center"
-  wheel_fl = Frame2D() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 160, "x2": 40, "y2": 240},
-        "diagram": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}
-      }
-    }
-  }
+  wheel_fl = Frame2D() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}}
   "Front-right wheel center"
-  wheel_fr = Frame2D() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 360, "x2": 40, "y2": 440},
-        "diagram": {"x1": -50, "y1": 1050, "x2": 50, "y2": 1150}
-      }
-    }
-  }
+  wheel_fr = Frame2D() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}}
   "Rear-left wheel center"
-  wheel_rl = Frame2D() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 560, "x2": 40, "y2": 640},
-        "diagram": {"x1": -50, "y1": 1350, "x2": 50, "y2": 1450}
-      }
-    }
-  }
+  wheel_rl = Frame2D() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 550, "x2": 50, "y2": 650}}}}
   "Rear-right wheel center"
-  wheel_rr = Frame2D() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 760, "x2": 40, "y2": 840},
-        "diagram": {"x1": -50, "y1": 1650, "x2": 50, "y2": 1750}
-      }
-    }
-  }
+  wheel_rr = Frame2D() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}}
   "Front-left wheel shaft"
-  spin_fl = Spline() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 260, "x2": 40, "y2": 340},
-        "diagram": {"x1": -50, "y1": 850, "x2": 50, "y2": 950}
-      }
-    }
-  }
+  spin_fl = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 350, "x2": 50, "y2": 450}}}}
   "Front-right wheel shaft"
-  spin_fr = Spline() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 460, "x2": 40, "y2": 540},
-        "diagram": {"x1": -50, "y1": 1150, "x2": 50, "y2": 1250}
-      }
-    }
-  }
+  spin_fr = Spline() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}}
   "Rear-left wheel shaft"
-  spin_rl = Spline() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 660, "x2": 40, "y2": 740},
-        "diagram": {"x1": -50, "y1": 1450, "x2": 50, "y2": 1550}
-      }
-    }
-  }
+  spin_rl = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}}
   "Rear-right wheel shaft"
-  spin_rr = Spline() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": -40, "y1": 860, "x2": 40, "y2": 940},
-        "diagram": {"x1": -50, "y1": 1750, "x2": 50, "y2": 1850}
-      }
-    }
-  }
+  spin_rr = Spline() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
   "Every reading"
-  bus = VehicleComponents.Body.Planar.CarBus() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550},
-        "diagram": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}
-      }
-    }
-  }
+  bus = VehicleComponents.Body.Planar.CarBus() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}}
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   velocity = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 150, "y2": 250}}}
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 200, "y2": 300}}}
   }
   acceleration = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration() {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 350, "y2": 450}}}
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 400, "y2": 500}}}
   }
   position = MultibodyComponents.PlanarMechanics.AbsolutePosition(resolve_in_frame = MultibodyComponents.ResolveInFrame.World()) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 550, "y2": 650}}}
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 600, "y2": 700}}}
   }
   steering_angle = RotationalComponents.Sensors.AngleSensor() {
-    "Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 150, "y2": 250}}}
+    "Dyad": {
+      "placement": {"diagram": {"x1": 250, "x2": 350, "y1": 150, "y2": 250, "rot": 90}}
+    }
   }
   slip_fl = VehicleComponents.Sensors.WheelSlip(radius = radius) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 800, "y2": 900}}}
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 300, "y2": 400}}}
   }
   slip_fr = VehicleComponents.Sensors.WheelSlip(radius = radius) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1100, "y2": 1200}}}
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 300, "y2": 400}}}
   }
   slip_rl = VehicleComponents.Sensors.WheelSlip(radius = radius) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1400, "y2": 1500}}}
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 600, "y2": 700}}}
   }
   slip_rr = VehicleComponents.Sensors.WheelSlip(radius = radius) {
-    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 1700, "y2": 1800}}}
+    "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 750, "y1": 600, "y2": 700}}}
   }
 relations
   connect(chassis, velocity.frame_a) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 150, "y": 400}, {"x": 150, "y": 200}], "E": 2}],
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 650, "y": 150}, {"x": 500, "y": 150}, {"x": 500, "y": 250}],
+          "E": 2
+        }
+      ],
       "path": {}
     }
   }
-  connect(chassis, acceleration.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(chassis, position.frame_a) {
-    "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 150, "y": 400}, {"x": 150, "y": 600}], "E": 2}],
-      "path": {}
-    }
-  }
-  connect(steering, steering_angle.spline) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}], "path": {}}}
-  connect(wheel_fl, slip_fl.frame_a) {
+  connect(chassis, acceleration.frame_a) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 200, "y": 800}, {"x": 200, "y": 830.0000000000001}],
+          "M": [{"x": 650, "y": 100}, {"x": 500, "y": 100}, {"x": 500, "y": 450}],
           "E": 2
         }
       ],
+      "path": {}
+    }
+  }
+  connect(chassis, position.frame_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 650, "y": 100}, {"x": 450, "y": 100}, {"x": 450, "y": 650}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(steering, steering_angle.spline) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 350, "y": 100}, {"x": 300, "y": 100}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(wheel_fl, slip_fl.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 100, "y": 300}, {"x": 100, "y": 330}], "E": 2}],
       "path": {}
     }
   }
   connect(wheel_fr, slip_fr.frame_a) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 200, "y": 1100}, {"x": 200, "y": 1130}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 300}, {"x": 900, "y": 330}], "E": 2}],
       "path": {}
     }
   }
   connect(wheel_rl, slip_rl.frame_a) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 200, "y": 1400}, {"x": 200, "y": 1430}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 100, "y": 600}, {"x": 100, "y": 630}], "E": 2}],
       "path": {}
     }
   }
   connect(wheel_rr, slip_rr.frame_a) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 200, "y": 1700}, {"x": 200, "y": 1730}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 600}, {"x": 900, "y": 630}], "E": 2}],
       "path": {}
     }
   }
   connect(spin_fl, slip_fl.spline) {
     "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 200, "y": 900}, {"x": 200, "y": 869.9999999999999}],
-          "E": 2
-        }
-      ],
+      "edges": [{"S": 1, "M": [{"x": 100, "y": 400}, {"x": 100, "y": 370}], "E": 2}],
       "path": {}
     }
   }
   connect(spin_fr, slip_fr.spline) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 200, "y": 1200}, {"x": 200, "y": 1170}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 400}, {"x": 900, "y": 370}], "E": 2}],
       "path": {}
     }
   }
   connect(spin_rl, slip_rl.spline) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 200, "y": 1500}, {"x": 200, "y": 1470}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 100, "y": 700}, {"x": 100, "y": 670}], "E": 2}],
       "path": {}
     }
   }
   connect(spin_rr, slip_rr.spline) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 200, "y": 1800}, {"x": 200, "y": 1770}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 700}, {"x": 900, "y": 670}], "E": 2}],
       "path": {}
     }
   }

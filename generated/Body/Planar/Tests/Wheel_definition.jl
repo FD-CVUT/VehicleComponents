@@ -5,16 +5,19 @@
 
 
 @doc Markdown.doc"""
-   Wheel(; name, vy, tau, __overrides)
+   Wheel(; name, h, vy, tau, __overrides)
 
-The road-wheel rig: a planar `Wheel` whose center moves at a prescribed constant velocity,
-heading along the world x axis, under a constant normal load, with a constant brake request.
+The road-wheel rig: a planar `Wheel` whose center moves at a prescribed constant velocity, its
+heading held at `h` off the world x axis, under a constant normal load, with a constant brake
+request.
 `wheel` runs on the default road of grip 1; `icy` is a second wheel on `uniform_low_mu.crg`, grip
 0.3 everywhere, with its own sources and the same settings. Both wheels have the tire of the
 course's planar front wheel: mu_A = 1, mu_S = 0.8, sAdhesion = 0.12, sSlide = 0.36, radius
 0.31 m, J = 1 kg m².
 
-Each center moves at `vx` = 20 m/s forward and `vy` to the left, under 4000 N. Each wheel starts
+Each center moves at 20 m/s along its heading and `vy` to its left, under 4000 N: the world
+velocity is that pair rotated by h, so the wheel sees the same slip at every heading. The
+heading is 0 except in `heading`. Each wheel starts
 rolling at (20 + 0.01)/0.31 rad/s, just above the road speed, and nothing drives its shaft, so
 an unbraked wheel settles at zero longitudinal slip within milliseconds, and the slip speed is
 the lateral speed alone. At 20 m/s the adhesion and sliding slip speeds are 0.12 · 20 = 2.4 m/s
@@ -32,16 +35,25 @@ slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
   and the wheel no longer decelerates: F_x = -1000/0.31 = -3225.81 N. The icy tire can pass
   at most 0.3 · 4000 = 1200 N, a torque of 372 N m, so its wheel locks and slides at the
   plateau: F_x = -0.3 · 0.8 · 4000 = -960 N.
+- `heading`: `half_peak` at h = 0.7 rad gives the same F_y = -2750 N, and -825 N on ice.
+- `braking_cornering`: 1000 N m on the brake with vy = 1.2 m/s. The dry tire again holds
+  F_x = -3225.81 N once the wheel stops decelerating, now with a lateral slip too. Its
+  longitudinal slip speed s solves 4000 c(x) s/sqrt(s² + 1.44) = 3225.81 with
+  x = sqrt(s² + 1.44)/(0.12 (20 - s)): s = 1.667445 m/s, the slip speed 2.054355 m/s against
+  vAdhesion = 2.199907 m/s, x = 0.933837, c = 0.993579, so the force is 3974.31 N and
+  F_y = -3974.31 · 1.2/2.054355 = -2321.50 N. The icy wheel locks; it slides at a speed that the
+  brake's regularization sets, so the case asserts the dry wheel only.
 - `lifted`: a -1000 N load with vy = 1.2 m/s lifts both tires: F_z = 0 and F_y = 0.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `vy`         | Sideways speed of the wheel centers                         | m/s  |   0.0 |
+| `h`         | Heading of the wheels off the world x axis                         | rad  |   0.0 |
+| `vy`         | Sideways speed of the wheel centers in their own frame                         | m/s  |   0.0 |
 | `tau`         | Requested brake torque                         | N.m  |   0.0 |
 """
-@component function Wheel(; name = nothing, var"vy"=Float64(0.0), var"tau"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function Wheel(; name = nothing, var"h"=Float64(0.0), var"vy"=Float64(0.0), var"tau"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -60,6 +72,7 @@ slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "h") && (h = pop!(__overrides, "h"))
   haskey(__overrides, "vy") && (vy = pop!(__overrides, "vy"))
   haskey(__overrides, "tau") && (tau = pop!(__overrides, "tau"))
 
@@ -76,8 +89,11 @@ slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__h = h
+  append!(__params, @parameters (h::Real), [description = "Heading of the wheels off the world x axis"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h, __local__h)
   __local__vy = vy
-  append!(__params, @parameters (vy::Real), [description = "Sideways speed of the wheel centers"])
+  append!(__params, @parameters (vy::Real), [description = "Sideways speed of the wheel centers in their own frame"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, vy, __local__vy)
   __local__tau = tau
   append!(__params, @parameters (tau::Real), [description = "Requested brake torque"])
@@ -97,13 +113,16 @@ slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
   ### Components
   # Subcomponent forward of type BlockComponents.Sources.Constant
   forward_overrides = __pop_subcomponent_overrides!(__overrides, "forward")
-  push!(__systems, @named forward = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = forward_overrides))
+  push!(__systems, @named forward = BlockComponents.Sources.Constant(; k=20.0 * cos(h) - vy * sin(h), __overrides = forward_overrides))
   # Subcomponent sideways of type BlockComponents.Sources.Constant
   sideways_overrides = __pop_subcomponent_overrides!(__overrides, "sideways")
-  push!(__systems, @named sideways = BlockComponents.Sources.Constant(; k=vy, __overrides = sideways_overrides))
+  push!(__systems, @named sideways = BlockComponents.Sources.Constant(; k=20.0 * sin(h) + vy * cos(h), __overrides = sideways_overrides))
   # Subcomponent motion of type MultibodyComponents.PlanarMechanics.PrescribedVelocity
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; __overrides = motion_overrides))
+  # Subcomponent heading of type MultibodyComponents.PlanarMechanics.FixedRotation
+  heading_overrides = __pop_subcomponent_overrides!(__overrides, "heading")
+  push!(__systems, @named heading = MultibodyComponents.PlanarMechanics.FixedRotation(; alpha=h, render=false, __overrides = heading_overrides))
   # Subcomponent load of type TranslationalComponents.Sources.ConstantForce
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
   push!(__systems, @named load = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(4000.0), __overrides = load_overrides))
@@ -121,13 +140,16 @@ slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
   push!(__systems, @named wheel = VehicleComponents.Body.Planar.Wheel(; J=Float64(1.0), tau_max=Float64(10000.0), __overrides = wheel_dict))
   # Subcomponent icy_forward of type BlockComponents.Sources.Constant
   icy_forward_overrides = __pop_subcomponent_overrides!(__overrides, "icy_forward")
-  push!(__systems, @named icy_forward = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = icy_forward_overrides))
+  push!(__systems, @named icy_forward = BlockComponents.Sources.Constant(; k=20.0 * cos(h) - vy * sin(h), __overrides = icy_forward_overrides))
   # Subcomponent icy_sideways of type BlockComponents.Sources.Constant
   icy_sideways_overrides = __pop_subcomponent_overrides!(__overrides, "icy_sideways")
-  push!(__systems, @named icy_sideways = BlockComponents.Sources.Constant(; k=vy, __overrides = icy_sideways_overrides))
+  push!(__systems, @named icy_sideways = BlockComponents.Sources.Constant(; k=20.0 * sin(h) + vy * cos(h), __overrides = icy_sideways_overrides))
   # Subcomponent icy_motion of type MultibodyComponents.PlanarMechanics.PrescribedVelocity
   icy_motion_overrides = __pop_subcomponent_overrides!(__overrides, "icy_motion")
   push!(__systems, @named icy_motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; __overrides = icy_motion_overrides))
+  # Subcomponent icy_heading of type MultibodyComponents.PlanarMechanics.FixedRotation
+  icy_heading_overrides = __pop_subcomponent_overrides!(__overrides, "icy_heading")
+  push!(__systems, @named icy_heading = MultibodyComponents.PlanarMechanics.FixedRotation(; alpha=h, render=false, __overrides = icy_heading_overrides))
   # Subcomponent icy_load of type TranslationalComponents.Sources.ConstantForce
   icy_load_overrides = __pop_subcomponent_overrides!(__overrides, "icy_load")
   push!(__systems, @named icy_load = TranslationalComponents.Sources.ConstantForce(; f_constant=Float64(4000.0), __overrides = icy_load_overrides))
@@ -157,13 +179,15 @@ slip, so F_y = -mu F_z and F_x = -mu F_z on the slip's axis:
   ### Equations
   push!(__eqs, connect(forward.y, motion.v_x))
   push!(__eqs, connect(sideways.y, motion.v_y))
-  push!(__eqs, connect(motion.frame_b, wheel.frame_a))
+  push!(__eqs, connect(motion.frame_b, heading.frame_a))
+  push!(__eqs, connect(heading.frame_b, wheel.frame_a))
   push!(__eqs, connect(load.flange, wheel.load))
   push!(__eqs, connect(load.support, ground.flange))
   push!(__eqs, connect(brake.y, wheel.tau_cmd))
   push!(__eqs, connect(icy_forward.y, icy_motion.v_x))
   push!(__eqs, connect(icy_sideways.y, icy_motion.v_y))
-  push!(__eqs, connect(icy_motion.frame_b, icy.frame_a))
+  push!(__eqs, connect(icy_motion.frame_b, icy_heading.frame_a))
+  push!(__eqs, connect(icy_heading.frame_b, icy.frame_a))
   push!(__eqs, connect(icy_load.flange, icy.load))
   push!(__eqs, connect(icy_load.support, icy_ground.flange))
   push!(__eqs, connect(icy_brake.y, icy.tau_cmd))

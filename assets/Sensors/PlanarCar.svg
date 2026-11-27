@@ -2,13 +2,16 @@
   <path fill="#fff" d="M4 4h992v992H4z"/>
   <path fill="#008a19" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
   <g fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M500 0 V120"/>
-    <path d="M0 100 H200 M0 200 H200 M0 300 H200 M0 400 H200 M0 500 H200 M0 600 H200 M0 700 H200 M0 800 H200 M0 900 H200"/>
-    <path d="M200 100 V900"/>
-    <path d="M380 260 Q380 170 470 160 H530 Q620 170 620 260 V740 Q620 830 530 840 H470 Q380 830 380 740 Z" fill="#c4c6f5"/>
-    <path d="M200 500 H380"/>
-    <circle cx="500" cy="500" r="70" fill="#fff"/>
-    <path d="M500 500 L545 450" stroke-width="12"/>
-    <path d="M620 500 H1000" stroke="#0277bd" stroke-width="40"/>
+    <path d="M300 0 V120 H420 V180 M700 0 V120 H580 V180"/>
+    <path d="M0 300 H220 M0 400 H220 M0 600 H220 M0 700 H220"/>
+    <path d="M1000 300 H780 M1000 400 H780 M1000 600 H780 M1000 700 H780"/>
+    <path d="M330 270 Q330 180 420 180 H580 Q670 180 670 270 V730 Q670 820 580 820 H420 Q330 820 330 730 Z" fill="#c4c6f5"/>
+    <rect x="220" y="260" width="110" height="180" rx="30" fill="#000"/>
+    <rect x="220" y="560" width="110" height="180" rx="30" fill="#000"/>
+    <rect x="670" y="260" width="110" height="180" rx="30" fill="#000"/>
+    <rect x="670" y="560" width="110" height="180" rx="30" fill="#000"/>
+    <circle cx="500" cy="500" r="80" fill="#fff"/>
+    <path d="M500 500 L555 440" stroke-width="12"/>
+    <path d="M500 820 V1000" stroke="#0277bd" stroke-width="40"/>
   </g>
 </svg>
