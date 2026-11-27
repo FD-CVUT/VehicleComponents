@@ -8,7 +8,8 @@
    Wheel(; name, vy, tau, __overrides)
 
 The road-wheel rig: a planar `Wheel` whose center moves at a prescribed constant velocity,
-heading along the world x axis, under a constant normal load, with a constant brake request.
+heading along the world x axis, under a constant normal load, with a `Chassis.Wheel.BrakeActuator`
+on its shaft (time constant 0.03 s, reacting on a fixed mount) under a constant brake request.
 `wheel` runs on the default road of grip 1; `icy` is a second wheel on `uniform_low_mu.crg`, grip
 0.3 everywhere, with its own sources and the same settings. Both wheels have the tire of the
 course's planar front wheel: mu_A = 1, mu_S = 0.8, sAdhesion = 0.12, sSlide = 0.36, radius
@@ -114,15 +115,15 @@ The tire's own law at other slips, its heading and a lifted tire are `SlipWheelJ
   # Subcomponent ground of type TranslationalComponents.Components.Fixed
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; __overrides = ground_overrides))
-  # Subcomponent brake of type BlockComponents.Sources.Constant
-  brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = BlockComponents.Sources.Constant(; k=tau, __overrides = brake_overrides))
+  # Subcomponent command of type BlockComponents.Sources.Constant
+  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=tau, __overrides = command_overrides))
   # Subcomponent wheel of type VehicleComponents.Body.Planar.Wheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
   wheel_dict = Dict{String, Any}()
   wheel_dict["inertia.w.initial"] = ModelingToolkit.default_to_parentscope(20.01 / 0.31)
   merge!(wheel_dict, wheel_overrides)
-  push!(__systems, @named wheel = VehicleComponents.Body.Planar.Wheel(; J=Float64(1.0), tau_max=Float64(10000.0), __overrides = wheel_dict))
+  push!(__systems, @named wheel = VehicleComponents.Body.Planar.Wheel(; J=Float64(1.0), __overrides = wheel_dict))
   # Subcomponent icy_forward of type BlockComponents.Sources.Constant
   icy_forward_overrides = __pop_subcomponent_overrides!(__overrides, "icy_forward")
   push!(__systems, @named icy_forward = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = icy_forward_overrides))
@@ -138,15 +139,27 @@ The tire's own law at other slips, its heading and a lifted tire are `SlipWheelJ
   # Subcomponent icy_ground of type TranslationalComponents.Components.Fixed
   icy_ground_overrides = __pop_subcomponent_overrides!(__overrides, "icy_ground")
   push!(__systems, @named icy_ground = TranslationalComponents.Components.Fixed(; __overrides = icy_ground_overrides))
-  # Subcomponent icy_brake of type BlockComponents.Sources.Constant
-  icy_brake_overrides = __pop_subcomponent_overrides!(__overrides, "icy_brake")
-  push!(__systems, @named icy_brake = BlockComponents.Sources.Constant(; k=tau, __overrides = icy_brake_overrides))
+  # Subcomponent icy_command of type BlockComponents.Sources.Constant
+  icy_command_overrides = __pop_subcomponent_overrides!(__overrides, "icy_command")
+  push!(__systems, @named icy_command = BlockComponents.Sources.Constant(; k=tau, __overrides = icy_command_overrides))
   # Subcomponent icy of type VehicleComponents.Body.Planar.Wheel
   icy_overrides = __pop_subcomponent_overrides!(__overrides, "icy")
   icy_dict = Dict{String, Any}()
   icy_dict["inertia.w.initial"] = ModelingToolkit.default_to_parentscope(20.01 / 0.31)
   merge!(icy_dict, icy_overrides)
-  push!(__systems, @named icy = VehicleComponents.Body.Planar.Wheel(; grip=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_low_mu.crg"), J=Float64(1.0), tau_max=Float64(10000.0), __overrides = icy_dict))
+  push!(__systems, @named icy = VehicleComponents.Body.Planar.Wheel(; grip=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_low_mu.crg"), J=Float64(1.0), __overrides = icy_dict))
+  # Subcomponent brake of type VehicleComponents.Chassis.Wheel.BrakeActuator
+  brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
+  push!(__systems, @named brake = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(10000.0), __overrides = brake_overrides))
+  # Subcomponent mount of type RotationalComponents.Components.Fixed
+  mount_overrides = __pop_subcomponent_overrides!(__overrides, "mount")
+  push!(__systems, @named mount = RotationalComponents.Components.Fixed(; __overrides = mount_overrides))
+  # Subcomponent icy_brake of type VehicleComponents.Chassis.Wheel.BrakeActuator
+  icy_brake_overrides = __pop_subcomponent_overrides!(__overrides, "icy_brake")
+  push!(__systems, @named icy_brake = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(10000.0), __overrides = icy_brake_overrides))
+  # Subcomponent icy_mount of type RotationalComponents.Components.Fixed
+  icy_mount_overrides = __pop_subcomponent_overrides!(__overrides, "icy_mount")
+  push!(__systems, @named icy_mount = RotationalComponents.Components.Fixed(; __overrides = icy_mount_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -164,13 +177,17 @@ The tire's own law at other slips, its heading and a lifted tire are `SlipWheelJ
   push!(__eqs, connect(motion.frame_b, wheel.frame_a))
   push!(__eqs, connect(load.flange, wheel.load))
   push!(__eqs, connect(load.support, ground.flange))
-  push!(__eqs, connect(brake.y, wheel.tau_cmd))
+  push!(__eqs, connect(command.y, brake.tau_cmd))
   push!(__eqs, connect(icy_forward.y, icy_motion.v_x))
   push!(__eqs, connect(icy_sideways.y, icy_motion.v_y))
   push!(__eqs, connect(icy_motion.frame_b, icy.frame_a))
   push!(__eqs, connect(icy_load.flange, icy.load))
   push!(__eqs, connect(icy_load.support, icy_ground.flange))
-  push!(__eqs, connect(icy_brake.y, icy.tau_cmd))
+  push!(__eqs, connect(icy_command.y, icy_brake.tau_cmd))
+  push!(__eqs, connect(wheel.spin, brake.spline_a))
+  push!(__eqs, connect(brake.support, mount.spline))
+  push!(__eqs, connect(icy.spin, icy_brake.spline_a))
+  push!(__eqs, connect(icy_brake.support, icy_mount.spline))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

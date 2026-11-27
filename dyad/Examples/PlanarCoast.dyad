@@ -6,8 +6,7 @@ the car's own bus. The model holds the planar `World`, gravity off. It has no po
 
 The car is the default `Body.Planar.Car` of `m` = 1500 kg with its CG `h_cg` = 0.55 m above the
 road and load transfer on. Each case starts on the road's center line, heading along x, at
-25 m/s with every wheel rolling at 25/0.31 rad/s, from x = `x0`; `brake.k` is each wheel's brake
-request.
+25 m/s with every wheel rolling at 25/0.31 rad/s, from x = `x0`.
 
 `ramp_z.crg` climbs at exactly 2 % on 0 to 500 m (`Body.Planar.Tests.RoadGrade` derives it).
 Before its grid starts at x = 0 the road blends over 2 m to height 0 and is level below -2 m,
@@ -15,7 +14,9 @@ so its slope there is exactly 0.
 
 - `climb` starts at x = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
   cos(alpha) = 1/sqrt(1.0004) = 0.99980006 and sin(alpha) = 0.01999600.
-- `braking` starts at x = -300 m, on the level road, with 250 N m on every brake.
+- `braking` starts at x = -300 m, on the level road, with 250 N m on every brake. The brakes are
+  `Chassis.Wheel.BrakeActuator`s on the car's wheel shafts, each reacting on its own mount, and
+  `brake.k` is each one's request; the other cases request 0.
 - `reverse` checks only the start of a car driving backward and sliding left, at
   vx = -19.363634 m/s and vy = 6.503820 m/s: the bus reads
   beta = atan(6.503820/max(|-19.363634|, 1)) = 0.324039 rad, where a sideslip taken against vx
@@ -85,6 +86,14 @@ test component PlanarCoast
   column = RotationalComponents.Components.Fixed() {^column}
   "Brake request on every wheel"
   brake = BlockComponents.Sources.Constant(k = 0.0) {^brake}
+  actuator_fl = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 2500.0) {^actuator_fl}
+  actuator_fr = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 2500.0) {^actuator_fr}
+  actuator_rl = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 2500.0) {^actuator_rl}
+  actuator_rr = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 2500.0) {^actuator_rr}
+  mount_fl = RotationalComponents.Components.Fixed() {^mount_fl}
+  mount_fr = RotationalComponents.Components.Fixed() {^mount_fr}
+  mount_rl = RotationalComponents.Components.Fixed() {^mount_rl}
+  mount_rr = RotationalComponents.Components.Fixed() {^mount_rr}
   "Planar world with its gravity off: the car lies in the road plane"
   world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {^world}
 relations
@@ -92,7 +101,15 @@ relations
   connect(road.grade, car.grade) {^id8}
   connect(tire.y, car.f_r) {^id9}
   connect(column.spline, car.steering) {^id10}
-  connect(brake.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr) {^id11}
+  connect(brake.y, actuator_fl.tau_cmd, actuator_rl.tau_cmd, actuator_fr.tau_cmd, actuator_rr.tau_cmd) {^id11}
+  connect(car.spin_fl, actuator_fl.spline_b) {^b1}
+  connect(car.spin_fr, actuator_fr.spline_a) {^b2}
+  connect(car.spin_rl, actuator_rl.spline_b) {^b3}
+  connect(car.spin_rr, actuator_rr.spline_a) {^b4}
+  connect(actuator_fl.support, mount_fl.spline) {^b5}
+  connect(actuator_fr.support, mount_fr.spline) {^b6}
+  connect(actuator_rl.support, mount_rl.spline) {^b7}
+  connect(actuator_rr.support, mount_rr.spline) {^b8}
 metadata {
   "Dyad": {
     "tests": {
@@ -212,32 +229,32 @@ metadata {
       "Dyad": {
         "edges": [
           {"S": 1, "M": [], "E": -1},
-          {"S": -1, "M": [{"x": 160, "y": 160}], "E": 2},
-          {
-            "S": -1,
-            "M": [{"x": 160, "y": 160}, {"x": 40, "y": 160}, {"x": 40, "y": 360}],
-            "E": 3
-          },
-          {
-            "S": -1,
-            "M": [
-              {"x": 200, "y": 100},
-              {"x": 200, "y": -120},
-              {"x": 960, "y": -120},
-              {"x": 960, "y": 160}
-            ],
-            "E": 4
-          },
-          {
-            "S": -1,
-            "M": [{"x": 160, "y": -160}, {"x": 1120, "y": -160}, {"x": 1120, "y": 360}],
-            "E": 5
-          }
+          {"S": -1, "M": [], "E": 2},
+          {"S": -1, "M": [], "E": 3},
+          {"S": -1, "M": [], "E": 4},
+          {"S": -1, "M": [], "E": 5}
         ],
-        "junctions": [{"x": 160, "y": 100}],
+        "junctions": [{"x": 350, "y": 100}],
         "path": {}
       }
-    }
+    },
+    "actuator_fl": {"Dyad": {"placement": {"diagram": {"x1": 310, "x2": 390, "y1": 160, "y2": 240}}}},
+    "actuator_rl": {"Dyad": {"placement": {"diagram": {"x1": 310, "x2": 390, "y1": 360, "y2": 440}}}},
+    "actuator_fr": {"Dyad": {"placement": {"diagram": {"x1": 810, "x2": 890, "y1": 160, "y2": 240}}}},
+    "actuator_rr": {"Dyad": {"placement": {"diagram": {"x1": 810, "x2": 890, "y1": 360, "y2": 440}}}},
+    "mount_fl": {"Dyad": {"placement": {"diagram": {"x1": 220, "x2": 300, "y1": 60, "y2": 140}}}},
+    "mount_rl": {"Dyad": {"placement": {"diagram": {"x1": 310, "x2": 390, "y1": 455, "y2": 535}}}},
+    "mount_fr": {"Dyad": {"placement": {"diagram": {"x1": 810, "x2": 890, "y1": 255, "y2": 335}}}},
+    "mount_rr": {"Dyad": {"placement": {"diagram": {"x1": 810, "x2": 890, "y1": 455, "y2": 535}}}},
+    "b1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "b8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+
   }
 }
 end

@@ -1,6 +1,7 @@
 """
 The road-wheel rig: a planar `Wheel` whose center moves at a prescribed constant velocity,
-heading along the world x axis, under a constant normal load, with a constant brake request.
+heading along the world x axis, under a constant normal load, with a `Chassis.Wheel.BrakeActuator`
+on its shaft (time constant 0.03 s, reacting on a fixed mount) under a constant brake request.
 `wheel` runs on the default road of grip 1; `icy` is a second wheel on `uniform_low_mu.crg`, grip
 0.3 everywhere, with its own sources and the same settings. Both wheels have the tire of the
 course's planar front wheel: mu_A = 1, mu_S = 0.8, sAdhesion = 0.12, sSlide = 0.36, radius
@@ -42,73 +43,85 @@ test component Wheel
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
   }
   motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 350, "y2": 450}}}
   }
   load = TranslationalComponents.Sources.ConstantForce(f_constant = 4000.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 500, "y2": 600}}}
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 650, "y2": 750}}}
   }
   ground = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 750, "y2": 850}}}
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 900, "y2": 1000}}}
   }
-  brake = BlockComponents.Sources.Constant(k = tau) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  command = BlockComponents.Sources.Constant(k = tau) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}
   }
-  wheel = VehicleComponents.Body.Planar.Wheel(J = 1.0, tau_max = 10000.0, inertia(w = initial 20.01 / 0.31)) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 500, "y2": 600}}}
+  wheel = VehicleComponents.Body.Planar.Wheel(J = 1.0, inertia(w = initial 20.01 / 0.31)) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 600, "y2": 700}}}
   }
   icy_forward = BlockComponents.Sources.Constant(k = 20.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 750, "y2": 850}}}
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 950, "y2": 1050}}}
   }
   icy_sideways = BlockComponents.Sources.Constant(k = vy) {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 1000, "y2": 1100}}}
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 1200, "y2": 1300}}}
   }
   icy_motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 850, "y2": 950}}}
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 1150, "y2": 1250}}}
   }
   icy_load = TranslationalComponents.Sources.ConstantForce(f_constant = 4000.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 1100, "y2": 1200}}}
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 1250, "y2": 1350}}}
   }
   icy_ground = TranslationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 1350, "y2": 1450}}}
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 1500, "y2": 1600}}}
   }
-  icy_brake = BlockComponents.Sources.Constant(k = tau) {
-    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 1100, "y2": 1200}}}
+  icy_command = BlockComponents.Sources.Constant(k = tau) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 1450, "y2": 1550}}}
   }
-  icy = VehicleComponents.Body.Planar.Wheel(grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_low_mu.crg"), J = 1.0, tau_max = 10000.0, inertia(w = initial 20.01 / 0.31)) {
-    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 1100, "y2": 1200}}}
+  icy = VehicleComponents.Body.Planar.Wheel(grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_low_mu.crg"), J = 1.0, inertia(w = initial 20.01 / 0.31)) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 1250, "y2": 1350}}}
+  }
+  brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 10000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 600, "y2": 700}}}
+  }
+  mount = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 850, "y2": 950}}}
+  }
+  icy_brake = VehicleComponents.Chassis.Wheel.BrakeActuator(tau_max = 10000.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 1400, "y2": 1500}}}
+  }
+  icy_mount = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 1650, "y2": 1750}}}
   }
 relations
   connect(forward.y, motion.v_x) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 330}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 250}, {"x": 400, "y": 380}], "E": 2}],
       "path": {}
     }
   }
   connect(sideways.y, motion.v_y) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 370}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 420}], "E": 2}],
       "path": {}
     }
   }
   connect(motion.frame_b, wheel.frame_a) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 850, "y": 350}, {"x": 850, "y": 530}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 400}, {"x": 850, "y": 630}], "E": 2}],
       "path": {}
     }
   }
   connect(load.flange, wheel.load) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 850, "y": 550}, {"x": 850, "y": 570}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 700}, {"x": 850, "y": 670}], "E": 2}],
       "path": {}
     }
   }
   connect(load.support, ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(brake.y, wheel.tau_cmd) {
+  connect(command.y, brake.tau_cmd) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 650, "y": 600}, {"x": 650, "y": 450}, {"x": 750, "y": 450}],
+          "M": [{"x": 400, "y": 750}, {"x": 400, "y": 550}, {"x": 500, "y": 550}],
           "E": 2
         }
       ],
@@ -117,53 +130,50 @@ relations
   }
   connect(icy_forward.y, icy_motion.v_x) {
     "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 400, "y": 800}, {"x": 400, "y": 880.0000000000001}],
-          "E": 2
-        }
-      ],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 1000}, {"x": 400, "y": 1180}], "E": 2}],
       "path": {}
     }
   }
   connect(icy_sideways.y, icy_motion.v_y) {
     "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 400, "y": 1050}, {"x": 400, "y": 919.9999999999999}],
-          "E": 2
-        }
-      ],
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 1250}, {"x": 400, "y": 1220}], "E": 2}],
       "path": {}
     }
   }
   connect(icy_motion.frame_b, icy.frame_a) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 850, "y": 900}, {"x": 850, "y": 1130}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 1200}, {"x": 850, "y": 1280}], "E": 2}],
       "path": {}
     }
   }
   connect(icy_load.flange, icy.load) {
     "Dyad": {
-      "edges": [{"S": 1, "M": [{"x": 850, "y": 1150}, {"x": 850, "y": 1170}], "E": 2}],
+      "edges": [{"S": 1, "M": [{"x": 850, "y": 1300}, {"x": 850, "y": 1320}], "E": 2}],
       "path": {}
     }
   }
   connect(icy_load.support, icy_ground.flange) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(icy_brake.y, icy.tau_cmd) {
+  connect(icy_command.y, icy_brake.tau_cmd) {
     "Dyad": {
       "edges": [
         {
           "S": 1,
-          "M": [{"x": 650, "y": 1150}, {"x": 650, "y": 1050}, {"x": 750, "y": 1050}],
+          "M": [{"x": 400, "y": 1500}, {"x": 400, "y": 1350}, {"x": 500, "y": 1350}],
           "E": 2
         }
       ],
       "path": {}
     }
   }
+  connect(wheel.spin, brake.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(brake.support, mount.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(icy.spin, icy_brake.spline_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 1300}, {"x": 650, "y": 1450}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(icy_brake.support, icy_mount.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
 metadata {
   "Dyad": {
     "tests": {

@@ -1,13 +1,11 @@
 """
-Braked road wheel of the planar car: slip tire contact, rotating inertia and an in-line commanded
-brake, wired in the order torque travels from the road: tire, inertia, brake, shaft.
+Road wheel of the planar car: slip tire contact and rotating inertia, wired in the order torque
+travels from the road: tire, inertia, shaft.
 
 Ports:
 - `frame_a` the wheel center, with x along the wheel heading; it takes the tire force.
-- `spin` the shaft end behind the brake, where a drive or a differential attaches; open when
-  nothing drives the wheel.
+- `spin` the wheel shaft, where a brake or a drive attaches; open when nothing acts on the wheel.
 - `load` takes the normal load; `SlipWheelJoint` states the load-flange convention.
-- `tau_cmd` the requested brake torque, to the `Chassis.Wheel.BrakeActuator`.
 
 The tire is a `SlipWheelJoint` whose `mu_scale` comes from a `RoadGrip` at the wheel center, so
 the grip follows the wheel over the road `grip`, a `Road.Grip` built with `Road.grip(file)`; the
@@ -17,8 +15,7 @@ Documented variables: `F_x` and `F_y` are the longitudinal and lateral tire forc
 vehicle, in the wheel's heading frame, and `F_z` is the normal load the tire carries, never
 negative.
 
-Assumptions: those of `SlipWheelJoint` and `Chassis.Wheel.BrakeActuator`; the brake reacts on a
-fixed housing. The wheel starts at rest with the brake released; give another start at the
+Assumptions: those of `SlipWheelJoint`. The wheel starts at rest; give another start at the
 declaration, `Wheel(inertia(w = initial 64.5))`. Defaults are one wheel of the course's planar
 car (assumed).
 """
@@ -32,7 +29,7 @@ component Wheel
       }
     }
   }
-  "Shaft end behind the brake"
+  "Wheel shaft"
   spin = Spline() {
     "Dyad": {
       "placement": {
@@ -50,15 +47,6 @@ component Wheel
       }
     }
   }
-  "Requested brake torque"
-  tau_cmd = RealInput() {
-    "Dyad": {
-      "placement": {
-        "icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90},
-        "diagram": {"x1": 200, "y1": -50, "x2": 300, "y2": 50}
-      }
-    }
-  }
   "Road grip over world position"
   structural parameter grip::VehicleComponents.Road.Grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg")
   "Rolling radius"
@@ -73,10 +61,6 @@ component Wheel
   parameter sAdhesion::Real = 0.12
   "Slip ratio at the sliding plateau"
   parameter sSlide::Real = 3 * sAdhesion
-  "Brake actuator time constant"
-  parameter T_brake::Time = 0.03
-  "Maximum brake torque"
-  parameter tau_max::Torque = 2500.0
   "Longitudinal tire force on the vehicle"
   variable F_x::Dyad.Force
   "Lateral tire force on the vehicle"
@@ -91,12 +75,6 @@ component Wheel
   }
   inertia = RotationalComponents.Components.Inertia(J = J, phi = initial 0.0, w = initial 0.0) {
     "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 450, "y2": 550}}}
-  }
-  brake = VehicleComponents.Chassis.Wheel.BrakeActuator(T = T_brake, tau_max = tau_max) {
-    "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 200, "y1": 450, "y2": 550}}}
-  }
-  housing = RotationalComponents.Components.Fixed() {
-    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 650, "y2": 750}}}
   }
 relations
   connect(frame_a, tire.frame_a) {
@@ -142,10 +120,7 @@ relations
   }
   connect(load, tire.load) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   connect(tire.spline, inertia.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(inertia.spline_b, brake.spline_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(brake.spline_b, spin) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(brake.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(tau_cmd, brake.tau_cmd) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(inertia.spline_b, spin) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   F_x = tire.F_x
   F_y = tire.F_y
   F_z = tire.F_z

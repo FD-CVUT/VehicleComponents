@@ -5,17 +5,15 @@
 
 
 @doc Markdown.doc"""
-   Wheel(; name, grip, radius, J, mu_A, mu_S, sAdhesion, sSlide, T_brake, tau_max, __overrides)
+   Wheel(; name, grip, radius, J, mu_A, mu_S, sAdhesion, sSlide, __overrides)
 
-Braked road wheel of the planar car: slip tire contact, rotating inertia and an in-line commanded
-brake, wired in the order torque travels from the road: tire, inertia, brake, shaft.
+Road wheel of the planar car: slip tire contact and rotating inertia, wired in the order torque
+travels from the road: tire, inertia, shaft.
 
 Ports:
 - `frame_a` the wheel center, with x along the wheel heading; it takes the tire force.
-- `spin` the shaft end behind the brake, where a drive or a differential attaches; open when
-  nothing drives the wheel.
+- `spin` the wheel shaft, where a brake or a drive attaches; open when nothing acts on the wheel.
 - `load` takes the normal load; `SlipWheelJoint` states the load-flange convention.
-- `tau_cmd` the requested brake torque, to the `Chassis.Wheel.BrakeActuator`.
 
 The tire is a `SlipWheelJoint` whose `mu_scale` comes from a `RoadGrip` at the wheel center, so
 the grip follows the wheel over the road `grip`, a `Road.Grip` built with `Road.grip(file)`; the
@@ -25,8 +23,7 @@ Documented variables: `F_x` and `F_y` are the longitudinal and lateral tire forc
 vehicle, in the wheel's heading frame, and `F_z` is the normal load the tire carries, never
 negative.
 
-Assumptions: those of `SlipWheelJoint` and `Chassis.Wheel.BrakeActuator`; the brake reacts on a
-fixed housing. The wheel starts at rest with the brake released; give another start at the
+Assumptions: those of `SlipWheelJoint`. The wheel starts at rest; give another start at the
 declaration, `Wheel(inertia(w = initial 64.5))`. Defaults are one wheel of the course's planar
 car (assumed).
 
@@ -41,8 +38,6 @@ car (assumed).
 | `mu_S`         | Sliding friction coefficient                         | --  |   0.8 |
 | `sAdhesion`         | Slip ratio at peak adhesion                         | --  |   0.12 |
 | `sSlide`         | Slip ratio at the sliding plateau                         | --  |   3 * sAdhesion |
-| `T_brake`         | Brake actuator time constant                         | s  |   0.03 |
-| `tau_max`         | Maximum brake torque                         | N.m  |   2500.0 |
 
 ## Connectors
 
@@ -50,7 +45,6 @@ car (assumed).
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `load` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
- * `tau_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
@@ -60,7 +54,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 | `F_y`         | Lateral tire force on the vehicle                         | N  |
 | `F_z`         | Normal load the tire carries                         | N  |
 """
-@component function Wheel(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion"=0.12, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"sSlide"=nothing, __overrides = Dict{String, Any}())
+@component function Wheel(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion"=0.12, var"sSlide"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -85,8 +79,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
   haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
   haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
-  haskey(__overrides, "T_brake") && (T_brake = pop!(__overrides, "T_brake"))
-  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
 
   ### Deferred keyword defaults (defaults referencing other keyword arguments)
@@ -124,17 +116,10 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __local__sSlide = sSlide
   append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
-  __local__T_brake = T_brake
-  append!(__params, @parameters (T_brake::Real), [description = "Brake actuator time constant"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, T_brake, __local__T_brake)
-  __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (tau_cmd(t)::Real), [input = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (F_x(t)::Real), [description = "Longitudinal tire force on the vehicle"])
@@ -172,12 +157,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   inertia_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(inertia_dict, inertia_overrides)
   push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J, __overrides = inertia_dict))
-  # Subcomponent brake of type VehicleComponents.Chassis.Wheel.BrakeActuator
-  brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleComponents.Chassis.Wheel.BrakeActuator(; T=T_brake, tau_max=tau_max, __overrides = brake_overrides))
-  # Subcomponent housing of type RotationalComponents.Components.Fixed
-  housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -201,10 +180,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(road.grip, tire.mu_scale))
   push!(__eqs, connect(load, tire.load))
   push!(__eqs, connect(tire.spline, inertia.spline_a))
-  push!(__eqs, connect(inertia.spline_b, brake.spline_a))
-  push!(__eqs, connect(brake.spline_b, spin))
-  push!(__eqs, connect(brake.support, housing.spline))
-  push!(__eqs, connect(tau_cmd, brake.tau_cmd))
+  push!(__eqs, connect(inertia.spline_b, spin))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

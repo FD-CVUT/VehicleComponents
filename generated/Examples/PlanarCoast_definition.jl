@@ -14,8 +14,7 @@ the car's own bus. The model holds the planar `World`, gravity off. It has no po
 
 The car is the default `Body.Planar.Car` of `m` = 1500 kg with its CG `h_cg` = 0.55 m above the
 road and load transfer on. Each case starts on the road's center line, heading along x, at
-25 m/s with every wheel rolling at 25/0.31 rad/s, from x = `x0`; `brake.k` is each wheel's brake
-request.
+25 m/s with every wheel rolling at 25/0.31 rad/s, from x = `x0`.
 
 `ramp_z.crg` climbs at exactly 2 % on 0 to 500 m (`Body.Planar.Tests.RoadGrade` derives it).
 Before its grid starts at x = 0 the road blends over 2 m to height 0 and is level below -2 m,
@@ -23,7 +22,9 @@ so its slope there is exactly 0.
 
 - `climb` starts at x = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
   cos(alpha) = 1/sqrt(1.0004) = 0.99980006 and sin(alpha) = 0.01999600.
-- `braking` starts at x = -300 m, on the level road, with 250 N m on every brake.
+- `braking` starts at x = -300 m, on the level road, with 250 N m on every brake. The brakes are
+  `Chassis.Wheel.BrakeActuator`s on the car's wheel shafts, each reacting on its own mount, and
+  `brake.k` is each one's request; the other cases request 0.
 - `reverse` checks only the start of a car driving backward and sliding left, at
   vx = -19.363634 m/s and vy = 6.503820 m/s: the bus reads
   beta = atan(6.503820/max(|-19.363634|, 1)) = 0.324039 rad, where a sideslip taken against vx
@@ -167,6 +168,30 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   # Subcomponent brake of type BlockComponents.Sources.Constant
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
   push!(__systems, @named brake = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = brake_overrides))
+  # Subcomponent actuator_fl of type VehicleComponents.Chassis.Wheel.BrakeActuator
+  actuator_fl_overrides = __pop_subcomponent_overrides!(__overrides, "actuator_fl")
+  push!(__systems, @named actuator_fl = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(2500.0), __overrides = actuator_fl_overrides))
+  # Subcomponent actuator_fr of type VehicleComponents.Chassis.Wheel.BrakeActuator
+  actuator_fr_overrides = __pop_subcomponent_overrides!(__overrides, "actuator_fr")
+  push!(__systems, @named actuator_fr = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(2500.0), __overrides = actuator_fr_overrides))
+  # Subcomponent actuator_rl of type VehicleComponents.Chassis.Wheel.BrakeActuator
+  actuator_rl_overrides = __pop_subcomponent_overrides!(__overrides, "actuator_rl")
+  push!(__systems, @named actuator_rl = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(2500.0), __overrides = actuator_rl_overrides))
+  # Subcomponent actuator_rr of type VehicleComponents.Chassis.Wheel.BrakeActuator
+  actuator_rr_overrides = __pop_subcomponent_overrides!(__overrides, "actuator_rr")
+  push!(__systems, @named actuator_rr = VehicleComponents.Chassis.Wheel.BrakeActuator(; tau_max=Float64(2500.0), __overrides = actuator_rr_overrides))
+  # Subcomponent mount_fl of type RotationalComponents.Components.Fixed
+  mount_fl_overrides = __pop_subcomponent_overrides!(__overrides, "mount_fl")
+  push!(__systems, @named mount_fl = RotationalComponents.Components.Fixed(; __overrides = mount_fl_overrides))
+  # Subcomponent mount_fr of type RotationalComponents.Components.Fixed
+  mount_fr_overrides = __pop_subcomponent_overrides!(__overrides, "mount_fr")
+  push!(__systems, @named mount_fr = RotationalComponents.Components.Fixed(; __overrides = mount_fr_overrides))
+  # Subcomponent mount_rl of type RotationalComponents.Components.Fixed
+  mount_rl_overrides = __pop_subcomponent_overrides!(__overrides, "mount_rl")
+  push!(__systems, @named mount_rl = RotationalComponents.Components.Fixed(; __overrides = mount_rl_overrides))
+  # Subcomponent mount_rr of type RotationalComponents.Components.Fixed
+  mount_rr_overrides = __pop_subcomponent_overrides!(__overrides, "mount_rr")
+  push!(__systems, @named mount_rr = RotationalComponents.Components.Fixed(; __overrides = mount_rr_overrides))
   # Subcomponent world of type MultibodyComponents.PlanarMechanics.World
   world_overrides = __pop_subcomponent_overrides!(__overrides, "world")
   push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), __symbol_overrides(world_overrides)...))
@@ -186,7 +211,15 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   push!(__eqs, connect(road.grade, car.grade))
   push!(__eqs, connect(tire.y, car.f_r))
   push!(__eqs, connect(column.spline, car.steering))
-  push!(__eqs, connect(brake.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr))
+  push!(__eqs, connect(brake.y, actuator_fl.tau_cmd, actuator_rl.tau_cmd, actuator_fr.tau_cmd, actuator_rr.tau_cmd))
+  push!(__eqs, connect(car.spin_fl, actuator_fl.spline_b))
+  push!(__eqs, connect(car.spin_fr, actuator_fr.spline_a))
+  push!(__eqs, connect(car.spin_rl, actuator_rl.spline_b))
+  push!(__eqs, connect(car.spin_rr, actuator_rr.spline_a))
+  push!(__eqs, connect(actuator_fl.support, mount_fl.spline))
+  push!(__eqs, connect(actuator_fr.support, mount_fr.spline))
+  push!(__eqs, connect(actuator_rl.support, mount_rl.spline))
+  push!(__eqs, connect(actuator_rr.support, mount_rr.spline))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

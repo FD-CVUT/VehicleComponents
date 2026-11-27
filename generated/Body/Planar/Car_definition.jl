@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   Car(; name, grip, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
+   Car(; name, grip, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
-Four-wheel planar car: a rigid chassis on four braked slip wheels, the front pair steered through
+Four-wheel planar car: a rigid chassis on four slip wheels, the front pair steered through
 a column and an Ackermann linkage, with quasi-static wheel loads, its road load, and ideal
 sensors that send everything measured about the car on `bus`.
 
@@ -28,9 +28,9 @@ Ports:
 - `chassis` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the model's
   own.
 - `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` the wheel-center frames.
-- `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft behind its brake, where a drive
-  attaches; open for an undriven wheel.
-- `tau_fl`, `tau_fr`, `tau_rl`, `tau_rr` each wheel's requested brake torque.
+- `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft, where a brake or a drive
+  attaches; open when nothing acts on the wheel. The car has no brakes: a model places a
+  `Chassis.Wheel.BrakeActuator` or a `Chassis.Brakes.Caliper` on each shaft it brakes.
 - `grade` the road gradient tan(alpha) along the heading, 0 on a flat road (or from a
   `RoadGrade` on `chassis`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
   asphalt).
@@ -40,8 +40,8 @@ Ports:
 Assumptions: no suspension, so no roll, pitch or camber; the road load acts at the center of mass
 along the heading (`RoadLoad`); gravity enters only through the wheel loads and the road load,
 and the model must hold one planar `World` with `g = 0`, since the car lies in the road plane.
-The car starts at rest at the world origin heading along x, with every wheel at rest and every
-brake released; give another start at the declaration,
+The car starts at rest at the world origin heading along x, with every wheel at rest; give
+another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
 planar car (a mid-size sedan, assumed). The wheel frames must take no torque about the kingpin:
 the steering column and linkage react on a fixed housing, so a steering reaction would go to the
@@ -67,8 +67,6 @@ wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are 
 | `mu_S`         | Sliding friction coefficient                         | --  |   0.8 |
 | `sAdhesion_f`         | Front slip ratio at peak adhesion                         | --  |   0.12 |
 | `sAdhesion_r`         | Rear slip ratio at peak adhesion                         | --  |   0.09 |
-| `T_brake`         | Brake actuator time constant                         | s  |   0.03 |
-| `tau_max`         | Maximum brake torque of each wheel                         | N.m  |   2500.0 |
 | `i_s`         | Steering ratio, steering-wheel angle over road-wheel angle                         | --  |   16.0 |
 | `t_k`         | Kingpin track                         | m  |   tw |
 | `ackermann`         | Ackermann fraction: 1 for full Ackermann, 0 for parallel steer                         | --  |   1.0 |
@@ -92,10 +90,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin_fr` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `spin_rl` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `spin_rr` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
- * `tau_fl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `f_r` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `bus` - The planar car's measurement bus, as the car sends it: every signal measured about the car, on
@@ -106,7 +100,7 @@ A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `
 the component that holds it. Two `CarBus` ports
 side by side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
-@component function Car(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
+@component function Car(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -138,8 +132,6 @@ side by side would both drive the same signals, and the compiler does not reject
   haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
   haskey(__overrides, "sAdhesion_f") && (sAdhesion_f = pop!(__overrides, "sAdhesion_f"))
   haskey(__overrides, "sAdhesion_r") && (sAdhesion_r = pop!(__overrides, "sAdhesion_r"))
-  haskey(__overrides, "T_brake") && (T_brake = pop!(__overrides, "T_brake"))
-  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "i_s") && (i_s = pop!(__overrides, "i_s"))
   haskey(__overrides, "ackermann") && (ackermann = pop!(__overrides, "ackermann"))
   haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
@@ -196,12 +188,6 @@ side by side would both drive the same signals, and the compiler does not reject
   __local__sAdhesion_r = sAdhesion_r
   append!(__params, @parameters (sAdhesion_r::Real), [description = "Rear slip ratio at peak adhesion"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion_r, __local__sAdhesion_r)
-  __local__T_brake = T_brake
-  append!(__params, @parameters (T_brake::Real), [description = "Brake actuator time constant"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, T_brake, __local__T_brake)
-  __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque of each wheel"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__i_s = i_s
   append!(__params, @parameters (i_s::Real), [description = "Steering ratio, steering-wheel angle over road-wheel angle"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, i_s, __local__i_s)
@@ -221,10 +207,6 @@ side by side would both drive the same signals, and the compiler does not reject
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (tau_fl(t)::Real), [input = true])
-  append!(__vars, @variables (tau_fr(t)::Real), [input = true])
-  append!(__vars, @variables (tau_rl(t)::Real), [input = true])
-  append!(__vars, @variables (tau_rr(t)::Real), [input = true])
   append!(__vars, @variables (grade(t)::Real), [input = true])
   append!(__vars, @variables (f_r(t)::Real), [input = true])
 
@@ -294,16 +276,16 @@ side by side would both drive the same signals, and the compiler does not reject
   push!(__systems, @named loads = VehicleComponents.Body.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = loads_overrides))
   # Subcomponent fl of type VehicleComponents.Body.Planar.Wheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
-  push!(__systems, @named fl = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fl_overrides))
+  push!(__systems, @named fl = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_f, __overrides = fl_overrides))
   # Subcomponent fr of type VehicleComponents.Body.Planar.Wheel
   fr_overrides = __pop_subcomponent_overrides!(__overrides, "fr")
-  push!(__systems, @named fr = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fr_overrides))
+  push!(__systems, @named fr = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_f, __overrides = fr_overrides))
   # Subcomponent rl of type VehicleComponents.Body.Planar.Wheel
   rl_overrides = __pop_subcomponent_overrides!(__overrides, "rl")
-  push!(__systems, @named rl = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
+  push!(__systems, @named rl = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_r, __overrides = rl_overrides))
   # Subcomponent rr of type VehicleComponents.Body.Planar.Wheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
-  push!(__systems, @named rr = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
+  push!(__systems, @named rr = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_r, __overrides = rr_overrides))
   # Subcomponent roadload of type VehicleComponents.Body.Planar.RoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleComponents.Body.Planar.RoadLoad(; m=m, __overrides = roadload_overrides))
@@ -387,10 +369,6 @@ side by side would both drive the same signals, and the compiler does not reject
   push!(__eqs, connect(fr.spin, spin_fr, slip_fr.spline))
   push!(__eqs, connect(rl.spin, spin_rl, slip_rl.spline))
   push!(__eqs, connect(rr.spin, spin_rr, slip_rr.spline))
-  push!(__eqs, connect(tau_fl, fl.tau_cmd))
-  push!(__eqs, connect(tau_fr, fr.tau_cmd))
-  push!(__eqs, connect(tau_rl, rl.tau_cmd))
-  push!(__eqs, connect(tau_rr, rr.tau_cmd))
   push!(__eqs, connect(f_r, roadload.f_r))
   push!(__eqs, connect(grade, roadload.grade))
 
