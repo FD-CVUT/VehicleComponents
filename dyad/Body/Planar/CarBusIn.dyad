@@ -1,0 +1,56 @@
+"""
+The receiving end of `CarBus`: the same fields, as inputs. A control unit or a `BusOut`
+listens on one of these.
+"""
+connector CarBusIn
+  "Forward speed of the chassis, in the chassis frame"
+  input vx::Velocity
+  "Lateral speed of the chassis, in the chassis frame"
+  input vy::Velocity
+  "Yaw rate"
+  input r::AngularVelocity
+  "Forward acceleration, in the chassis frame"
+  input ax::Acceleration
+  "Lateral acceleration, in the chassis frame"
+  input ay::Acceleration
+  "World x position of the chassis frame"
+  input x::Position
+  "World y position of the chassis frame"
+  input y::Position
+  "Yaw angle"
+  input psi::Angle
+  "Body sideslip angle, atan(vy / max(|vx|, 1 m/s))"
+  input beta::Angle
+  "Steering-wheel angle"
+  input delta_sw::Angle
+  "Longitudinal slip of the front-left wheel"
+  input kappa_fl::Real
+  "Longitudinal slip of the front-right wheel"
+  input kappa_fr::Real
+  "Longitudinal slip of the rear-left wheel"
+  input kappa_rl::Real
+  "Longitudinal slip of the rear-right wheel"
+  input kappa_rr::Real
+  "Slip angle of the front-left wheel"
+  input alpha_fl::Angle
+  "Slip angle of the front-right wheel"
+  input alpha_fr::Angle
+  "Slip angle of the rear-left wheel"
+  input alpha_rl::Angle
+  "Slip angle of the rear-right wheel"
+  input alpha_rr::Angle
+  "Spin speed of the front-left wheel"
+  input omega_fl::AngularVelocity
+  "Spin speed of the front-right wheel"
+  input omega_fr::AngularVelocity
+  "Spin speed of the rear-left wheel"
+  input omega_rl::AngularVelocity
+  "Spin speed of the rear-right wheel"
+  input omega_rr::AngularVelocity
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Body/Planar/CarBusIn.svg"},
+    "path": {"stroke": "#0277bd"}
+  }
+}
+end

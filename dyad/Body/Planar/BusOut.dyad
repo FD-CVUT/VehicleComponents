@@ -1,0 +1,84 @@
+"""
+Unpacks the planar car's measurement bus: each field of a `CarBusIn` to the output of the same
+name, as a plain signal for blocks that take `RealInput`s.
+
+Ports: `bus` the car's bus; one output per field, in the connector's order down the right side
+(`CarBus` lists the fields and their units). Outputs a model does not use stay open.
+
+Assumptions: none; each output is its bus field, with no delay or noise. A realistic measurement
+adds them after this block, `Sensors.Noise` for one.
+"""
+component BusOut
+  "The car's measurement bus"
+  bus = VehicleComponents.Body.Planar.CarBusIn() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+  "Forward speed of the chassis, in the chassis frame [m/s]"
+  vx = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 62, "x2": 1040, "y2": 98}}}}
+  "Lateral speed of the chassis, in the chassis frame [m/s]"
+  vy = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 102, "x2": 1040, "y2": 138}}}}
+  "Yaw rate [rad/s]"
+  r = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 142, "x2": 1040, "y2": 178}}}}
+  "Forward acceleration, in the chassis frame [m/s²]"
+  ax = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 182, "x2": 1040, "y2": 218}}}}
+  "Lateral acceleration, in the chassis frame [m/s²]"
+  ay = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 222, "x2": 1040, "y2": 258}}}}
+  "World x position of the chassis frame [m]"
+  x = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 262, "x2": 1040, "y2": 298}}}}
+  "World y position of the chassis frame [m]"
+  y = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 302, "x2": 1040, "y2": 338}}}}
+  "Yaw angle [rad]"
+  psi = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 342, "x2": 1040, "y2": 378}}}}
+  "Body sideslip angle, atan(vy / max(|vx|, 1 m/s)) [rad]"
+  beta = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 382, "x2": 1040, "y2": 418}}}}
+  "Steering-wheel angle [rad]"
+  delta_sw = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 422, "x2": 1040, "y2": 458}}}}
+  "Longitudinal slip of the front-left wheel [-]"
+  kappa_fl = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 462, "x2": 1040, "y2": 498}}}}
+  "Longitudinal slip of the front-right wheel [-]"
+  kappa_fr = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 502, "x2": 1040, "y2": 538}}}}
+  "Longitudinal slip of the rear-left wheel [-]"
+  kappa_rl = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 542, "x2": 1040, "y2": 578}}}}
+  "Longitudinal slip of the rear-right wheel [-]"
+  kappa_rr = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 582, "x2": 1040, "y2": 618}}}}
+  "Slip angle of the front-left wheel [rad]"
+  alpha_fl = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 622, "x2": 1040, "y2": 658}}}}
+  "Slip angle of the front-right wheel [rad]"
+  alpha_fr = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 662, "x2": 1040, "y2": 698}}}}
+  "Slip angle of the rear-left wheel [rad]"
+  alpha_rl = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 702, "x2": 1040, "y2": 738}}}}
+  "Slip angle of the rear-right wheel [rad]"
+  alpha_rr = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 742, "x2": 1040, "y2": 778}}}}
+  "Spin speed of the front-left wheel [rad/s]"
+  omega_fl = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 782, "x2": 1040, "y2": 818}}}}
+  "Spin speed of the front-right wheel [rad/s]"
+  omega_fr = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 822, "x2": 1040, "y2": 858}}}}
+  "Spin speed of the rear-left wheel [rad/s]"
+  omega_rl = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 862, "x2": 1040, "y2": 898}}}}
+  "Spin speed of the rear-right wheel [rad/s]"
+  omega_rr = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 960, "y1": 902, "x2": 1040, "y2": 938}}}}
+relations
+  vx = bus.vx
+  vy = bus.vy
+  r = bus.r
+  ax = bus.ax
+  ay = bus.ay
+  x = bus.x
+  y = bus.y
+  psi = bus.psi
+  beta = bus.beta
+  delta_sw = bus.delta_sw
+  kappa_fl = bus.kappa_fl
+  kappa_fr = bus.kappa_fr
+  kappa_rl = bus.kappa_rl
+  kappa_rr = bus.kappa_rr
+  alpha_fl = bus.alpha_fl
+  alpha_fr = bus.alpha_fr
+  alpha_rl = bus.alpha_rl
+  alpha_rr = bus.alpha_rr
+  omega_fl = bus.omega_fl
+  omega_fr = bus.omega_fr
+  omega_rl = bus.omega_rl
+  omega_rr = bus.omega_rr
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/BusOut.svg"}}
+}
+end

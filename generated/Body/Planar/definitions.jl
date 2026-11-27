@@ -201,6 +201,10 @@ end
 
 
 include("AckermannSteering_definition.jl")
+include("BusIn_definition.jl")
+include("BusOut_definition.jl")
+include("CarBusIn_definition.jl")
+include("CarBus_definition.jl")
 include("Car_definition.jl")
 include("QuasiStaticLoads_definition.jl")
 include("RoadGrade_definition.jl")

@@ -1,8 +1,8 @@
 """
 Straight-line runs of the planar car on the 2 % ramp road, steering wheel held straight by
 `column`, no drive: a coast up the ramp and a braked stop with load transfer on the level road.
-The car's road load reads the grade from a `RoadGrade` under the chassis, and a
-`Sensors.PlanarCar` beside the car reads it. It has no ports.
+The car's road load reads the grade from a `RoadGrade` under the chassis; the assertions read
+the car's own bus. The model holds the planar `World`, gravity off. It has no ports.
 
 The car is the default `Body.Planar.Car` of `m` = 1500 kg with its CG `h_cg` = 0.55 m above the
 road and load transfer on. Each case starts on the road's center line, heading along x, at
@@ -51,6 +51,9 @@ J Σv_sl/(r² m_eff) = 1 · 1.223064/(0.0961 · 1541.6233) = 0.008256 m/s, v = 2
 slip shrinks with the speed (v_sl ∝ v at a constant force), which adds J Σv_sl a/(v r² m_eff) =
 -0.000935 m/s² to the acceleration, a = -2.309900 m/s², and over the braking phase the speed
 offset adds 0.008256 · 44.689427/20.394800 = 0.018091 m to the distance, x = -254.542602 m.
+The car's bus reads the wheels' slip ratio (r w - v)/v = -v_sl/v: -0.284891/20.403056 =
+-0.013963 front and -0.326641/20.403056 = -0.016009 rear, and their spin speeds
+(v - v_sl)/r: (20.403056 - 0.284891)/0.31 = 64.8973 rad/s front and 64.7626 rad/s rear.
 
 The braked case's wheel loads: at rest each front wheel carries m g b/(2 L) = 4086.1042 N and
 each rear wheel m g a/(2 L) = 3268.8833 N (a = 1.2 m, b = 1.5 m, L = 2.7 m). The loads see the
@@ -74,64 +77,154 @@ test component PlanarCoast
   column = RotationalComponents.Components.Fixed() {^column}
   "Brake request on every wheel"
   brake = BlockComponents.Sources.Constant(k = 0.0) {^brake}
-  sensors = VehicleComponents.Sensors.PlanarCar() {^sensors}
+  "Planar world with its gravity off: the car lies in the road plane"
+  world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {^world}
 relations
-  connect(car.chassis, road.frame_a, sensors.chassis) {^w1}
-  connect(road.grade, car.grade) {^w2}
-  connect(tire.y, car.f_r) {^w3}
-  connect(column.spline, car.steering, sensors.steering) {^w4}
-  connect(brake.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr) {^w5}
-  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
-  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
-  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
-  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
-  connect(car.spin_fl, sensors.spin_fl) {^w10}
-  connect(car.spin_fr, sensors.spin_fr) {^w11}
-  connect(car.spin_rl, sensors.spin_rl) {^w12}
-  connect(car.spin_rr, sensors.spin_rr) {^w13}
+  connect(car.chassis, road.frame_a) {^id7}
+  connect(road.grade, car.grade) {^id8}
+  connect(tire.y, car.f_r) {^id9}
+  connect(column.spline, car.steering) {^id10}
+  connect(brake.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr) {^id11}
 metadata {
   "Dyad": {
     "tests": {
       "climb": {
-        "stop": 10, "solver": "Auto", "abstol": 1e-7, "reltol": 1e-7,
+        "stop": 10,
+        "solver": "Auto",
+        "abstol": 1e-7,
+        "reltol": 1e-7,
         "params": {"x0": 10.0},
-        "atol": {"sensors.bus.vx": 0.001, "sensors.bus.x": 0.01, "sensors.bus.y": 0.001, "sensors.bus.r": 1e-6},
+        "atol": {
+          "car.bus.vx": 0.001,
+          "car.bus.x": 0.01,
+          "car.bus.y": 0.001,
+          "car.bus.r": 1e-6
+        },
         "expect": {
-          "initial": {"sensors.bus.vx": 25.0, "sensors.bus.x": 10.0},
-          "final": {"sensors.bus.vx": 20.669387, "sensors.bus.x": 237.943473, "sensors.bus.y": 0.0, "sensors.bus.r": 0.0}
+          "initial": {"car.bus.vx": 25.0, "car.bus.x": 10.0},
+          "final": {
+            "car.bus.vx": 20.669387,
+            "car.bus.x": 237.943473,
+            "car.bus.y": 0.0,
+            "car.bus.r": 0.0
+          }
         }
       },
       "braking": {
-        "stop": 2, "solver": "Auto", "abstol": 1e-7, "reltol": 1e-7,
+        "stop": 2,
+        "solver": "Auto",
+        "abstol": 1e-7,
+        "reltol": 1e-7,
         "params": {"brake.k": 250.0},
-        "atol": {"sensors.bus.vx": 0.002, "sensors.bus.x": 0.01, "sensors.bus.ax": 0.001, "car.fl.F_z": 0.5, "car.fr.F_z": 0.5, "car.rl.F_z": 0.5, "car.rr.F_z": 0.5, "sensors.bus.y": 0.001, "sensors.bus.r": 1e-6},
+        "atol": {
+          "car.bus.vx": 0.002,
+          "car.bus.x": 0.01,
+          "car.bus.ax": 0.001,
+          "car.fl.F_z": 0.5,
+          "car.fr.F_z": 0.5,
+          "car.rl.F_z": 0.5,
+          "car.rr.F_z": 0.5,
+          "car.bus.y": 0.001,
+          "car.bus.r": 1e-6,
+          "car.bus.kappa_fl": 0.0005,
+          "car.bus.kappa_fr": 0.0005,
+          "car.bus.kappa_rl": 0.0005,
+          "car.bus.kappa_rr": 0.0005,
+          "car.bus.omega_fl": 0.01,
+          "car.bus.omega_rl": 0.01
+        },
         "expect": {
-          "initial": {"sensors.bus.vx": 25.0, "sensors.bus.x": -300.0},
-          "final": {"sensors.bus.vx": 20.403056, "sensors.bus.x": -254.542602, "sensors.bus.ax": -2.309900, "car.fl.F_z": 4439.1820, "car.fr.F_z": 4439.1820, "car.rl.F_z": 2915.8055, "car.rr.F_z": 2915.8055, "sensors.bus.y": 0.0, "sensors.bus.r": 0.0}
+          "initial": {"car.bus.vx": 25.0, "car.bus.x": -300.0},
+          "final": {
+            "car.bus.vx": 20.403056,
+            "car.bus.x": -254.542602,
+            "car.bus.ax": -2.309900,
+            "car.fl.F_z": 4439.1820,
+            "car.fr.F_z": 4439.1820,
+            "car.rl.F_z": 2915.8055,
+            "car.rr.F_z": 2915.8055,
+            "car.bus.y": 0.0,
+            "car.bus.r": 0.0,
+            "car.bus.kappa_fl": -0.013963,
+            "car.bus.kappa_fr": -0.013963,
+            "car.bus.kappa_rl": -0.016009,
+            "car.bus.kappa_rr": -0.016009,
+            "car.bus.omega_fl": 64.8973,
+            "car.bus.omega_rl": 64.7626
+          }
         }
       }
     }
   },
   "_links": {
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 800, "y1": 100, "y2": 500}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 800, "y1": 650, "y2": 1050}}}},
-    "column": {"Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": -50, "y2": 50}}}},
-    "brake": {"Dyad": {"placement": {"diagram": {"x1": 50, "x2": 150, "y1": 50, "y2": 150}}}},
-    "tire": {"Dyad": {"placement": {"diagram": {"x1": 50, "x2": 150, "y1": 230, "y2": 330}}}},
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 50, "x2": 150, "y1": 550, "y2": 650}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 600, "y": 575}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 900, "y": -80}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [], "E": 5}], "junctions": [{"x": 250, "y": 100}]}},
-    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+    "car": {
+      "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 800, "y1": 100, "y2": 500}}}
+    },
+    "road": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 200, "x2": 100, "y1": 450, "y2": 550, "rot": 90}}
+      }
+    },
+    "tire": {
+      "Dyad": {"placement": {"diagram": {"x1": 170, "x2": 270, "y1": 180, "y2": 280}}}
+    },
+    "column": {
+      "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 10, "y2": 110}}}
+    },
+    "brake": {
+      "Dyad": {"placement": {"diagram": {"x1": -110, "x2": -10, "y1": 50, "y2": 150}}}
+    },
+    "world": {
+      "Dyad": {"placement": {"diagram": {"x1": -110, "x2": -10, "y1": 900, "y2": 1000}}}
+    },
+    "id7": {
+      "Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 575}, {"x": 150, "y": 575}], "E": 2}], "path": {}}
+    },
+    "id8": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 150, "y": 360}, {"x": 400, "y": 360}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id9": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 360, "y": 230}, {"x": 360, "y": 280}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id10": {
+      "Dyad": {"edges": [{"S": 1, "M": [{"x": 900, "y": -80}, {"x": 600, "y": -80}], "E": 2}], "path": {}}
+    },
+    "id11": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {
+            "S": -1,
+            "M": [{"x": 160, "y": 140}, {"x": 360, "y": 140}, {"x": 360, "y": 160}],
+            "E": 2
+          },
+          {"S": -1, "M": [{"x": 160, "y": 320}, {"x": 400, "y": 320}], "E": 3},
+          {
+            "S": -1,
+            "M": [
+              {"x": 200, "y": 100},
+              {"x": 200, "y": -120},
+              {"x": 960, "y": -120},
+              {"x": 960, "y": 160}
+            ],
+            "E": 4
+          },
+          {
+            "S": -1,
+            "M": [{"x": 160, "y": -160}, {"x": 1120, "y": -160}, {"x": 1120, "y": 360}],
+            "E": 5
+          }
+        ],
+        "junctions": [{"x": 160, "y": 100}],
+        "path": {}
+      }
+    }
   }
 }
 end

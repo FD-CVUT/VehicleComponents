@@ -10,6 +10,7 @@ end
 
 
 include("AckermannSteering_experiment.jl")
+include("Bus_experiment.jl")
 include("QuasiStaticLoads_experiment.jl")
 include("RoadGrade_experiment.jl")
 include("RoadGrip_experiment.jl")

@@ -17,6 +17,7 @@ end
 
 @testset "`VehicleComponents.Body.Planar.Tests`" begin
 include("AckermannSteering_test.jl")
+include("Bus_test.jl")
 include("QuasiStaticLoads_test.jl")
 include("RoadGrade_test.jl")
 include("RoadGrip_test.jl")

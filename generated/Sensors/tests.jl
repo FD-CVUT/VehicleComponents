@@ -16,12 +16,7 @@ end
 
 
 @testset "`VehicleComponents.Sensors`" begin
-include("BusMotion_test.jl")
-include("BusSlipAngle_test.jl")
-include("BusSlip_test.jl")
-include("BusWheelSpeed_test.jl")
 include("Noise_test.jl")
-include("PlanarCar_test.jl")
 include("WheelSlip_test.jl")
 end
 include("Tests/tests.jl")

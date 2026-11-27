@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path fill="#fff" d="M4 4h992v992H4z"/>
+  <path fill="#84bfed" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
+  <g fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 300 H200 M0 700 H200 M820 500 H1000"/>
+    <path d="M300 720 L760 720 M300 720 L740 460" stroke-width="20"/>
+    <path d="M700 720 L760 720 L700 690" stroke-width="14"/>
+    <path d="M740 460 L670 470 M740 460 L700 520" stroke-width="14"/>
+    <path d="M520 720 A220 220 0 0 0 495 620" stroke="#5757db" stroke-width="14"/>
+  </g>
+  <text x="560" y="680" font-family="sans-serif" font-size="110" fill="#5757db">β</text>
+  <text x="200" y="330" font-family="sans-serif" font-size="80" fill="#000">vy</text>
+  <text x="200" y="680" font-family="sans-serif" font-size="80" fill="#000">vx</text>
+</svg>

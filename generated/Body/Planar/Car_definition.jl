@@ -8,20 +8,25 @@
    Car(; name, grip, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
 Four-wheel planar car: a rigid chassis on four braked slip wheels, the front pair steered through
-a column and an Ackermann linkage, with quasi-static wheel loads and its road load.
+a column and an Ackermann linkage, with quasi-static wheel loads, its road load, and ideal
+sensors that send everything measured about the car on `bus`.
 
 The chassis is a planar body of mass `m` and yaw inertia `Iz` at the center of mass, with the
 front axle `a` ahead and the rear axle `b` behind it and the wheels `tw/2` to either side. The
 steering wheel turns the column, which turns the linkage's input by `1/i_s` of its angle; the
 linkage turns the front wheels on revolute joints. `QuasiStaticLoads` pushes each wheel's normal
 load onto its tire, every `Wheel` reads its grip from the road `grip`, and `RoadLoad` puts the
-drag, rolling resistance and along-slope weight of the mass `m` on the chassis.
+drag, rolling resistance and along-slope weight of the mass `m` on the chassis. The sensors read
+the chassis (`velocity`, `acceleration`, `position`, the last in the world frame), the steering
+column (`steering_angle`) and each wheel (a `Sensors.WheelSlip` each), `Helpers.Sideslip` turns
+the chassis velocity into the sideslip angle, and a `BusIn` packs every reading onto `bus`.
 
 Ports:
 - `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
   be held or driven (a `Fixed`, or a position source): the wheels carry no aligning torque, so
   an open steering shaft leaves its angle undetermined.
-- `chassis` the chassis frame at the center of mass, for a `RoadGrade` or the sensors.
+- `chassis` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the model's
+  own.
 - `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` the wheel-center frames.
 - `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft behind its brake, where a drive
   attaches; open for an undriven wheel.
@@ -29,14 +34,14 @@ Ports:
 - `grade` the road gradient tan(alpha) along the heading, 0 on a flat road (or from a
   `RoadGrade` on `chassis`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
   asphalt).
-
-The car carries no sensors: a model that needs measurements places a `Sensors.PlanarCar` beside
-it and wires it to `steering`, `chassis` and the wheel frames and shafts.
+- `bus` everything measured about the car (`CarBus` lists the fields); read it with a `BusOut`.
+  The wheel and steering ports stay open to other sensors a model places itself.
 
 Assumptions: no suspension, so no roll, pitch or camber; the road load acts at the center of mass
 along the heading (`RoadLoad`); gravity enters only through the wheel loads and the road load,
-the world's gravity is off. The car starts at rest at the world origin heading along x, with
-every wheel at rest and every brake released; give another start at the declaration,
+and the model must hold one planar `World` with `g = 0`, since the car lies in the road plane.
+The car starts at rest at the world origin heading along x, with every wheel at rest and every
+brake released; give another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
 planar car (a mid-size sedan, assumed). The wheel frames must take no torque about the kingpin:
 the steering column and linkage react on a fixed housing, so a steering reaction would go to the
@@ -93,6 +98,13 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `tau_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `f_r` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `bus` - The planar car's measurement bus, as the car sends it: every signal measured about the car, on
+one port, each field in its own unit (SI; the slip ratios dimensionless). It is a plain signal
+bus, not a model of a vehicle network.
+
+A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
+the component that holds it, as `Car` passes on the one its `BusIn` fills. Two `CarBus` ports
+side by side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
 @component function Car(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -234,9 +246,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named spin_fr = __Dyad__Spline())
   push!(__systems, @named spin_rl = __Dyad__Spline())
   push!(__systems, @named spin_rr = __Dyad__Spline())
-  # Subcomponent world of type MultibodyComponents.PlanarMechanics.World
-  world_overrides = __pop_subcomponent_overrides!(__overrides, "world")
-  push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), __symbol_overrides(world_overrides)...))
+  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
   # Subcomponent body of type MultibodyComponents.PlanarMechanics.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   body_dict = Dict{String, Any}()
@@ -297,6 +307,36 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   # Subcomponent roadload of type VehicleComponents.Body.Planar.RoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleComponents.Body.Planar.RoadLoad(; m=m, __overrides = roadload_overrides))
+  # Subcomponent velocity of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
+  velocity_overrides = __pop_subcomponent_overrides!(__overrides, "velocity")
+  push!(__systems, @named velocity = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = velocity_overrides))
+  # Subcomponent acceleration of type MultibodyComponents.PlanarMechanics.AbsoluteAcceleration
+  acceleration_overrides = __pop_subcomponent_overrides!(__overrides, "acceleration")
+  push!(__systems, @named acceleration = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; __overrides = acceleration_overrides))
+  # Subcomponent position of type MultibodyComponents.PlanarMechanics.AbsolutePosition
+  position_overrides = __pop_subcomponent_overrides!(__overrides, "position")
+  push!(__systems, @named position = MultibodyComponents.PlanarMechanics.AbsolutePosition(; resolve_in_frame=MultibodyComponents.ResolveInFrame.World(), __overrides = position_overrides))
+  # Subcomponent steering_angle of type RotationalComponents.Sensors.AngleSensor
+  steering_angle_overrides = __pop_subcomponent_overrides!(__overrides, "steering_angle")
+  push!(__systems, @named steering_angle = RotationalComponents.Sensors.AngleSensor(; __overrides = steering_angle_overrides))
+  # Subcomponent slip_fl of type VehicleComponents.Sensors.WheelSlip
+  slip_fl_overrides = __pop_subcomponent_overrides!(__overrides, "slip_fl")
+  push!(__systems, @named slip_fl = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_fl_overrides))
+  # Subcomponent slip_fr of type VehicleComponents.Sensors.WheelSlip
+  slip_fr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_fr")
+  push!(__systems, @named slip_fr = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_fr_overrides))
+  # Subcomponent slip_rl of type VehicleComponents.Sensors.WheelSlip
+  slip_rl_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rl")
+  push!(__systems, @named slip_rl = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_rl_overrides))
+  # Subcomponent slip_rr of type VehicleComponents.Sensors.WheelSlip
+  slip_rr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rr")
+  push!(__systems, @named slip_rr = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_rr_overrides))
+  # Subcomponent sideslip of type VehicleComponents.Body.Planar.Helpers.Sideslip
+  sideslip_overrides = __pop_subcomponent_overrides!(__overrides, "sideslip")
+  push!(__systems, @named sideslip = VehicleComponents.Body.Planar.Helpers.Sideslip(; __overrides = sideslip_overrides))
+  # Subcomponent pack of type VehicleComponents.Body.Planar.BusIn
+  pack_overrides = __pop_subcomponent_overrides!(__overrides, "pack")
+  push!(__systems, @named pack = VehicleComponents.Body.Planar.BusIn(; __overrides = pack_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -309,16 +349,16 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis))
+  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a))
   push!(__eqs, connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a))
   push!(__eqs, connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a))
   push!(__eqs, connect(arm_fl.frame_b, kingpin_fl.frame_a))
-  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, wheel_fl))
+  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, wheel_fl, slip_fl.frame_a))
   push!(__eqs, connect(arm_fr.frame_b, kingpin_fr.frame_a))
-  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, wheel_fr))
-  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, wheel_rl))
-  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, wheel_rr))
-  push!(__eqs, connect(steering, column.spline_a))
+  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, wheel_fr, slip_fr.frame_a))
+  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, wheel_rl, slip_rl.frame_a))
+  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, wheel_rr, slip_rr.frame_a))
+  push!(__eqs, connect(steering, column.spline_a, steering_angle.spline))
   push!(__eqs, connect(column.spline_b, linkage.spline_in))
   push!(__eqs, connect(linkage.spline_left, kingpin_fl.flange_a))
   push!(__eqs, connect(linkage.spline_right, kingpin_fr.flange_a))
@@ -327,16 +367,39 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(loads.fr, fr.load))
   push!(__eqs, connect(loads.rl, rl.load))
   push!(__eqs, connect(loads.rr, rr.load))
-  push!(__eqs, connect(fl.spin, spin_fl))
-  push!(__eqs, connect(fr.spin, spin_fr))
-  push!(__eqs, connect(rl.spin, spin_rl))
-  push!(__eqs, connect(rr.spin, spin_rr))
+  push!(__eqs, connect(fl.spin, spin_fl, slip_fl.spline))
+  push!(__eqs, connect(fr.spin, spin_fr, slip_fr.spline))
+  push!(__eqs, connect(rl.spin, spin_rl, slip_rl.spline))
+  push!(__eqs, connect(rr.spin, spin_rr, slip_rr.spline))
   push!(__eqs, connect(tau_fl, fl.tau_cmd))
   push!(__eqs, connect(tau_fr, fr.tau_cmd))
   push!(__eqs, connect(tau_rl, rl.tau_cmd))
   push!(__eqs, connect(tau_rr, rr.tau_cmd))
   push!(__eqs, connect(f_r, roadload.f_r))
   push!(__eqs, connect(grade, roadload.grade))
+  push!(__eqs, connect(velocity.v_x, pack.vx, sideslip.vx))
+  push!(__eqs, connect(velocity.v_y, pack.vy, sideslip.vy))
+  push!(__eqs, connect(velocity.w, pack.r))
+  push!(__eqs, connect(acceleration.a_x, pack.ax))
+  push!(__eqs, connect(acceleration.a_y, pack.ay))
+  push!(__eqs, connect(position.x, pack.x))
+  push!(__eqs, connect(position.y, pack.y))
+  push!(__eqs, connect(position.phi, pack.psi))
+  push!(__eqs, connect(sideslip.beta, pack.beta))
+  push!(__eqs, connect(steering_angle.phi, pack.delta_sw))
+  push!(__eqs, connect(slip_fl.kappa, pack.kappa_fl))
+  push!(__eqs, connect(slip_fr.kappa, pack.kappa_fr))
+  push!(__eqs, connect(slip_rl.kappa, pack.kappa_rl))
+  push!(__eqs, connect(slip_rr.kappa, pack.kappa_rr))
+  push!(__eqs, connect(slip_fl.alpha, pack.alpha_fl))
+  push!(__eqs, connect(slip_fr.alpha, pack.alpha_fr))
+  push!(__eqs, connect(slip_rl.alpha, pack.alpha_rl))
+  push!(__eqs, connect(slip_rr.alpha, pack.alpha_rr))
+  push!(__eqs, connect(slip_fl.omega, pack.omega_fl))
+  push!(__eqs, connect(slip_fr.omega, pack.omega_fr))
+  push!(__eqs, connect(slip_rl.omega, pack.omega_rl))
+  push!(__eqs, connect(slip_rr.omega, pack.omega_rr))
+  push!(__eqs, connect(pack.bus, bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

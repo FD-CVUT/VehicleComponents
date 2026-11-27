@@ -14,6 +14,7 @@ end
 include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
+include("Helpers/module.jl")
 include("Tests/module.jl")
 include("precompilation.jl")
 

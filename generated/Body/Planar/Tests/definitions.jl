@@ -201,6 +201,7 @@ end
 
 
 include("AckermannSteering_definition.jl")
+include("Bus_definition.jl")
 include("QuasiStaticLoads_definition.jl")
 include("RoadGrade_definition.jl")
 include("RoadGrip_definition.jl")

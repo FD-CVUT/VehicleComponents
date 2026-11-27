@@ -9,10 +9,5 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Sensors"
 end
 
 
-include("BusMotion_experiment.jl")
-include("BusSlipAngle_experiment.jl")
-include("BusSlip_experiment.jl")
-include("BusWheelSpeed_experiment.jl")
 include("Noise_experiment.jl")
-include("PlanarCar_experiment.jl")
 include("WheelSlip_experiment.jl")

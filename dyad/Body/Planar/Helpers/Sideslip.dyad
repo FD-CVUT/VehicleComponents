@@ -1,0 +1,76 @@
+"""
+Body sideslip angle from the chassis velocity: beta = atan(vy / max(|vx|, 1 m/s)), the angle of
+the velocity from the heading, taken against the speed's magnitude so it reads the same driving
+forward and backward.
+
+Ports: `vx` and `vy` the forward and lateral speed in the chassis frame [m/s]; `beta` the
+sideslip angle [rad], positive when the car moves to the left of its heading.
+
+Assumptions: below 1 m/s the angle is taken against 1 m/s, which keeps it finite at standstill.
+Built from stdlib blocks: `Math.Abs`, `Math.Max` against a constant 1 m/s, and `Math.Atan2`,
+whose second argument is then never negative.
+"""
+component Sideslip
+  "Forward speed in the chassis frame"
+  vx = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}}
+  "Lateral speed in the chassis frame"
+  vy = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}}
+  "Body sideslip angle"
+  beta = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  speed = BlockComponents.Math.Abs() {
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 650, "y2": 750}}}
+  }
+  "Speed below which the angle is taken against 1 m/s"
+  floor = BlockComponents.Sources.Constant(k = 1.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 800, "y2": 900}}}
+  }
+  reference = BlockComponents.Math.Max() {
+    "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 600, "y2": 700}}}
+  }
+  angle = BlockComponents.Math.Atan2() {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 450, "y2": 550}}}
+  }
+relations
+  connect(vx, speed.u) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(speed.y, reference.u1) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 300, "y": 700},
+            {"x": 300, "y": 650},
+            {"x": 350, "y": 650},
+            {"x": 350, "y": 620}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(floor.y, reference.u2) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 350, "y": 850}, {"x": 350, "y": 680}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(vy, angle.u1) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 300}, {"x": 650, "y": 470}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(reference.y, angle.u2) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 650}, {"x": 650, "y": 530}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(angle.y, beta) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleComponents/Body/Planar/Helpers/Sideslip.svg"}
+  }
+}
+end

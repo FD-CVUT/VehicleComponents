@@ -9,8 +9,8 @@
 
 Straight-line runs of the planar car on the 2 % ramp road, steering wheel held straight by
 `column`, no drive: a coast up the ramp and a braked stop with load transfer on the level road.
-The car's road load reads the grade from a `RoadGrade` under the chassis, and a
-`Sensors.PlanarCar` beside the car reads it. It has no ports.
+The car's road load reads the grade from a `RoadGrade` under the chassis; the assertions read
+the car's own bus. The model holds the planar `World`, gravity off. It has no ports.
 
 The car is the default `Body.Planar.Car` of `m` = 1500 kg with its CG `h_cg` = 0.55 m above the
 road and load transfer on. Each case starts on the road's center line, heading along x, at
@@ -59,6 +59,9 @@ J Σv_sl/(r² m_eff) = 1 · 1.223064/(0.0961 · 1541.6233) = 0.008256 m/s, v = 2
 slip shrinks with the speed (v_sl ∝ v at a constant force), which adds J Σv_sl a/(v r² m_eff) =
 -0.000935 m/s² to the acceleration, a = -2.309900 m/s², and over the braking phase the speed
 offset adds 0.008256 · 44.689427/20.394800 = 0.018091 m to the distance, x = -254.542602 m.
+The car's bus reads the wheels' slip ratio (r w - v)/v = -v_sl/v: -0.284891/20.403056 =
+-0.013963 front and -0.326641/20.403056 = -0.016009 rear, and their spin speeds
+(v - v_sl)/r: (20.403056 - 0.284891)/0.31 = 64.8973 rad/s front and 64.7626 rad/s rear.
 
 The braked case's wheel loads: at rest each front wheel carries m g b/(2 L) = 4086.1042 N and
 each rear wheel m g a/(2 L) = 3268.8833 N (a = 1.2 m, b = 1.5 m, L = 2.7 m). The loads see the
@@ -150,9 +153,9 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   # Subcomponent brake of type BlockComponents.Sources.Constant
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
   push!(__systems, @named brake = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = brake_overrides))
-  # Subcomponent sensors of type VehicleComponents.Sensors.PlanarCar
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleComponents.Sensors.PlanarCar(; __overrides = sensors_overrides))
+  # Subcomponent world of type MultibodyComponents.PlanarMechanics.World
+  world_overrides = __pop_subcomponent_overrides!(__overrides, "world")
+  push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), __symbol_overrides(world_overrides)...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -165,19 +168,11 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(car.chassis, road.frame_a, sensors.chassis))
+  push!(__eqs, connect(car.chassis, road.frame_a))
   push!(__eqs, connect(road.grade, car.grade))
   push!(__eqs, connect(tire.y, car.f_r))
-  push!(__eqs, connect(column.spline, car.steering, sensors.steering))
+  push!(__eqs, connect(column.spline, car.steering))
   push!(__eqs, connect(brake.y, car.tau_fl, car.tau_rl, car.tau_fr, car.tau_rr))
-  push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
-  push!(__eqs, connect(car.wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(car.wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(car.wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(car.spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
