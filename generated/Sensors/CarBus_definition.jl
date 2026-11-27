@@ -30,7 +30,7 @@ and the compiler does not reject that wiring.
     (x(t)::Real), [description = "World x position of the chassis frame [m]", output = true]
     (y(t)::Real), [description = "World y position of the chassis frame [m]", output = true]
     (psi(t)::Real), [description = "Yaw angle [rad]", output = true]
-    (beta(t)::Real), [description = "Body sideslip angle, atan(vy / max(vx, 1)) [rad]", output = true]
+    (beta(t)::Real), [description = "Body sideslip angle, atan(vy / max(|vx|, 1)) [rad]", output = true]
     (delta_sw(t)::Real), [description = "Steering-wheel angle [rad]", output = true]
     (kappa_fl(t)::Real), [description = "Longitudinal slip of the front-left wheel [-]", output = true]
     (kappa_fr(t)::Real), [description = "Longitudinal slip of the front-right wheel [-]", output = true]

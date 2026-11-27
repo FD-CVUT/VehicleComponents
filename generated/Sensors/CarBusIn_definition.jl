@@ -26,7 +26,7 @@ listens on one of these.
     (x(t)::Real), [description = "World x position of the chassis frame [m]", input = true]
     (y(t)::Real), [description = "World y position of the chassis frame [m]", input = true]
     (psi(t)::Real), [description = "Yaw angle [rad]", input = true]
-    (beta(t)::Real), [description = "Body sideslip angle, atan(vy / max(vx, 1)) [rad]", input = true]
+    (beta(t)::Real), [description = "Body sideslip angle, atan(vy / max(|vx|, 1)) [rad]", input = true]
     (delta_sw(t)::Real), [description = "Steering-wheel angle [rad]", input = true]
     (kappa_fl(t)::Real), [description = "Longitudinal slip of the front-left wheel [-]", input = true]
     (kappa_fr(t)::Real), [description = "Longitudinal slip of the front-right wheel [-]", input = true]

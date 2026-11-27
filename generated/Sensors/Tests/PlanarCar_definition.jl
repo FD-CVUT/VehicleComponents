@@ -7,34 +7,37 @@
 @doc Markdown.doc"""
    PlanarCar(; name, __overrides)
 
-`PlanarCar`, the planar car's sensor cluster, on a chassis whose motion is prescribed: every
-reading differs, so a swapped wheel, a swapped axis or a reading in the wrong frame fails.
+`PlanarCar`, the planar car's sensor cluster, on a chassis driving backward along a prescribed
+motion: every reading differs, so a swapped wheel, a swapped axis, a reading in the wrong frame
+or a sideslip taken against vx instead of |vx| fails.
 
 The chassis point starts at the world origin with velocity (18, 8) m/s and accelerates at a
 constant (1, -0.5) m/s² in the world frame. A revolute joint on it turns the chassis frame at a
-constant yaw rate r = 0.2 rad/s from the heading 0.5 rad. The wheel centers sit on the chassis at
-(1.2, ±0.775) m front and (-1.5, ±0.775) m rear, left positive, unsteered. Each wheel shaft turns
-at its own constant speed, 60, 62, 64 and 66 rad/s for fl, fr, rl, rr, each source on its own
-mount; the cluster's radius is 0.25 m, so they roll at 15, 15.5, 16 and 16.5 m/s. The steering
-wheel is held at 0.3 rad.
+constant yaw rate r = 0.2 rad/s from the heading 0.5 + pi rad, so the chassis faces against its
+motion. The wheel centers sit on the chassis at (1.2, ±0.775) m front and (-1.5, ±0.775) m rear,
+left positive, unsteered. Each wheel shaft turns backward at its own constant speed, -60, -62,
+-64 and -66 rad/s for fl, fr, rl, rr, each source on its own mount; the cluster's radius is
+0.25 m, so they roll at -15, -15.5, -16 and -16.5 m/s. The steering wheel is held at 0.3 rad.
 
-At t = 1 s the heading is psi = 0.7 rad, the world velocity (19, 7.5) m/s and the position
-(18.5, 7.75) m. In the chassis frame, with c = cos 0.7 = 0.7648422 and s = sin 0.7 = 0.6442177:
+At t = 1 s the heading is psi = 0.7 + pi = 3.841593 rad, the world velocity (19, 7.5) m/s and the
+position (18.5, 7.75) m. In the chassis frame, with c = cos psi = -0.7648422 and
+s = sin psi = -0.6442177:
 
-- vx = 19 c + 7.5 s = 19.363634 m/s, vy = -19 s + 7.5 c = -6.503820 m/s, r = 0.2 rad/s;
-- ax = 1 c - 0.5 s = 0.442733 m/s² and ay = -1 s - 0.5 c = -1.026639 m/s²: the point's
+- vx = 19 c + 7.5 s = -19.363634 m/s, vy = -19 s + 7.5 c = 6.503820 m/s, r = 0.2 rad/s;
+- ax = 1 c - 0.5 s = -0.442733 m/s² and ay = -1 s - 0.5 c = 1.026639 m/s²: the point's
   acceleration is the prescribed one, resolved in the turning frame;
-- beta = atan(vy/max(vx, 1)) = atan(-6.503820/19.363634) = -0.324039 rad;
-- x = 18.5 m, y = 7.75 m, psi = 0.7 rad and delta_sw = 0.3 rad.
+- beta = atan(vy/max(|vx|, 1)) = atan(6.503820/19.363634) = 0.324039 rad, where vx in place of
+  |vx| would give atan(6.503820/1) = 1.418235 rad;
+- x = 18.5 m, y = 7.75 m, psi = 3.841593 rad and delta_sw = 0.3 rad.
 
 A wheel at (p_x, p_y) moves at vx - r p_y along its heading and vy + r p_x across it:
 
-| wheel | v_x [m/s] | v_y [m/s] | kappa = (r w - v_x)/v_x | alpha = atan(v_y/v_x) |
+| wheel | v_x [m/s] | v_y [m/s] | kappa = (r w - v_x)/abs(v_x) | alpha = atan(v_y/abs(v_x)) |
 |---|---|---|---|---|
-| fl | 19.208634 | -6.263820 | (15 - 19.208634)/19.208634 = -0.219101 | -0.315221 |
-| fr | 19.518634 | -6.263820 | (15.5 - 19.518634)/19.518634 = -0.205887 | -0.310533 |
-| rl | 19.208634 | -6.803820 | (16 - 19.208634)/19.208634 = -0.167041 | -0.340417 |
-| rr | 19.518634 | -6.803820 | (16.5 - 19.518634)/19.518634 = -0.154654 | -0.335410 |
+| fl | -19.518634 | 6.743820 | (-15 + 19.518634)/19.518634 = 0.231504 | 0.332666 |
+| fr | -19.208634 | 6.743820 | (-15.5 + 19.208634)/19.208634 = 0.193071 | 0.337639 |
+| rl | -19.518634 | 6.203820 | (-16 + 19.518634)/19.518634 = 0.180271 | 0.307743 |
+| rr | -19.208634 | 6.203820 | (-16.5 + 19.208634)/19.208634 = 0.141011 | 0.312395 |
 """
 @component function PlanarCar(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -95,7 +98,7 @@ A wheel at (p_x, p_y) moves at vx - r p_y along its heading and vy + r p_x acros
   # Subcomponent yaw of type RotationalComponents.Sources.ConstantVelocity
   yaw_overrides = __pop_subcomponent_overrides!(__overrides, "yaw")
   yaw_dict = Dict{String, Any}()
-  yaw_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.5)
+  yaw_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(3.641592653589793)
   merge!(yaw_dict, yaw_overrides)
   push!(__systems, @named yaw = RotationalComponents.Sources.ConstantVelocity(; w_fixed=0.2, __overrides = yaw_dict))
   # Subcomponent yaw_mount of type RotationalComponents.Components.Fixed
@@ -133,25 +136,25 @@ A wheel at (p_x, p_y) moves at vx - r p_y along its heading and vy + r p_x acros
   spin_fl_dict = Dict{String, Any}()
   spin_fl_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(spin_fl_dict, spin_fl_overrides)
-  push!(__systems, @named spin_fl = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(60.0), __overrides = spin_fl_dict))
+  push!(__systems, @named spin_fl = RotationalComponents.Sources.ConstantVelocity(; w_fixed=-60.0, __overrides = spin_fl_dict))
   # Subcomponent spin_fr of type RotationalComponents.Sources.ConstantVelocity
   spin_fr_overrides = __pop_subcomponent_overrides!(__overrides, "spin_fr")
   spin_fr_dict = Dict{String, Any}()
   spin_fr_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(spin_fr_dict, spin_fr_overrides)
-  push!(__systems, @named spin_fr = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(62.0), __overrides = spin_fr_dict))
+  push!(__systems, @named spin_fr = RotationalComponents.Sources.ConstantVelocity(; w_fixed=-62.0, __overrides = spin_fr_dict))
   # Subcomponent spin_rl of type RotationalComponents.Sources.ConstantVelocity
   spin_rl_overrides = __pop_subcomponent_overrides!(__overrides, "spin_rl")
   spin_rl_dict = Dict{String, Any}()
   spin_rl_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(spin_rl_dict, spin_rl_overrides)
-  push!(__systems, @named spin_rl = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(64.0), __overrides = spin_rl_dict))
+  push!(__systems, @named spin_rl = RotationalComponents.Sources.ConstantVelocity(; w_fixed=-64.0, __overrides = spin_rl_dict))
   # Subcomponent spin_rr of type RotationalComponents.Sources.ConstantVelocity
   spin_rr_overrides = __pop_subcomponent_overrides!(__overrides, "spin_rr")
   spin_rr_dict = Dict{String, Any}()
   spin_rr_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
   merge!(spin_rr_dict, spin_rr_overrides)
-  push!(__systems, @named spin_rr = RotationalComponents.Sources.ConstantVelocity(; w_fixed=Float64(66.0), __overrides = spin_rr_dict))
+  push!(__systems, @named spin_rr = RotationalComponents.Sources.ConstantVelocity(; w_fixed=-66.0, __overrides = spin_rr_dict))
   # Subcomponent steer of type BlockComponents.Sources.Constant
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
   push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.3, __overrides = steer_overrides))

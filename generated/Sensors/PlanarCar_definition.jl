@@ -11,10 +11,10 @@ Ideal sensor cluster of the planar car: reads the chassis, the steering column a
 through physical ports, without applying force or torque, and sends every reading on one
 `Sensors.CarBus`.
 
-The chassis readings are resolved in the chassis frame, except the position `x`, `y` and the
-yaw angle `psi`, which are in the world frame. The body sideslip angle is
-`beta = atan(vy / max(vx, 1 m/s))`. Each wheel's slip ratio, slip angle and spin speed come from
-a `WheelSlip` on its center frame and shaft; `delta_sw` is the steering-wheel angle.
+The chassis readings are resolved in the chassis frame, except the position `x`, `y` and the yaw
+angle `psi`, which are in the world frame. The body sideslip angle is `beta = atan(vy / max(|vx|, 1
+m/s))`. Each wheel's slip ratio, slip angle and spin speed come from a `WheelSlip` on its center
+frame and shaft; `delta_sw` is the steering-wheel angle.
 
 Ports: `chassis` the chassis frame; `steering` the steering-wheel shaft; `wheel_fl`, `wheel_fr`,
 `wheel_rl`, `wheel_rr` the wheel centers; `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` the wheel
@@ -159,7 +159,7 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
   push!(__eqs, bus.x ~ position.x)
   push!(__eqs, bus.y ~ position.y)
   push!(__eqs, bus.psi ~ position.phi)
-  push!(__eqs, bus.beta ~ atan(velocity.v_y / max(velocity.v_x, 1.0)))
+  push!(__eqs, bus.beta ~ atan(velocity.v_y / max(abs(velocity.v_x), 1.0)))
   push!(__eqs, bus.delta_sw ~ steering_angle.phi)
   push!(__eqs, bus.kappa_fl ~ slip_fl.kappa)
   push!(__eqs, bus.kappa_fr ~ slip_fr.kappa)

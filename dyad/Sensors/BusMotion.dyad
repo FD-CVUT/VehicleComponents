@@ -21,7 +21,7 @@ component BusMotion
   vx = RealOutput() {^vx}
   "Lateral speed of the chassis, in the chassis frame [m/s]"
   vy = RealOutput() {^vy}
-  "Body sideslip angle, atan(vy / max(vx, 1)) [rad]"
+  "Body sideslip angle, atan(vy / max(|vx|, 1)) [rad]"
   beta = RealOutput() {^beta}
   "Forward acceleration, in the chassis frame [m/s^2]"
   ax = RealOutput() {^ax}

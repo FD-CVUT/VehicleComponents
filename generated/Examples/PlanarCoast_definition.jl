@@ -75,7 +75,7 @@ by up to about 1e-5 m over the run, which its tolerance allows.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `x0`         | Start position along the road. The compiler takes no per-case start for an array state such as `car.body.r`, so the cases set this instead                         | m  |   -300.0 |
+| `x0`         | Start position of the chassis along the road's center line                         | m  |   -300.0 |
 """
 @component function PlanarCoast(; name = nothing, var"x0"=-300.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -112,7 +112,7 @@ by up to about 1e-5 m over the run, which its tolerance allows.
 
   ### Symbolic Parameters
   __local__x0 = x0
-  append!(__params, @parameters (x0::Real), [description = "Start position along the road. The compiler takes no per-case start for an array state such as\n  `car.body.r`, so the cases set this instead"])
+  append!(__params, @parameters (x0::Real), [description = "Start position of the chassis along the road's center line"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, x0, __local__x0)
 
   ### Final Parameters (assignments)

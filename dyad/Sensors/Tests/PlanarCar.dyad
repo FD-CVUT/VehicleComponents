@@ -1,32 +1,35 @@
 """
-`PlanarCar`, the planar car's sensor cluster, on a chassis whose motion is prescribed: every
-reading differs, so a swapped wheel, a swapped axis or a reading in the wrong frame fails.
+`PlanarCar`, the planar car's sensor cluster, on a chassis driving backward along a prescribed
+motion: every reading differs, so a swapped wheel, a swapped axis, a reading in the wrong frame
+or a sideslip taken against vx instead of |vx| fails.
 
 The chassis point starts at the world origin with velocity (18, 8) m/s and accelerates at a
 constant (1, -0.5) m/s² in the world frame. A revolute joint on it turns the chassis frame at a
-constant yaw rate r = 0.2 rad/s from the heading 0.5 rad. The wheel centers sit on the chassis at
-(1.2, ±0.775) m front and (-1.5, ±0.775) m rear, left positive, unsteered. Each wheel shaft turns
-at its own constant speed, 60, 62, 64 and 66 rad/s for fl, fr, rl, rr, each source on its own
-mount; the cluster's radius is 0.25 m, so they roll at 15, 15.5, 16 and 16.5 m/s. The steering
-wheel is held at 0.3 rad.
+constant yaw rate r = 0.2 rad/s from the heading 0.5 + pi rad, so the chassis faces against its
+motion. The wheel centers sit on the chassis at (1.2, ±0.775) m front and (-1.5, ±0.775) m rear,
+left positive, unsteered. Each wheel shaft turns backward at its own constant speed, -60, -62,
+-64 and -66 rad/s for fl, fr, rl, rr, each source on its own mount; the cluster's radius is
+0.25 m, so they roll at -15, -15.5, -16 and -16.5 m/s. The steering wheel is held at 0.3 rad.
 
-At t = 1 s the heading is psi = 0.7 rad, the world velocity (19, 7.5) m/s and the position
-(18.5, 7.75) m. In the chassis frame, with c = cos 0.7 = 0.7648422 and s = sin 0.7 = 0.6442177:
+At t = 1 s the heading is psi = 0.7 + pi = 3.841593 rad, the world velocity (19, 7.5) m/s and the
+position (18.5, 7.75) m. In the chassis frame, with c = cos psi = -0.7648422 and
+s = sin psi = -0.6442177:
 
-- vx = 19 c + 7.5 s = 19.363634 m/s, vy = -19 s + 7.5 c = -6.503820 m/s, r = 0.2 rad/s;
-- ax = 1 c - 0.5 s = 0.442733 m/s² and ay = -1 s - 0.5 c = -1.026639 m/s²: the point's
+- vx = 19 c + 7.5 s = -19.363634 m/s, vy = -19 s + 7.5 c = 6.503820 m/s, r = 0.2 rad/s;
+- ax = 1 c - 0.5 s = -0.442733 m/s² and ay = -1 s - 0.5 c = 1.026639 m/s²: the point's
   acceleration is the prescribed one, resolved in the turning frame;
-- beta = atan(vy/max(vx, 1)) = atan(-6.503820/19.363634) = -0.324039 rad;
-- x = 18.5 m, y = 7.75 m, psi = 0.7 rad and delta_sw = 0.3 rad.
+- beta = atan(vy/max(|vx|, 1)) = atan(6.503820/19.363634) = 0.324039 rad, where vx in place of
+  |vx| would give atan(6.503820/1) = 1.418235 rad;
+- x = 18.5 m, y = 7.75 m, psi = 3.841593 rad and delta_sw = 0.3 rad.
 
 A wheel at (p_x, p_y) moves at vx - r p_y along its heading and vy + r p_x across it:
 
-| wheel | v_x [m/s] | v_y [m/s] | kappa = (r w - v_x)/v_x | alpha = atan(v_y/v_x) |
+| wheel | v_x [m/s] | v_y [m/s] | kappa = (r w - v_x)/abs(v_x) | alpha = atan(v_y/abs(v_x)) |
 |---|---|---|---|---|
-| fl | 19.208634 | -6.263820 | (15 - 19.208634)/19.208634 = -0.219101 | -0.315221 |
-| fr | 19.518634 | -6.263820 | (15.5 - 19.518634)/19.518634 = -0.205887 | -0.310533 |
-| rl | 19.208634 | -6.803820 | (16 - 19.208634)/19.208634 = -0.167041 | -0.340417 |
-| rr | 19.518634 | -6.803820 | (16.5 - 19.518634)/19.518634 = -0.154654 | -0.335410 |
+| fl | -19.518634 | 6.743820 | (-15 + 19.518634)/19.518634 = 0.231504 | 0.332666 |
+| fr | -19.208634 | 6.743820 | (-15.5 + 19.208634)/19.208634 = 0.193071 | 0.337639 |
+| rl | -19.518634 | 6.203820 | (-16 + 19.518634)/19.518634 = 0.180271 | 0.307743 |
+| rr | -19.208634 | 6.203820 | (-16.5 + 19.208634)/19.208634 = 0.141011 | 0.312395 |
 """
 test component PlanarCar
   forward = BlockComponents.Sources.Constant(k = 1.0) {
@@ -41,7 +44,7 @@ test component PlanarCar
   turn = MultibodyComponents.PlanarMechanics.Revolute(render = false) {
     "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 2400, "y2": 2500}}}
   }
-  yaw = RotationalComponents.Sources.ConstantVelocity(w_fixed = 0.2, phi = initial 0.5) {
+  yaw = RotationalComponents.Sources.ConstantVelocity(w_fixed = 0.2, phi = initial 3.641592653589793) {
     "Dyad": {"placement": {"diagram": {"x1": 1000, "x2": 1100, "y1": 150, "y2": 250}}}
   }
   yaw_mount = RotationalComponents.Components.Fixed() {
@@ -127,12 +130,12 @@ test component PlanarCar
       }
     }
   }
-  spin_fl = RotationalComponents.Sources.ConstantVelocity(w_fixed = 60.0, phi = initial 0.0) {
+  spin_fl = RotationalComponents.Sources.ConstantVelocity(w_fixed = -60.0, phi = initial 0.0) {
     "Dyad": {
       "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 976.925, "y2": 1076.925}}
     }
   }
-  spin_fr = RotationalComponents.Sources.ConstantVelocity(w_fixed = 62.0, phi = initial 0.0) {
+  spin_fr = RotationalComponents.Sources.ConstantVelocity(w_fixed = -62.0, phi = initial 0.0) {
     "Dyad": {
       "placement": {
         "diagram": {
@@ -144,12 +147,12 @@ test component PlanarCar
       }
     }
   }
-  spin_rl = RotationalComponents.Sources.ConstantVelocity(w_fixed = 64.0, phi = initial 0.0) {
+  spin_rl = RotationalComponents.Sources.ConstantVelocity(w_fixed = -64.0, phi = initial 0.0) {
     "Dyad": {
       "placement": {"diagram": {"x1": 1015.385, "x2": 1115.385, "y1": 1576.925, "y2": 1676.925}}
     }
   }
-  spin_rr = RotationalComponents.Sources.ConstantVelocity(w_fixed = 66.0, phi = initial 0.0) {
+  spin_rr = RotationalComponents.Sources.ConstantVelocity(w_fixed = -66.0, phi = initial 0.0) {
     "Dyad": {
       "placement": {
         "diagram": {
@@ -455,7 +458,7 @@ metadata {
           "sensors.bus.ay": 1e-5,
           "sensors.bus.x": 1e-5,
           "sensors.bus.y": 1e-5,
-          "sensors.bus.psi": 1e-7,
+          "sensors.bus.psi": 1e-6,
           "sensors.bus.delta_sw": 1e-9,
           "sensors.bus.beta": 1e-5,
           "sensors.bus.kappa_fl": 1e-5,
@@ -473,28 +476,28 @@ metadata {
         },
         "expect": {
           "final": {
-            "sensors.bus.vx": 19.363634,
-            "sensors.bus.vy": -6.503820,
+            "sensors.bus.vx": -19.363634,
+            "sensors.bus.vy": 6.503820,
             "sensors.bus.r": 0.2,
-            "sensors.bus.ax": 0.442733,
-            "sensors.bus.ay": -1.026639,
+            "sensors.bus.ax": -0.442733,
+            "sensors.bus.ay": 1.026639,
             "sensors.bus.x": 18.5,
             "sensors.bus.y": 7.75,
-            "sensors.bus.psi": 0.7,
+            "sensors.bus.psi": 3.841593,
             "sensors.bus.delta_sw": 0.3,
-            "sensors.bus.beta": -0.324039,
-            "sensors.bus.kappa_fl": -0.219101,
-            "sensors.bus.kappa_fr": -0.205887,
-            "sensors.bus.kappa_rl": -0.167041,
-            "sensors.bus.kappa_rr": -0.154654,
-            "sensors.bus.alpha_fl": -0.315221,
-            "sensors.bus.alpha_fr": -0.310533,
-            "sensors.bus.alpha_rl": -0.340417,
-            "sensors.bus.alpha_rr": -0.335410,
-            "sensors.bus.omega_fl": 60.0,
-            "sensors.bus.omega_fr": 62.0,
-            "sensors.bus.omega_rl": 64.0,
-            "sensors.bus.omega_rr": 66.0
+            "sensors.bus.beta": 0.324039,
+            "sensors.bus.kappa_fl": 0.231504,
+            "sensors.bus.kappa_fr": 0.193071,
+            "sensors.bus.kappa_rl": 0.180271,
+            "sensors.bus.kappa_rr": 0.141011,
+            "sensors.bus.alpha_fl": 0.332666,
+            "sensors.bus.alpha_fr": 0.337639,
+            "sensors.bus.alpha_rl": 0.307743,
+            "sensors.bus.alpha_rr": 0.312395,
+            "sensors.bus.omega_fl": -60.0,
+            "sensors.bus.omega_fr": -62.0,
+            "sensors.bus.omega_rl": -64.0,
+            "sensors.bus.omega_rr": -66.0
           }
         }
       }

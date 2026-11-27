@@ -24,7 +24,7 @@ connector CarBus
   output y::Real
   "Yaw angle [rad]"
   output psi::Real
-  "Body sideslip angle, atan(vy / max(vx, 1)) [rad]"
+  "Body sideslip angle, atan(vy / max(|vx|, 1)) [rad]"
   output beta::Real
   "Steering-wheel angle [rad]"
   output delta_sw::Real

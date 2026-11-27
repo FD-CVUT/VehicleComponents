@@ -30,11 +30,12 @@ along the heading (`RoadLoad`); gravity enters only through the wheel loads and 
 the world's gravity is off. The car starts at rest at the world origin heading along x, with
 every wheel at rest and every brake released; give another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
-planar car (a mid-size sedan, assumed).
+planar car (a mid-size sedan, assumed). The wheel frames must take no torque about the kingpin:
+the steering column and linkage react on a fixed housing, so a steering reaction would go to the
+ground, not the chassis.
 
 Limit on Dyad 3.5.0: once the car yaws, the test harness's default code optimization gives
-wrong results (JuliaComputing/DyadCompilerPasses.jl#43, fixed in DyadCompilerPasses 0.3.14,
-which dyad 3.6 ships); straight-line runs are unaffected.
+wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are unaffected.
 """
 component Car
   "Steering-wheel shaft"

@@ -64,8 +64,7 @@ keeps y = 0 and no yaw rate. The straight run is neutrally stable sideways, so r
 by up to about 1e-5 m over the run, which its tolerance allows.
 """
 test component PlanarCoast
-  "Start position along the road. The compiler takes no per-case start for an array state such as
-  `car.body.r`, so the cases set this instead"
+  "Start position of the chassis along the road's center line"
   parameter x0::Length = -300.0
   car = VehicleComponents.Body.Planar.Car(h_cg = 0.55, load_transfer = true, body(r = initial [x0, 0.0], v = initial [25.0, 0.0]), fl(inertia(w = initial 25.0 / 0.31)), fr(inertia(w = initial 25.0 / 0.31)), rl(inertia(w = initial 25.0 / 0.31)), rr(inertia(w = initial 25.0 / 0.31))) {^car}
   road = VehicleComponents.Body.Planar.RoadGrade(road = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")) {^road}
