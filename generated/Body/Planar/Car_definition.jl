@@ -7,19 +7,12 @@
 @doc Markdown.doc"""
    Car(; name, grip, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
-Four-wheel planar car: a rigid chassis on four slip wheels, the front pair steered through
-a column and an Ackermann linkage, with quasi-static wheel loads, its road load, and ideal
-sensors that send everything measured about the car on `bus`.
-
-The chassis is a planar body of mass `m` and yaw inertia `Iz` at the center of mass, with the
-front axle `a` ahead and the rear axle `b` behind it and the wheels `tw/2` to either side. The
-steering wheel turns the column, which turns the linkage's input by `1/i_s` of its angle; the
-linkage turns the front wheels on revolute joints. `QuasiStaticLoads` pushes each wheel's normal
-load onto its tire, every `Wheel` reads its grip from the road `grip`, and `RoadLoad` puts the
-drag, rolling resistance and along-slope weight of the mass `m` on the chassis. The sensors read
-the chassis (`velocity`, `acceleration`, `position`, the last in the world frame), the steering
-column (`steering_angle`) and each wheel (a `Sensors.WheelSlip` each), and the car's equations
-put every reading on `bus`, with the sideslip angle beta = atan(vy / max(|vx|, 1 m/s)).
+Four-wheel planar car, ready-made: a `Chassis`, the part `base`, on four `Wheel`s. The chassis is
+steered through a column and an Ackermann linkage, with quasi-static wheel loads, its road load,
+and ideal sensors that send everything measured about the car on `bus`; each wheel is slip tire
+contact and spin inertia, reading its grip from the road `grip`. A model that needs other wheels
+places a `Chassis` and wires its own. `Chassis` describes the body, the steering, the loads and
+the sensors in full; the parameters here pass down to it and to the wheels.
 
 Ports:
 - `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
@@ -41,8 +34,8 @@ along the heading (`RoadLoad`); gravity enters only through the wheel loads and 
 and the model must hold one planar `World` with `g = 0`, since the car lies in the road plane.
 The car starts at rest at the world origin heading along x, with every wheel at rest; give
 another start at the declaration,
-`Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
-planar car (a mid-size sedan, assumed). The steering column and linkage react on a fixed
+`Car(base(body(v = initial [20.0, 0.0])), fl(inertia(w = initial 64.5)))`. Defaults are the
+course's planar car (a mid-size sedan, assumed). The steering column and linkage react on a fixed
 housing, not on the chassis.
 
 Limit on Dyad 3.5.0: once the car yaws, the test harness's default code optimization gives
@@ -215,51 +208,9 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
   push!(__systems, @named spin_rl = __Dyad__Spline())
   push!(__systems, @named spin_rr = __Dyad__Spline())
   push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
-  # Subcomponent body of type MultibodyComponents.PlanarMechanics.Body
-  body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  body_dict = Dict{String, Any}()
-  body_dict["r.initial"] = ModelingToolkit.default_to_parentscope([0.0, 0.0])
-  body_dict["v.initial"] = ModelingToolkit.default_to_parentscope([0.0, 0.0])
-  body_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(0.0)
-  body_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0.0)
-  merge!(body_dict, body_overrides)
-  push!(__systems, @named body = MultibodyComponents.PlanarMechanics.Body(; m=m, I=Iz, render=false, linearStatePriority=2, __overrides = body_dict))
-  # Subcomponent front of type MultibodyComponents.PlanarMechanics.FixedTranslation
-  front_overrides = __pop_subcomponent_overrides!(__overrides, "front")
-  push!(__systems, @named front = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[a, Float64(0.0)], render=false, __overrides = front_overrides))
-  # Subcomponent rear of type MultibodyComponents.PlanarMechanics.FixedTranslation
-  rear_overrides = __pop_subcomponent_overrides!(__overrides, "rear")
-  push!(__systems, @named rear = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[-b, Float64(0.0)], render=false, __overrides = rear_overrides))
-  # Subcomponent arm_fl of type MultibodyComponents.PlanarMechanics.FixedTranslation
-  arm_fl_overrides = __pop_subcomponent_overrides!(__overrides, "arm_fl")
-  push!(__systems, @named arm_fl = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0.0), tw / 2], render=false, __overrides = arm_fl_overrides))
-  # Subcomponent arm_fr of type MultibodyComponents.PlanarMechanics.FixedTranslation
-  arm_fr_overrides = __pop_subcomponent_overrides!(__overrides, "arm_fr")
-  push!(__systems, @named arm_fr = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0.0), -tw / 2], render=false, __overrides = arm_fr_overrides))
-  # Subcomponent arm_rl of type MultibodyComponents.PlanarMechanics.FixedTranslation
-  arm_rl_overrides = __pop_subcomponent_overrides!(__overrides, "arm_rl")
-  push!(__systems, @named arm_rl = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0.0), tw / 2], render=false, __overrides = arm_rl_overrides))
-  # Subcomponent arm_rr of type MultibodyComponents.PlanarMechanics.FixedTranslation
-  arm_rr_overrides = __pop_subcomponent_overrides!(__overrides, "arm_rr")
-  push!(__systems, @named arm_rr = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0.0), -tw / 2], render=false, __overrides = arm_rr_overrides))
-  # Subcomponent kingpin_fl of type MultibodyComponents.PlanarMechanics.Revolute
-  kingpin_fl_overrides = __pop_subcomponent_overrides!(__overrides, "kingpin_fl")
-  push!(__systems, @named kingpin_fl = MultibodyComponents.PlanarMechanics.Revolute(; render=false, __overrides = kingpin_fl_overrides))
-  # Subcomponent kingpin_fr of type MultibodyComponents.PlanarMechanics.Revolute
-  kingpin_fr_overrides = __pop_subcomponent_overrides!(__overrides, "kingpin_fr")
-  push!(__systems, @named kingpin_fr = MultibodyComponents.PlanarMechanics.Revolute(; render=false, __overrides = kingpin_fr_overrides))
-  # Subcomponent column of type RotationalComponents.Components.IdealGear
-  column_overrides = __pop_subcomponent_overrides!(__overrides, "column")
-  push!(__systems, @named column = RotationalComponents.Components.IdealGear(; ratio=i_s, __overrides = column_overrides))
-  # Subcomponent linkage of type VehicleComponents.Body.Planar.AckermannSteering
-  linkage_overrides = __pop_subcomponent_overrides!(__overrides, "linkage")
-  push!(__systems, @named linkage = VehicleComponents.Body.Planar.AckermannSteering(; L=a + b, t_k=t_k, ackermann=ackermann, __overrides = linkage_overrides))
-  # Subcomponent housing of type RotationalComponents.Components.Fixed
-  housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
-  # Subcomponent loads of type VehicleComponents.Body.Planar.QuasiStaticLoads
-  loads_overrides = __pop_subcomponent_overrides!(__overrides, "loads")
-  push!(__systems, @named loads = VehicleComponents.Body.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = loads_overrides))
+  # Subcomponent base of type VehicleComponents.Body.Planar.Chassis
+  base_overrides = __pop_subcomponent_overrides!(__overrides, "base")
+  push!(__systems, @named base = VehicleComponents.Body.Planar.Chassis(; m=m, Iz=Iz, a=a, b=b, tw=tw, radius=radius, i_s=i_s, t_k=t_k, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = base_overrides))
   # Subcomponent fl of type VehicleComponents.Body.Planar.Wheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
   push!(__systems, @named fl = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_f, __overrides = fl_overrides))
@@ -272,33 +223,6 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
   # Subcomponent rr of type VehicleComponents.Body.Planar.Wheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
   push!(__systems, @named rr = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_r, __overrides = rr_overrides))
-  # Subcomponent roadload of type VehicleComponents.Body.Planar.RoadLoad
-  roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
-  push!(__systems, @named roadload = VehicleComponents.Body.Planar.RoadLoad(; m=m, __overrides = roadload_overrides))
-  # Subcomponent velocity of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
-  velocity_overrides = __pop_subcomponent_overrides!(__overrides, "velocity")
-  push!(__systems, @named velocity = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = velocity_overrides))
-  # Subcomponent acceleration of type MultibodyComponents.PlanarMechanics.AbsoluteAcceleration
-  acceleration_overrides = __pop_subcomponent_overrides!(__overrides, "acceleration")
-  push!(__systems, @named acceleration = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; __overrides = acceleration_overrides))
-  # Subcomponent position of type MultibodyComponents.PlanarMechanics.AbsolutePosition
-  position_overrides = __pop_subcomponent_overrides!(__overrides, "position")
-  push!(__systems, @named position = MultibodyComponents.PlanarMechanics.AbsolutePosition(; resolve_in_frame=MultibodyComponents.ResolveInFrame.World(), __overrides = position_overrides))
-  # Subcomponent steering_angle of type RotationalComponents.Sensors.AngleSensor
-  steering_angle_overrides = __pop_subcomponent_overrides!(__overrides, "steering_angle")
-  push!(__systems, @named steering_angle = RotationalComponents.Sensors.AngleSensor(; __overrides = steering_angle_overrides))
-  # Subcomponent slip_fl of type VehicleComponents.Sensors.WheelSlip
-  slip_fl_overrides = __pop_subcomponent_overrides!(__overrides, "slip_fl")
-  push!(__systems, @named slip_fl = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_fl_overrides))
-  # Subcomponent slip_fr of type VehicleComponents.Sensors.WheelSlip
-  slip_fr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_fr")
-  push!(__systems, @named slip_fr = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_fr_overrides))
-  # Subcomponent slip_rl of type VehicleComponents.Sensors.WheelSlip
-  slip_rl_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rl")
-  push!(__systems, @named slip_rl = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_rl_overrides))
-  # Subcomponent slip_rr of type VehicleComponents.Sensors.WheelSlip
-  slip_rr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rr")
-  push!(__systems, @named slip_rr = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_rr_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -311,52 +235,23 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, bus.vx ~ velocity.v_x)
-  push!(__eqs, bus.vy ~ velocity.v_y)
-  push!(__eqs, bus.r ~ velocity.w)
-  push!(__eqs, bus.ax ~ acceleration.a_x)
-  push!(__eqs, bus.ay ~ acceleration.a_y)
-  push!(__eqs, bus.x ~ position.x)
-  push!(__eqs, bus.y ~ position.y)
-  push!(__eqs, bus.psi ~ position.phi)
-  push!(__eqs, bus.beta ~ atan(bus.vy / max(abs(bus.vx), 1.0)))
-  push!(__eqs, bus.delta_sw ~ steering_angle.phi)
-  push!(__eqs, bus.kappa_fl ~ slip_fl.kappa)
-  push!(__eqs, bus.kappa_fr ~ slip_fr.kappa)
-  push!(__eqs, bus.kappa_rl ~ slip_rl.kappa)
-  push!(__eqs, bus.kappa_rr ~ slip_rr.kappa)
-  push!(__eqs, bus.alpha_fl ~ slip_fl.alpha)
-  push!(__eqs, bus.alpha_fr ~ slip_fr.alpha)
-  push!(__eqs, bus.alpha_rl ~ slip_rl.alpha)
-  push!(__eqs, bus.alpha_rr ~ slip_rr.alpha)
-  push!(__eqs, bus.omega_fl ~ slip_fl.omega)
-  push!(__eqs, bus.omega_fr ~ slip_fr.omega)
-  push!(__eqs, bus.omega_rl ~ slip_rl.omega)
-  push!(__eqs, bus.omega_rr ~ slip_rr.omega)
-  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a))
-  push!(__eqs, connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a))
-  push!(__eqs, connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a))
-  push!(__eqs, connect(arm_fl.frame_b, kingpin_fl.frame_a))
-  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, slip_fl.frame_a))
-  push!(__eqs, connect(arm_fr.frame_b, kingpin_fr.frame_a))
-  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, slip_fr.frame_a))
-  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, slip_rl.frame_a))
-  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, slip_rr.frame_a))
-  push!(__eqs, connect(steering, column.spline_a, steering_angle.spline))
-  push!(__eqs, connect(column.spline_b, linkage.spline_in))
-  push!(__eqs, connect(linkage.spline_left, kingpin_fl.flange_a))
-  push!(__eqs, connect(linkage.spline_right, kingpin_fr.flange_a))
-  push!(__eqs, connect(column.support, linkage.support, housing.spline))
-  push!(__eqs, connect(loads.fl, fl.load))
-  push!(__eqs, connect(loads.fr, fr.load))
-  push!(__eqs, connect(loads.rl, rl.load))
-  push!(__eqs, connect(loads.rr, rr.load))
-  push!(__eqs, connect(fl.spin, spin_fl, slip_fl.spline))
-  push!(__eqs, connect(fr.spin, spin_fr, slip_fr.spline))
-  push!(__eqs, connect(rl.spin, spin_rl, slip_rl.spline))
-  push!(__eqs, connect(rr.spin, spin_rr, slip_rr.spline))
-  push!(__eqs, connect(f_r, roadload.f_r))
-  push!(__eqs, connect(grade, roadload.grade))
+  push!(__eqs, connect(steering, base.steering))
+  push!(__eqs, connect(base.chassis, chassis))
+  push!(__eqs, connect(grade, base.grade))
+  push!(__eqs, connect(f_r, base.f_r))
+  push!(__eqs, connect(base.bus, bus))
+  push!(__eqs, connect(fl.frame_a, base.frame_fl))
+  push!(__eqs, connect(fl.load, base.load_fl))
+  push!(__eqs, connect(fl.spin, spin_fl, base.spin_fl))
+  push!(__eqs, connect(fr.frame_a, base.frame_fr))
+  push!(__eqs, connect(fr.load, base.load_fr))
+  push!(__eqs, connect(fr.spin, spin_fr, base.spin_fr))
+  push!(__eqs, connect(rl.frame_a, base.frame_rl))
+  push!(__eqs, connect(rl.load, base.load_rl))
+  push!(__eqs, connect(rl.spin, spin_rl, base.spin_rl))
+  push!(__eqs, connect(rr.frame_a, base.frame_rr))
+  push!(__eqs, connect(rr.load, base.load_rr))
+  push!(__eqs, connect(rr.spin, spin_rr, base.spin_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

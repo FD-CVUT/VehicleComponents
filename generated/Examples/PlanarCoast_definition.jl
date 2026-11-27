@@ -149,8 +149,8 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   # Subcomponent car of type VehicleComponents.Body.Planar.Car
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   car_dict = Dict{String, Any}()
-  car_dict["body.r.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([x0, 0.0]))
-  car_dict["body.v.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([vx0, vy0]))
+  car_dict["base.body.r.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([x0, 0.0])))
+  car_dict["base.body.v.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([vx0, vy0])))
   car_dict["fl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
   car_dict["fr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
   car_dict["rl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))

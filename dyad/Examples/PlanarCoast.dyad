@@ -79,7 +79,7 @@ test component PlanarCoast
   parameter vx0::Velocity = 25.0
   "Start speed of the chassis to its left"
   parameter vy0::Velocity = 0.0
-  car = VehicleComponents.Body.Planar.Car(h_cg = 0.55, load_transfer = true, body(r = initial [x0, 0.0], v = initial [vx0, vy0]), fl(inertia(w = initial vx0 / 0.31)), fr(inertia(w = initial vx0 / 0.31)), rl(inertia(w = initial vx0 / 0.31)), rr(inertia(w = initial vx0 / 0.31))) {^car}
+  car = VehicleComponents.Body.Planar.Car(h_cg = 0.55, load_transfer = true, base(body(r = initial [x0, 0.0], v = initial [vx0, vy0])), fl(inertia(w = initial vx0 / 0.31)), fr(inertia(w = initial vx0 / 0.31)), rl(inertia(w = initial vx0 / 0.31)), rr(inertia(w = initial vx0 / 0.31))) {^car}
   road = VehicleComponents.Body.Planar.RoadGrade(road = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")) {^road}
   "Rolling resistance coefficient, a car tire on asphalt"
   tire = BlockComponents.Sources.Constant(k = 0.012) {^tire}

@@ -19,6 +19,7 @@ end
 include("AckermannSteering_test.jl")
 include("BusOut_test.jl")
 include("Car_test.jl")
+include("Chassis_test.jl")
 include("QuasiStaticLoads_test.jl")
 include("RoadGrade_test.jl")
 include("RoadGrip_test.jl")

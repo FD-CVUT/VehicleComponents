@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 150 H230 V200 M1000 150 H770 V200 M0 650 H230 V700 M1000 650 H770 V700"/>
+    <path d="M0 250 H200 M1000 250 H800 M0 750 H200 M1000 750 H800" stroke="#2e7d32" stroke-width="30"/>
+    <path d="M0 350 H230 V300 M1000 350 H770 V300 M0 850 H230 V800 M1000 850 H770 V800" stroke-width="30"/>
+    <path d="M230 250 H330 M770 250 H670 M230 750 H330 M770 750 H670"/>
+    <path d="M500 0 V70 M500 930 V1000"/>
+    <path d="M0 450 H330 M0 550 H330" stroke-width="30"/>
+    <path d="M670 500 H1000" stroke="#0277bd" stroke-width="60"/>
+    <path d="M330 170 Q330 80 420 70 H580 Q670 80 670 170 V840 Q670 930 580 930 H420 Q330 930 330 840 Z" fill="#eceff1"/>
+    <path d="M385 330 Q500 290 615 330 L595 410 H405 Z" fill="#ffffff" stroke-width="30"/>
+    <path d="M405 730 H595 L615 800 Q500 830 385 800 Z" fill="#ffffff" stroke-width="30"/>
+    <circle cx="230" cy="250" r="40" fill="#ffffff" stroke-width="20"/>
+    <circle cx="770" cy="250" r="40" fill="#ffffff" stroke-width="20"/>
+    <circle cx="230" cy="750" r="40" fill="#ffffff" stroke-width="20"/>
+    <circle cx="770" cy="750" r="40" fill="#ffffff" stroke-width="20"/>
+    <path d="M500 650 V480 M430 550 L500 480 L570 550" stroke="#0277bd"/>
+  </g>
+  <g font-family="sans-serif" font-size="60" fill="#263238" text-anchor="middle">
+    <text x="430" y="235">FL</text>
+    <text x="570" y="235">FR</text>
+    <text x="430" y="895">RL</text>
+    <text x="570" y="895">RR</text>
+    <text x="80" y="430" font-size="50">fᵣ</text>
+    <text x="110" y="530" font-size="50">grade</text>
+  </g>
+</svg>
