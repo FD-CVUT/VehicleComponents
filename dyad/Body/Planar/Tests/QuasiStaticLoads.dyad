@@ -1,0 +1,158 @@
+"""
+`QuasiStaticLoads` of a 1500 kg car (a = 1.2 m, b = 1.5 m, L = 2.7 m, t_w = 1.55 m) with its CG
+0.55 m above the road and load transfer on, on a chassis frame whose prescribed velocity ramps
+at the constant accelerations `ax` forward and `ay` to the left from t = 0, heading held along
+x. Each wheel flange is held by its own `Fixed`, and flow is positive into a port, so each
+flange carries minus its wheel's normal load.
+
+At rest each front wheel carries N_f = m g b/(2 L) = 1500 · 9.80665 · 1.5/5.4 = 4086.1042 N and
+each rear wheel N_r = m g a/(2 L) = 3268.8833 N; the lagged accelerations start at 0, so every
+case starts there. The cases stop at 1 s, 20 lag time constants of 0.05 s, so the lag is done
+to e^-20:
+
+- `braking_cornering` brakes and turns left at once. ax = -4 m/s² moves m ax h/(2 L) =
+  1500 · 4 · 0.55/5.4 = 611.1111 N onto each front wheel from each rear one, and ay = 3.873 m/s²
+  moves m ay h (b/L)/t_w = 1145.2419 N from the front-left to the front-right wheel and
+  m ay h (a/L)/t_w = 916.1935 N from the rear-left to the rear-right:
+  F_fl = 4086.1042 + 611.1111 - 1145.2419 = 3551.9734 N,
+  F_fr = 4086.1042 + 611.1111 + 1145.2419 = 5842.4572 N,
+  F_rl = 3268.8833 - 611.1111 - 916.1935 = 1741.5787 N,
+  F_rr = 3268.8833 - 611.1111 + 916.1935 = 3573.9657 N.
+- `lifted`: ay = 15 m/s² would move 4435.4839 N off the front-left and 3548.3871 N off the
+  rear-left wheel, more than their static loads: both left wheels end at 0 N, while the right
+  ones carry 8521.5880 and 6817.2704 N.
+"""
+test component QuasiStaticLoads
+  "Forward acceleration of the chassis"
+  parameter ax::Acceleration = 0.0
+  "Leftward acceleration of the chassis"
+  parameter ay::Acceleration = 0.0
+  forward = BlockComponents.Sources.Ramp(offset = 0.0, height = 2 * ax, duration = 2.0, start_time = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 550, "y2": 650}}}
+  }
+  sideways = BlockComponents.Sources.Ramp(offset = 0.0, height = 2 * ay, duration = 2.0, start_time = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 800, "y2": 900}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 550, "y2": 650}}}
+  }
+  loads = VehicleComponents.Body.Planar.QuasiStaticLoads(h = 0.55, load_transfer = true) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 550, "y2": 650}}}
+  }
+  fixed_fl = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 200, "y2": 300}}}
+  }
+  fixed_fr = TranslationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550, "rot": 270}}
+    }
+  }
+  fixed_rl = TranslationalComponents.Components.Fixed() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800, "rot": 270}}
+    }
+  }
+  fixed_rr = TranslationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 1100, "x2": 1200, "y1": 950, "y2": 1050}}}
+  }
+relations
+  connect(forward.y, motion.v_x) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 600}, {"x": 400, "y": 580}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.v_y) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 850}, {"x": 400, "y": 620}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, loads.chassis) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(loads.fl, fixed_fl.flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 725, "y": 500},
+            {"x": 750, "y": 500},
+            {"x": 750, "y": 150},
+            {"x": 1000, "y": 150}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(loads.fr, fixed_fr.flange) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 500}], "E": 2}], "path": {}}}
+  connect(loads.rl, fixed_rl.flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 725, "y": 700}, {"x": 750, "y": 700}, {"x": 750, "y": 750}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(loads.rr, fixed_rr.flange) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 775, "y": 700},
+            {"x": 850, "y": 700},
+            {"x": 850, "y": 650},
+            {"x": 1150, "y": 650}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "braking_cornering": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"ax": -4.0, "ay": 3.873},
+        "atol": {"loads.fl.f": 0.001, "loads.fr.f": 0.001, "loads.rl.f": 0.001, "loads.rr.f": 0.001},
+        "expect": {
+          "initial": {"loads.fl.f": -4086.1042, "loads.fr.f": -4086.1042, "loads.rl.f": -3268.8833, "loads.rr.f": -3268.8833},
+          "final": {"loads.fl.f": -3551.9734, "loads.fr.f": -5842.4572, "loads.rl.f": -1741.5787, "loads.rr.f": -3573.9657}
+        }
+      },
+      "lifted": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"ay": 15.0},
+        "atol": {
+          "loads.fl.f": 0.001,
+          "loads.fr.f": 0.001,
+          "loads.rl.f": 0.001,
+          "loads.rr.f": 0.001
+        },
+        "expect": {
+          "final": {
+            "loads.fl.f": 0.0,
+            "loads.fr.f": -8521.5880,
+            "loads.rl.f": 0.0,
+            "loads.rr.f": -6817.2704
+          }
+        }
+      }
+    }
+  }
+}
+end

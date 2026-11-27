@@ -1,0 +1,32 @@
+"""
+Road grade under a planar frame: tan of the road angle along the frame's heading at its world
+position, read without applying force or torque.
+
+Ports: `frame_a` the point on the road and its heading, usually the chassis; `grade` the road
+gradient tan(alpha) along the x axis of `frame_a`, positive uphill. It feeds the `grade` input of
+`RoadLoad`.
+
+`road` is a `Road.Slope`; build one from an OpenCRG height file with `Road.slope(file)`. The
+default is the level road. Assumption: the grade is read at the frame's origin, not averaged over
+the wheelbase.
+"""
+component RoadGrade
+  "Point on the road and its heading"
+  frame_a = Frame2D() {^frame_a}
+  "Road gradient along the heading, tan(alpha)"
+  grade = RealOutput() {^grade}
+  "Road slope over world position and heading"
+  structural parameter road::VehicleComponents.Road.Slope = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/flat_z.crg")
+relations
+  grade = road(frame_a.x, frame_a.y, frame_a.phi)
+  frame_a.fx = 0
+  frame_a.fy = 0
+  frame_a.tau = 0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/RoadGrade.svg"}},
+  "_links": {
+    "frame_a": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "grade": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

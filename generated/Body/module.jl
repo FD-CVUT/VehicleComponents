@@ -15,6 +15,7 @@ include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
 include("Longitudinal/module.jl")
+include("Planar/module.jl")
 include("precompilation.jl")
 
 end # module Body

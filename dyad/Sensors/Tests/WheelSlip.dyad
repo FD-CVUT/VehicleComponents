@@ -1,0 +1,109 @@
+"""
+`WheelSlip` on a wheel center moved at a prescribed constant velocity, heading along the world x
+axis, and a shaft spun at a prescribed constant speed. The sensor's radius is 0.25 m, so the
+shaft speed `w` rolls the wheel at 0.25 w. The center moves at 20 m/s forward and `vy` to the
+left.
+
+- `rolling`: w = 80 rad/s rolls at 20 m/s and vy = 0, so kappa = (20 - 20)/20 = 0 and
+  alpha = atan(0/20) = 0.
+- `braking_sideslip`: w = 72 rad/s rolls at 18 m/s, kappa = (18 - 20)/20 = -0.1, and
+  vy = 1.2 m/s, alpha = atan(1.2/20) = atan(0.06) = 0.0599282 rad.
+
+`omega` is w in both cases.
+"""
+test component WheelSlip
+  "Sideways speed of the wheel center"
+  parameter vy::Velocity = 0.0
+  forward = BlockComponents.Sources.Constant(k = 20.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  sideways = BlockComponents.Sources.Constant(k = vy) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 450, "y2": 550}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 200, "y2": 300}}}
+  }
+  spin = RotationalComponents.Sources.ConstantVelocity(w_fixed = 80.0, phi = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 950, "y1": 200, "y2": 300}}}
+  }
+  housing = RotationalComponents.Components.Fixed() {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+  }
+  sensor = VehicleComponents.Sensors.WheelSlip(radius = 0.25) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(forward.y, motion.v_x) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 400, "y": 250}, {"x": 400, "y": 229.99999999999997}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.v_y) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 500}, {"x": 400, "y": 270}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, sensor.frame_a) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [{"x": 650, "y": 250}, {"x": 650, "y": 229.99999999999997}],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(spin.spline, sensor.spline) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 850, "y": 250},
+            {"x": 850, "y": 350},
+            {"x": 650, "y": 350},
+            {"x": 650, "y": 270}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+  connect(spin.support, housing.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "rolling": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"sensor.kappa": 1e-9, "sensor.alpha": 1e-9, "sensor.omega": 1e-9},
+        "expect": {"final": {"sensor.kappa": 0.0, "sensor.alpha": 0.0, "sensor.omega": 80.0}}
+      },
+      "braking_sideslip": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"spin.w_fixed": 72.0, "vy": 1.2},
+        "atol": {"sensor.kappa": 1e-9, "sensor.alpha": 1e-7, "sensor.omega": 1e-9},
+        "expect": {
+          "final": {"sensor.kappa": -0.1, "sensor.alpha": 0.0599282, "sensor.omega": 72.0}
+        }
+      }
+    }
+  }
+}
+end

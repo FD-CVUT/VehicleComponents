@@ -1,0 +1,72 @@
+"""
+Two `RoadGrade`s on one frame moved along the 2 % ramp road at a prescribed 55 m/s, from
+x = 420 m at t = 0 to x = 475 m at t = 1 s: `along` heads with the frame, along x, and `across`
+heads a quarter turn to its left, along y.
+
+`assets/data/roads/generate.jl` writes `ramp_z.crg` rising at 2 % along x from x = 0 to 500 m,
+then easing onto a plateau over 500 to 540 m, level across. The nodes are 40 m apart from 0, so
+the spline's breaks, midway between nodes, include 500 and 540 m; the height is then linear,
+quadratic and constant between breaks and C1, so the spline reproduces it exactly, and on 0 to
+500 m its slope is 0.02 along x and 0 along y. `along` reads 0.02 at both ends and `across`
+reads 0.
+"""
+test component RoadGrade
+  forward = BlockComponents.Sources.Constant(k = 55.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 300, "y2": 400}}}
+  }
+  sideways = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 550, "y2": 650}}}
+  }
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(r_start = [420.0, 0.0]) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 300, "y2": 400}}}
+  }
+  turn = MultibodyComponents.PlanarMechanics.FixedRotation(alpha = 1.5707963267948966, render = false) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 200, "y2": 300}}}
+  }
+  along = VehicleComponents.Body.Planar.RoadGrade(road = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")) {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 700, "x2": 800, "y1": 450, "y2": 550, "rot": 90}}
+    }
+  }
+  across = VehicleComponents.Body.Planar.RoadGrade(road = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")) {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}
+  }
+relations
+  connect(forward.y, motion.v_x) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 350}, {"x": 400, "y": 330}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(sideways.y, motion.v_y) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 400, "y": 600}, {"x": 400, "y": 370}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(motion.frame_b, along.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 350}], "E": 2}], "path": {}}}
+  connect(motion.frame_b, turn.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 650, "y": 350}, {"x": 650, "y": 250}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(turn.frame_b, across.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+metadata {
+  "Dyad": {
+    "tests": {
+      "ramp": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {"along.grade": 1e-9, "across.grade": 1e-9},
+        "expect": {
+          "initial": {"along.grade": 0.02, "across.grade": 0.0},
+          "final": {"along.grade": 0.02, "across.grade": 0.0}
+        }
+      }
+    }
+  }
+}
+end

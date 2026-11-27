@@ -1,0 +1,121 @@
+"""
+Tire contact of a wheel rolling on the x,y-plane: the contact patch passes a friction force that
+depends on the combined longitudinal and lateral slip speed, scaled by the normal load and the
+road's grip.
+
+The wheel heads along the x axis of `frame_a`. Its center velocity splits into `v_long` along the
+heading and `v_lat` across it; the longitudinal slip speed is `v_long - radius w_roll`, the
+lateral one `v_lat`. The friction force `f = mu_scale F_z mu(v_slip)` acts against the total slip
+velocity, where mu is the stdlib's point-symmetric triple-S law
+`MultibodyComponents.limit_S_triple`: it rises from 0 to `mu_A` at the adhesion speed `vAdhesion`
+and falls to `mu_S` at the sliding speed `vSlide`. Both speeds grow with the rolling speed,
+`vAdhesion = max(vAdhesion_min, sAdhesion |radius w_roll|)` and the same for `vSlide`, so
+`sAdhesion` and `sSlide` act as slip ratios once the wheel rolls.
+
+Ports:
+- `frame_a` the wheel center, steered on the plane; it takes the tire force and no torque.
+- `spline` the wheel shaft; it takes the tire's reaction torque.
+- `load` takes the normal load in newtons. This is the planar wheels' load-flange convention,
+  which `Wheel` and `QuasiStaticLoads` follow: the flange force, flow into the port, is the load,
+  positive when it presses the tire onto the road, and the joint holds the flange at zero travel.
+  It must be connected to a source that sets only the force, such as `QuasiStaticLoads`.
+- `mu_scale` multiplies the friction for the road: 1 on the road the law describes.
+
+Documented variables: `F_x` and `F_y` are the longitudinal and lateral tire forces on the
+vehicle, in the wheel's heading frame; `F_z` is the normal load the tire carries.
+
+Assumptions: the force follows the slip instantly (no relaxation length), and the tire has no
+rolling resistance. A negative load is a tire lifted off the road: it carries no load and passes
+no force. The slip-speed magnitude is regularized inside the square root,
+`sqrt(v_slip_long^2 + v_slip_lat^2 + v_small^2)`, so its Jacobian stays finite at zero slip.
+Defaults are a car tire on dry asphalt (the course's planar car).
+
+The equations are `MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint` from
+MultibodyComponents 0.3.0 with the regularization above, the load as a flange and the grip
+scaling added, and the rendering dropped. Copyright 2024-2026 JuliaHub Inc., BSD 3-Clause
+License; the copyright notice, conditions and disclaimer are in
+`licenses/MultibodyComponents.LICENSE`.
+"""
+component SlipWheelJoint
+  "Wheel center, steered on the plane; the wheel heads along its x axis"
+  frame_a = Frame2D() {^frame_a}
+  "Wheel shaft"
+  spline = Spline() {^spline}
+  "Normal load; positive presses the tire onto the road"
+  load = Flange() {^load}
+  "Road-friction multiplier"
+  mu_scale = RealInput() {^mu_scale}
+  "Rolling radius"
+  parameter radius::Length = 0.31
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.8
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.12
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 3 * sAdhesion
+  "Adhesion slip speed at standstill"
+  parameter vAdhesion_min::Velocity = 0.05
+  "Sliding slip speed at standstill"
+  parameter vSlide_min::Velocity = 0.15
+  "Slip speed that regularizes the slip-speed magnitude at zero slip"
+  parameter v_small::Velocity = 1e-4
+  "Wheel rolling speed"
+  variable w_roll::AngularVelocity
+  "Wheel-center velocity along the heading"
+  variable v_long::Velocity
+  "Wheel-center velocity across the heading, positive to the left"
+  variable v_lat::Velocity
+  "Longitudinal slip speed"
+  variable v_slip_long::Velocity
+  "Lateral slip speed"
+  variable v_slip_lat::Velocity
+  "Regularized slip-speed magnitude"
+  variable v_slip::Velocity
+  "Slip speed at peak adhesion"
+  variable vAdhesion::Velocity
+  "Slip speed at the sliding plateau"
+  variable vSlide::Velocity
+  "Friction force magnitude, against the slip velocity"
+  variable f::Dyad.Force
+  "Longitudinal friction force on the road"
+  variable f_long::Dyad.Force
+  "Lateral friction force on the road"
+  variable f_lat::Dyad.Force
+  "Longitudinal tire force on the vehicle"
+  variable F_x::Dyad.Force
+  "Lateral tire force on the vehicle"
+  variable F_y::Dyad.Force
+  "Normal load the tire carries; never negative"
+  variable F_z::Dyad.Force
+relations
+  w_roll = der(spline.phi)
+  v_long = der(frame_a.x) * cos(frame_a.phi) + der(frame_a.y) * sin(frame_a.phi)
+  v_lat = -der(frame_a.x) * sin(frame_a.phi) + der(frame_a.y) * cos(frame_a.phi)
+  v_slip_long = v_long - radius * w_roll
+  v_slip_lat = v_lat
+  v_slip = sqrt(v_slip_long ^ 2 + v_slip_lat ^ 2 + v_small ^ 2)
+  vAdhesion = max(vAdhesion_min, sAdhesion * abs(radius * w_roll))
+  vSlide = max(vSlide_min, sSlide * abs(radius * w_roll))
+  load.s = 0
+  F_z = max(load.f, 0.0)
+  f = mu_scale * F_z * MultibodyComponents.limit_S_triple(vAdhesion, vSlide, mu_A, mu_S, v_slip)
+  f_long = f * v_slip_long / v_slip
+  f_lat = f * v_slip_lat / v_slip
+  f_long = frame_a.fx * cos(frame_a.phi) + frame_a.fy * sin(frame_a.phi)
+  f_lat = frame_a.fy * cos(frame_a.phi) - frame_a.fx * sin(frame_a.phi)
+  frame_a.tau = 0
+  0 = spline.tau + f_long * radius
+  F_x = -f_long
+  F_y = -f_lat
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/SlipWheelJoint.svg"}},
+  "_links": {
+    "frame_a": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "load": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "mu_scale": {"Dyad": {"placement": {"icon": {"x1": 200, "y1": -50, "x2": 300, "y2": 50, "rot": 90}}}}
+  }
+}
+end

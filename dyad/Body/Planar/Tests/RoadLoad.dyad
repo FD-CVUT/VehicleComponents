@@ -1,0 +1,83 @@
+"""
+A planar chassis of 1500 kg under `RoadLoad` coasts on a flat road (grade 0, f_r = 0.012) from
+30 m/s, heading 0.5 rad off the world x axis, so the road load has to read the speed and apply
+the force in the chassis frame.
+
+The chassis follows m dv/dt = -(c v² + A), with c = rho CdA/2 = 1.2 · 0.63/2 = 0.378 kg/m and
+A = f_r m g = 0.012 · 1500 · 9.80665 = 176.5197 N (the rolling resistance is at full value above a
+few mm/s). The solution is v(t) = s tan(theta0 - k t), with s = sqrt(A/c) = 21.609797 m/s,
+k = sqrt(A c)/m = 0.0054457 1/s and theta0 = atan(30/s) = 0.946558, so at 5 s the chassis is at
+v = 28.339941 m/s.
+
+The chassis' velocity in its own frame is that speed along its heading and none across it, and
+it does not turn.
+"""
+test component RoadLoad
+  "Planar world with its gravity off: the road load carries the weight's effects"
+  world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
+  }
+  body = MultibodyComponents.PlanarMechanics.Body(m = 1500.0, I = 2500.0, render = false, r = initial [0.0, 0.0], v = initial [30.0 * cos(0.5), 30.0 * sin(0.5)], phi = initial 0.5, w = initial 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 500, "y2": 600}}}
+  }
+  speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 1200, "x2": 1300, "y1": 600, "y2": 700}}}
+  }
+  roadload = VehicleComponents.Body.Planar.RoadLoad(m = 1500.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 500, "y2": 600}}}
+  }
+  flat = BlockComponents.Sources.Constant(k = 0.0) {
+    "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 350, "y2": 450}}}
+  }
+  tire = BlockComponents.Sources.Constant(k = 0.012) {
+    "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 450, "y2": 550}}}
+  }
+relations
+  connect(body.frame_a, roadload.chassis) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(body.frame_a, speed.frame_a) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 900, "y": 550}, {"x": 900, "y": 650}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(flat.y, roadload.grade) {
+    "Dyad": {
+      "edges": [{"S": 1, "M": [{"x": 600, "y": 400}, {"x": 600, "y": 550}], "E": 2}],
+      "path": {}
+    }
+  }
+  connect(tire.y, roadload.f_r) {
+    "Dyad": {
+      "edges": [
+        {
+          "S": 1,
+          "M": [
+            {"x": 350, "y": 500},
+            {"x": 350, "y": 300},
+            {"x": 650, "y": 300},
+            {"x": 650, "y": 525}
+          ],
+          "E": 2
+        }
+      ],
+      "path": {}
+    }
+  }
+metadata {
+  "Dyad": {
+    "tests": {
+      "coast": {
+        "stop": 5,
+        "solver": "Auto",
+        "abstol": 1e-6,
+        "reltol": 1e-6,
+        "atol": {"speed.v_x": 1e-4, "speed.v_y": 1e-6, "speed.w": 1e-6},
+        "expect": {
+          "initial": {"speed.v_x": 30.0, "speed.v_y": 0.0},
+          "final": {"speed.v_x": 28.339941, "speed.v_y": 0.0, "speed.w": 0.0}
+        }
+      }
+    }
+  }
+}
+end

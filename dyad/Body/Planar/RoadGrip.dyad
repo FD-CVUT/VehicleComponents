@@ -1,0 +1,31 @@
+"""
+Road grip under a planar frame: the road's grip multiplier at the frame's world position, read
+without applying force or torque.
+
+Ports: `frame_a` the point on the road, usually a wheel center; `grip` the dimensionless
+multiplier on the tire's friction coefficient there, 1 on a nominal dry road.
+
+`grip` is a `Road.Grip`; build one from an OpenCRG grip file with `Road.grip(file)`. The default
+is the uniform road of grip 1. Assumption: the grip is read at the frame's origin, not over a
+contact patch.
+"""
+component RoadGrip
+  "Point on the road"
+  frame_a = Frame2D() {^frame_a}
+  "Grip multiplier at the point"
+  grip = RealOutput() {^grip}
+  "Road grip over world position"
+  structural parameter road::VehicleComponents.Road.Grip = VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg")
+relations
+  grip = road(frame_a.x, frame_a.y)
+  frame_a.fx = 0
+  frame_a.fy = 0
+  frame_a.tau = 0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/RoadGrip.svg"}},
+  "_links": {
+    "frame_a": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "grip": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

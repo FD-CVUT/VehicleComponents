@@ -18,3 +18,4 @@ end
 @testset "`VehicleComponents.Body`" begin
 end
 include("Longitudinal/tests.jl")
+include("Planar/tests.jl")

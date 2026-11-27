@@ -1,0 +1,100 @@
+"""
+`BusOut` reading a `CarBus` whose 22 fields each hold their own value, set on this rig's own bus
+port: 1 to 22 in the connector's order (vx = 1, vy = 2, r = 3, ..., omega_rr = 22). Each output
+must read the value of its own field, so a swapped or misread field fails.
+"""
+test component Bus
+  "Every field at its own value"
+  bus = VehicleComponents.Body.Planar.CarBus() {}
+  unpack = VehicleComponents.Body.Planar.BusOut() {
+    "Dyad": {
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 400, "y2": 500, "rot": 270}}
+    }
+  }
+relations
+  connect(bus, unpack.bus) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  bus.vx = 1.0
+  bus.vy = 2.0
+  bus.r = 3.0
+  bus.ax = 4.0
+  bus.ay = 5.0
+  bus.x = 6.0
+  bus.y = 7.0
+  bus.psi = 8.0
+  bus.beta = 9.0
+  bus.delta_sw = 10.0
+  bus.kappa_fl = 11.0
+  bus.kappa_fr = 12.0
+  bus.kappa_rl = 13.0
+  bus.kappa_rr = 14.0
+  bus.alpha_fl = 15.0
+  bus.alpha_fr = 16.0
+  bus.alpha_rl = 17.0
+  bus.alpha_rr = 18.0
+  bus.omega_fl = 19.0
+  bus.omega_fr = 20.0
+  bus.omega_rl = 21.0
+  bus.omega_rr = 22.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "fields": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "atol": {
+          "unpack.vx": 1e-12,
+          "unpack.vy": 1e-12,
+          "unpack.r": 1e-12,
+          "unpack.ax": 1e-12,
+          "unpack.ay": 1e-12,
+          "unpack.x": 1e-12,
+          "unpack.y": 1e-12,
+          "unpack.psi": 1e-12,
+          "unpack.beta": 1e-12,
+          "unpack.delta_sw": 1e-12,
+          "unpack.kappa_fl": 1e-12,
+          "unpack.kappa_fr": 1e-12,
+          "unpack.kappa_rl": 1e-12,
+          "unpack.kappa_rr": 1e-12,
+          "unpack.alpha_fl": 1e-12,
+          "unpack.alpha_fr": 1e-12,
+          "unpack.alpha_rl": 1e-12,
+          "unpack.alpha_rr": 1e-12,
+          "unpack.omega_fl": 1e-12,
+          "unpack.omega_fr": 1e-12,
+          "unpack.omega_rl": 1e-12,
+          "unpack.omega_rr": 1e-12
+        },
+        "expect": {
+          "final": {
+            "unpack.vx": 1.0,
+            "unpack.vy": 2.0,
+            "unpack.r": 3.0,
+            "unpack.ax": 4.0,
+            "unpack.ay": 5.0,
+            "unpack.x": 6.0,
+            "unpack.y": 7.0,
+            "unpack.psi": 8.0,
+            "unpack.beta": 9.0,
+            "unpack.delta_sw": 10.0,
+            "unpack.kappa_fl": 11.0,
+            "unpack.kappa_fr": 12.0,
+            "unpack.kappa_rl": 13.0,
+            "unpack.kappa_rr": 14.0,
+            "unpack.alpha_fl": 15.0,
+            "unpack.alpha_fr": 16.0,
+            "unpack.alpha_rl": 17.0,
+            "unpack.alpha_rr": 18.0,
+            "unpack.omega_fl": 19.0,
+            "unpack.omega_fr": 20.0,
+            "unpack.omega_rl": 21.0,
+            "unpack.omega_rr": 22.0
+          }
+        }
+      }
+    }
+  }
+}
+end

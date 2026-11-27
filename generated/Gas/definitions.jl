@@ -19,6 +19,7 @@ import BlockComponents
 import DyadData
 import DyadInterface
 import HydraulicComponents
+import MultibodyComponents
 import RotationalComponents
 import TranslationalComponents
 @doc Markdown.doc"""

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path fill="#fff" d="M4 4h992v992H4z"/>
+  <path fill="#008a19" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
+  <g fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 500 H220"/>
+    <circle cx="300" cy="500" r="80" fill="#fff"/>
+    <path d="M260 500 H340 M300 460 V540" stroke-width="10"/>
+    <path d="M120 860 L880 680"/>
+    <path d="M520 765 H880 V680" stroke-dasharray="20 20" stroke-width="10"/>
+    <path d="M300 580 V805" stroke-dasharray="20 20" stroke-width="10"/>
+    <path d="M620 500 H1000" stroke="#5757db"/>
+  </g>
+  <text x="640" y="440" text-anchor="middle" font-family="sans-serif" font-size="140" fill="#000">tan α</text>
+</svg>

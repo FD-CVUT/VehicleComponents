@@ -44,6 +44,7 @@ Examples
   Energy.Charging
   Platforms        partial platform bases the examples extend
   HardStop         reference example of the platform pattern, until a domain example takes its role
+  PlanarCoast      straight-line runs of the planar car, until a chassis example covers them
 ```
 
 The course's coupled hybrid is P0/P1 (P0 as a variant inside P1); its output hybrid is P3/P4.

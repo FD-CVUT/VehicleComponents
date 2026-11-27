@@ -17,5 +17,6 @@ end
 
 @testset "`VehicleComponents.Examples`" begin
 include("HardStop_test.jl")
+include("PlanarCoast_test.jl")
 end
 include("Platforms/tests.jl")

@@ -1,0 +1,71 @@
+"""
+Ideal wheel-slip sensor: the longitudinal slip ratio, slip angle and spin speed of one wheel, read
+from its center frame and its shaft without applying force or torque.
+
+The wheel center's velocity is resolved in its own frame, `v_x` along the wheel heading and
+`v_y` to its left. With the shaft speed omega:
+
+    kappa = (radius omega - v_x) / max(|v_x|, v_eps),    alpha = atan(v_y / max(|v_x|, v_eps)),
+
+so `kappa` is negative while braking and positive under wheelspin, the same slip ratio as
+`Chassis.Wheel.PartialSlip`'s, and `alpha` is positive when the wheel moves to the left of its
+heading.
+
+Ports: `frame_a` the wheel center, with x along the wheel heading; `spline` the wheel shaft;
+outputs `kappa` [-], `alpha` [rad] and `omega` the shaft speed [rad/s].
+
+Assumptions: ideal, with no delay or noise. Below `v_eps` both ratios are taken against `v_eps`,
+which keeps them finite at standstill. The default radius is the planar car's wheel.
+"""
+component WheelSlip
+  "Wheel center, with x along the wheel heading"
+  frame_a = Frame2D() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}}
+  "Wheel shaft"
+  spline = Spline() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}}
+  "Longitudinal slip ratio; negative while braking"
+  kappa = RealOutput() {
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": 950, "y1": 200, "x2": 1050, "y2": 300},
+        "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}
+      }
+    }
+  }
+  "Slip angle"
+  alpha = RealOutput() {
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550},
+        "diagram": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}
+      }
+    }
+  }
+  "Wheel spin speed"
+  omega = RealOutput() {
+    "Dyad": {
+      "placement": {
+        "icon": {"x1": 950, "y1": 700, "x2": 1050, "y2": 800},
+        "diagram": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}
+      }
+    }
+  }
+  "Rolling radius"
+  parameter radius::Length = 0.31
+  "Speed below which both ratios are taken against v_eps"
+  parameter v_eps::Velocity = 0.5
+  velocity = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {
+    "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 250, "y2": 350}}}
+  }
+  spin = RotationalComponents.Sensors.VelocitySensor() {
+    "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 650, "y2": 750}}}
+  }
+relations
+  connect(frame_a, velocity.frame_a) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(spline, spin.spline) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  connect(spin.w, omega) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  kappa = (radius * spin.w - velocity.v_x) / max(abs(velocity.v_x), v_eps)
+  alpha = atan(velocity.v_y / max(abs(velocity.v_x), v_eps))
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleComponents/Sensors/WheelSlip.svg"}}
+}
+end

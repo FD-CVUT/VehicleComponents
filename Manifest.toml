@@ -2,7 +2,7 @@
 
 julia_version = "1.13.2"
 manifest_format = "2.1"
-project_hash = "75f188300c5320235614cfadabf08e4676a8c836"
+project_hash = "2c35801891b71b4209bff5387808fb6a01d76069"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -225,6 +225,15 @@ deps = ["TranscodingStreams", "Zlib_jll"]
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
 version = "0.7.9"
 
+[[deps.ColorTypes]]
+deps = ["FixedPointNumbers", "Random"]
+uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
+version = "0.12.3"
+weakdeps = ["StyledStrings"]
+
+    [deps.ColorTypes.extensions]
+    StyledStringsExt = "StyledStrings"
+
 [[deps.Combinatorics]]
 uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 version = "1.0.2"
@@ -284,6 +293,11 @@ weakdeps = ["IntervalSets", "LinearAlgebra", "StaticArrays"]
     ConstructionBaseIntervalSetsExt = "IntervalSets"
     ConstructionBaseLinearAlgebraExt = "LinearAlgebra"
     ConstructionBaseStaticArraysExt = "StaticArrays"
+
+[[deps.CoordinateTransformations]]
+deps = ["LinearAlgebra", "StaticArrays"]
+uuid = "150eb455-5306-5404-9cee-2592286d6298"
+version = "0.6.4"
 
 [[deps.Crayons]]
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
@@ -521,14 +535,11 @@ version = "1.4.1"
 deps = ["ConstructionBase", "DataStructures", "DocStringExtensions", "Graphs", "LinearAlgebra", "ModelingToolkit", "ModelingToolkitBase", "ModelingToolkitTearing", "Moshi", "PreallocationTools", "Random", "Setfield", "SparseArrays", "StaticArrays", "SymbolicUtils", "Symbolics"]
 uuid = "7ad99603-9b08-4a9b-96cd-82ecdbcce176"
 version = "0.3.7"
+weakdeps = ["LinearSolve", "Rotations"]
 
     [deps.DyadCompilerPasses.extensions]
     DyadCompilerPassesRotationsExt = ["Rotations"]
     SCPLinearSolveExt = ["LinearSolve", "StaticArrays"]
-
-    [deps.DyadCompilerPasses.weakdeps]
-    LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-    Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 
 [[deps.DyadData]]
 deps = ["DelimitedFiles", "PrecompileTools", "Tables", "TypedTables"]
@@ -560,6 +571,16 @@ version = "7.5.1"
 deps = ["LinearAlgebra", "MultivariatePolynomials", "MutableArithmetics", "Reexport", "StarAlgebras"]
 uuid = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 version = "0.6.8"
+
+[[deps.EarCut_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
+version = "2.2.4+0"
+
+[[deps.ElectricalComponents]]
+deps = ["BlockComponents", "DyadData", "DyadInterface", "Markdown", "ModelingToolkit", "Moshi", "OrdinaryDiffEqDefault", "PrecompileTools", "RotationalComponents", "RuntimeGeneratedFunctions", "Symbolics", "ThermalComponents", "TranslationalComponents"]
+uuid = "3fc4c519-469d-4ff5-98c9-d4d06b1514a2"
+version = "3.0.0"
 
 [[deps.EllipsisNotation]]
 deps = ["PrecompileTools"]
@@ -638,6 +659,17 @@ version = "1.5.0"
     ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
     Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
+[[deps.FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.20.0"
+
+    [deps.FileIO.extensions]
+    HTTPExt = "HTTP"
+
+    [deps.FileIO.weakdeps]
+    HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 version = "1.11.0"
@@ -689,6 +721,11 @@ version = "2.33.0"
     SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
+[[deps.FixedPointNumbers]]
+deps = ["Random", "Statistics"]
+uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
+version = "0.8.6"
+
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
@@ -730,6 +767,21 @@ version = "1.11.0"
 deps = ["Adapt"]
 uuid = "46192b85-c4d5-4398-a991-12ede77f4527"
 version = "0.2.1"
+
+[[deps.GeometryBasics]]
+deps = ["EarCut_jll", "LinearAlgebra", "PrecompileTools", "Random", "StaticArrays"]
+uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+version = "0.5.13"
+
+    [deps.GeometryBasics.extensions]
+    ExtentsExt = "Extents"
+    GeometryBasicsGeoInterfaceExt = "GeoInterface"
+    IntervalSetsExt = "IntervalSets"
+
+    [deps.GeometryBasics.weakdeps]
+    Extents = "411431e0-e8b7-467b-b5e0-f676ba4f2910"
+    GeoInterface = "cf35fbd7-0cd7-5166-be24-54bfbe79505f"
+    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
 
 [[deps.Graphs]]
 deps = ["ArnoldiMethod", "DataStructures", "Inflate", "LinearAlgebra", "Random", "SimpleTraits", "SparseArrays", "Statistics"]
@@ -1088,6 +1140,11 @@ weakdeps = ["SparseArrays"]
     [deps.MaybeInplace.extensions]
     MaybeInplaceSparseArraysExt = "SparseArrays"
 
+[[deps.MeshIO]]
+deps = ["ColorTypes", "FileIO", "GeometryBasics", "Printf"]
+uuid = "7269a6da-0436-5bbc-96c2-40638cbb6118"
+version = "0.5.5"
+
 [[deps.Missings]]
 deps = ["DataAPI"]
 uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
@@ -1170,6 +1227,22 @@ version = "2026.8.13"
 deps = ["PrecompileTools"]
 uuid = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 version = "0.2.7"
+
+[[deps.MultibodyComponents]]
+deps = ["BlockComponents", "CoordinateTransformations", "DelimitedFiles", "DyadCompilerPasses", "DyadData", "DyadInterface", "ElectricalComponents", "FileIO", "ForwardDiff", "HydraulicComponents", "LinearAlgebra", "Markdown", "MeshIO", "ModelingToolkit", "ModelingToolkitBase", "ModelingToolkitTearing", "Moshi", "OrdinaryDiffEqDefault", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "OrdinaryDiffEqTsit5", "PrecompileTools", "RotationalComponents", "Rotations", "RuntimeGeneratedFunctions", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "StateSelection", "StaticArrays", "Symbolics", "ThermalComponents", "TrajectoryLimiters", "TranslationalComponents"]
+uuid = "01883e52-22cd-4538-b14d-b44f958a131d"
+version = "0.3.0"
+
+    [deps.MultibodyComponents.extensions]
+    Render = ["Makie"]
+    URDF = ["LightXML", "Graphs", "MetaGraphsNext", "JuliaFormatter"]
+
+    [deps.MultibodyComponents.weakdeps]
+    Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+    JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
+    LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
+    Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+    MetaGraphsNext = "fa8bd995-216d-47f1-8a91-f3b68fbeb377"
 
 [[deps.MultivariatePolynomials]]
 deps = ["DataStructures", "LinearAlgebra", "MutableArithmetics", "StarAlgebras"]
@@ -1478,6 +1551,11 @@ weakdeps = ["ForwardDiff"]
     [deps.PureKLU.extensions]
     PureKLUForwardDiffExt = "ForwardDiff"
 
+[[deps.Quaternions]]
+deps = ["LinearAlgebra", "Random", "RealDot"]
+uuid = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"
+version = "0.7.7"
+
 [[deps.REPL]]
 deps = ["Base64", "Dates", "FileWatching", "InteractiveUtils", "JuliaSyntaxHighlighting", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -1496,6 +1574,11 @@ version = "0.2.0"
 deps = ["DocStringExtensions"]
 uuid = "795d4caa-f5a7-4580-b5d8-c01d53451803"
 version = "1.0.1"
+
+[[deps.RealDot]]
+deps = ["LinearAlgebra"]
+uuid = "c1ae055f-0cd5-4b69-90a6-9a35b1a98df9"
+version = "0.1.0"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -1564,6 +1647,15 @@ version = "1.3.0"
 deps = ["BlockComponents", "CSV", "DyadData", "DyadInterface", "Markdown", "ModelingToolkit", "Moshi", "OrdinaryDiffEqDefault", "PrecompileTools", "RuntimeGeneratedFunctions", "Test"]
 uuid = "824fa3ed-d7dc-4365-8bdf-ac77a1ac2011"
 version = "3.0.0"
+
+[[deps.Rotations]]
+deps = ["LinearAlgebra", "Quaternions", "Random", "StaticArrays"]
+uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
+version = "1.7.1"
+weakdeps = ["RecipesBase"]
+
+    [deps.Rotations.extensions]
+    RotationsRecipesBaseExt = "RecipesBase"
 
 [[deps.RuntimeGeneratedFunctions]]
 deps = ["ExprTools", "PrecompileTools", "SHA", "Serialization"]
@@ -1973,6 +2065,10 @@ version = "1.2.2"
     [deps.TimerOutputs.weakdeps]
     FlameGraphs = "08572546-2f56-4bcf-ba4e-bab62c3a3f89"
 
+[[deps.TrajectoryLimiters]]
+uuid = "9792e600-fe43-4e4e-833b-462f466b8006"
+version = "0.1.5"
+
 [[deps.TranscodingStreams]]
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
@@ -2016,7 +2112,7 @@ version = "0.3.2"
     LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
 
 [[deps.VehicleComponents]]
-deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "HydraulicComponents", "JSON", "LinearAlgebra", "Markdown", "ModelingToolkit", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RotationalComponents", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
+deps = ["BlockComponents", "DyadData", "DyadInterface", "ForwardDiff", "HydraulicComponents", "JSON", "LinearAlgebra", "Markdown", "ModelingToolkit", "MultibodyComponents", "OpenCRG", "OrdinaryDiffEqDefault", "PrecompileTools", "RotationalComponents", "RuntimeGeneratedFunctions", "TOML", "TranslationalComponents"]
 path = "."
 uuid = "8c616c4b-ea35-4d9d-a47e-f6124bcac953"
 version = "0.1.0"
