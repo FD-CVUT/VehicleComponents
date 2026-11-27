@@ -17,7 +17,6 @@ end
 
 @testset "`VehicleComponents.Body.Planar`" begin
 include("AckermannSteering_test.jl")
-include("BusIn_test.jl")
 include("BusOut_test.jl")
 include("Car_test.jl")
 include("QuasiStaticLoads_test.jl")
@@ -27,5 +26,4 @@ include("RoadLoad_test.jl")
 include("SlipWheelJoint_test.jl")
 include("Wheel_test.jl")
 end
-include("Helpers/tests.jl")
 include("Tests/tests.jl")

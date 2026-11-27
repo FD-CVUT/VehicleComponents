@@ -16,6 +16,10 @@ so its slope there is exactly 0.
 - `climb` starts at x = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
   cos(alpha) = 1/sqrt(1.0004) = 0.99980006 and sin(alpha) = 0.01999600.
 - `braking` starts at x = -300 m, on the level road, with 250 N m on every brake.
+- `reverse` checks only the start of a car driving backward and sliding left, at
+  vx = -19.363634 m/s and vy = 6.503820 m/s: the bus reads
+  beta = atan(6.503820/max(|-19.363634|, 1)) = 0.324039 rad, where a sideslip taken against vx
+  would read atan(6.503820) = 1.418235 rad.
 
 The wheels turn with the chassis, so the four wheel inertias add J/r² each to the mass the
 forces decelerate: m_eff = 1500 + 4 · 1/0.31² = 1541.6233 kg. Coasting, the tires slip only the
@@ -69,7 +73,11 @@ by up to about 1e-5 m over the run, which its tolerance allows.
 test component PlanarCoast
   "Start position of the chassis along the road's center line"
   parameter x0::Length = -300.0
-  car = VehicleComponents.Body.Planar.Car(h_cg = 0.55, load_transfer = true, body(r = initial [x0, 0.0], v = initial [25.0, 0.0]), fl(inertia(w = initial 25.0 / 0.31)), fr(inertia(w = initial 25.0 / 0.31)), rl(inertia(w = initial 25.0 / 0.31)), rr(inertia(w = initial 25.0 / 0.31))) {^car}
+  "Start speed of the chassis along its heading"
+  parameter vx0::Velocity = 25.0
+  "Start speed of the chassis to its left"
+  parameter vy0::Velocity = 0.0
+  car = VehicleComponents.Body.Planar.Car(h_cg = 0.55, load_transfer = true, body(r = initial [x0, 0.0], v = initial [vx0, vy0]), fl(inertia(w = initial vx0 / 0.31)), fr(inertia(w = initial vx0 / 0.31)), rl(inertia(w = initial vx0 / 0.31)), rr(inertia(w = initial vx0 / 0.31))) {^car}
   road = VehicleComponents.Body.Planar.RoadGrade(road = VehicleComponents.Road.slope("dyad://VehicleComponents/data/roads/ramp_z.crg")) {^road}
   "Rolling resistance coefficient, a car tire on asphalt"
   tire = BlockComponents.Sources.Constant(k = 0.012) {^tire}
@@ -94,12 +102,7 @@ metadata {
         "abstol": 1e-7,
         "reltol": 1e-7,
         "params": {"x0": 10.0},
-        "atol": {
-          "car.bus.vx": 0.001,
-          "car.bus.x": 0.01,
-          "car.bus.y": 0.001,
-          "car.bus.r": 1e-6
-        },
+        "atol": {"car.bus.vx": 0.001, "car.bus.x": 0.01, "car.bus.y": 0.001, "car.bus.r": 1e-6},
         "expect": {
           "initial": {"car.bus.vx": 25.0, "car.bus.x": 10.0},
           "final": {
@@ -109,6 +112,15 @@ metadata {
             "car.bus.r": 0.0
           }
         }
+      },
+      "reverse": {
+        "stop": 0.01,
+        "solver": "Auto",
+        "abstol": 1e-7,
+        "reltol": 1e-7,
+        "params": {"vx0": -19.363634, "vy0": 6.50382},
+        "atol": {"car.bus.vx": 1e-6, "car.bus.beta": 1e-6},
+        "expect": {"initial": {"car.bus.vx": -19.363634, "car.bus.beta": 0.324039}}
       },
       "braking": {
         "stop": 2,
@@ -162,11 +174,11 @@ metadata {
     },
     "road": {
       "Dyad": {
-        "placement": {"diagram": {"x1": 200, "x2": 100, "y1": 450, "y2": 550, "rot": 90}}
+        "placement": {"diagram": {"x1": 210, "x2": 110, "y1": 450, "y2": 550, "rot": 90}}
       }
     },
     "tire": {
-      "Dyad": {"placement": {"diagram": {"x1": 170, "x2": 270, "y1": 180, "y2": 280}}}
+      "Dyad": {"placement": {"diagram": {"x1": 170, "x2": 270, "y1": 190, "y2": 290}}}
     },
     "column": {
       "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 10, "y2": 110}}}
@@ -178,33 +190,34 @@ metadata {
       "Dyad": {"placement": {"diagram": {"x1": -110, "x2": -10, "y1": 900, "y2": 1000}}}
     },
     "id7": {
-      "Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 575}, {"x": 150, "y": 575}], "E": 2}], "path": {}}
-    },
-    "id8": {
       "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 150, "y": 360}, {"x": 400, "y": 360}], "E": 2}],
+        "edges": [{"S": 1, "M": [{"x": 600, "y": 575}, {"x": 160, "y": 575}], "E": 2}],
         "path": {}
       }
     },
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 160, "y": 320}], "E": 2}], "path": {}}},
     "id9": {
       "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 360, "y": 230}, {"x": 360, "y": 280}], "E": 2}],
+        "edges": [{"S": 1, "M": [{"x": 360, "y": 240}, {"x": 360, "y": 280}], "E": 2}],
         "path": {}
       }
     },
     "id10": {
-      "Dyad": {"edges": [{"S": 1, "M": [{"x": 900, "y": -80}, {"x": 600, "y": -80}], "E": 2}], "path": {}}
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 900, "y": -80}, {"x": 600, "y": -80}], "E": 2}],
+        "path": {}
+      }
     },
     "id11": {
       "Dyad": {
         "edges": [
           {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 160, "y": 160}], "E": 2},
           {
             "S": -1,
-            "M": [{"x": 160, "y": 140}, {"x": 360, "y": 140}, {"x": 360, "y": 160}],
-            "E": 2
+            "M": [{"x": 160, "y": 160}, {"x": 40, "y": 160}, {"x": 40, "y": 360}],
+            "E": 3
           },
-          {"S": -1, "M": [{"x": 160, "y": 320}, {"x": 400, "y": 320}], "E": 3},
           {
             "S": -1,
             "M": [

@@ -7,9 +7,19 @@
 @doc Markdown.doc"""
    Bus(; name, __overrides)
 
-A `BusIn` and a `BusOut` back to back: each of the 22 inputs gets its own constant, 1 to 22 in
-the `CarBus` order (vx = 1, vy = 2, r = 3, ..., omega_rr = 22), and each output must read back
-the constant of its own field, so a swapped or misread field fails.
+`BusOut` reading a `CarBus` whose 22 fields each hold their own value, set on this rig's own bus
+port: 1 to 22 in the connector's order (vx = 1, vy = 2, r = 3, ..., omega_rr = 22). Each output
+must read the value of its own field, so a swapped or misread field fails.
+
+## Connectors
+
+ * `bus` - The planar car's measurement bus, as the car sends it: every signal measured about the car, on
+one port, each field in its own unit (SI; the slip ratios dimensionless). It is a plain signal
+bus, not a model of a vehicle network.
+
+A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
+the component that holds it. Two `CarBus` ports
+side by side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
 @component function Bus(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -55,75 +65,7 @@ the constant of its own field, so a swapped or misread field fails.
   __constants = Any[]
 
   ### Components
-  # Subcomponent vx of type BlockComponents.Sources.Constant
-  vx_overrides = __pop_subcomponent_overrides!(__overrides, "vx")
-  push!(__systems, @named vx = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = vx_overrides))
-  # Subcomponent vy of type BlockComponents.Sources.Constant
-  vy_overrides = __pop_subcomponent_overrides!(__overrides, "vy")
-  push!(__systems, @named vy = BlockComponents.Sources.Constant(; k=Float64(2.0), __overrides = vy_overrides))
-  # Subcomponent r of type BlockComponents.Sources.Constant
-  r_overrides = __pop_subcomponent_overrides!(__overrides, "r")
-  push!(__systems, @named r = BlockComponents.Sources.Constant(; k=Float64(3.0), __overrides = r_overrides))
-  # Subcomponent ax of type BlockComponents.Sources.Constant
-  ax_overrides = __pop_subcomponent_overrides!(__overrides, "ax")
-  push!(__systems, @named ax = BlockComponents.Sources.Constant(; k=Float64(4.0), __overrides = ax_overrides))
-  # Subcomponent ay of type BlockComponents.Sources.Constant
-  ay_overrides = __pop_subcomponent_overrides!(__overrides, "ay")
-  push!(__systems, @named ay = BlockComponents.Sources.Constant(; k=Float64(5.0), __overrides = ay_overrides))
-  # Subcomponent x of type BlockComponents.Sources.Constant
-  x_overrides = __pop_subcomponent_overrides!(__overrides, "x")
-  push!(__systems, @named x = BlockComponents.Sources.Constant(; k=Float64(6.0), __overrides = x_overrides))
-  # Subcomponent y of type BlockComponents.Sources.Constant
-  y_overrides = __pop_subcomponent_overrides!(__overrides, "y")
-  push!(__systems, @named y = BlockComponents.Sources.Constant(; k=Float64(7.0), __overrides = y_overrides))
-  # Subcomponent psi of type BlockComponents.Sources.Constant
-  psi_overrides = __pop_subcomponent_overrides!(__overrides, "psi")
-  push!(__systems, @named psi = BlockComponents.Sources.Constant(; k=Float64(8.0), __overrides = psi_overrides))
-  # Subcomponent beta of type BlockComponents.Sources.Constant
-  beta_overrides = __pop_subcomponent_overrides!(__overrides, "beta")
-  push!(__systems, @named beta = BlockComponents.Sources.Constant(; k=Float64(9.0), __overrides = beta_overrides))
-  # Subcomponent delta_sw of type BlockComponents.Sources.Constant
-  delta_sw_overrides = __pop_subcomponent_overrides!(__overrides, "delta_sw")
-  push!(__systems, @named delta_sw = BlockComponents.Sources.Constant(; k=Float64(10.0), __overrides = delta_sw_overrides))
-  # Subcomponent kappa_fl of type BlockComponents.Sources.Constant
-  kappa_fl_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_fl")
-  push!(__systems, @named kappa_fl = BlockComponents.Sources.Constant(; k=Float64(11.0), __overrides = kappa_fl_overrides))
-  # Subcomponent kappa_fr of type BlockComponents.Sources.Constant
-  kappa_fr_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_fr")
-  push!(__systems, @named kappa_fr = BlockComponents.Sources.Constant(; k=Float64(12.0), __overrides = kappa_fr_overrides))
-  # Subcomponent kappa_rl of type BlockComponents.Sources.Constant
-  kappa_rl_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_rl")
-  push!(__systems, @named kappa_rl = BlockComponents.Sources.Constant(; k=Float64(13.0), __overrides = kappa_rl_overrides))
-  # Subcomponent kappa_rr of type BlockComponents.Sources.Constant
-  kappa_rr_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_rr")
-  push!(__systems, @named kappa_rr = BlockComponents.Sources.Constant(; k=Float64(14.0), __overrides = kappa_rr_overrides))
-  # Subcomponent alpha_fl of type BlockComponents.Sources.Constant
-  alpha_fl_overrides = __pop_subcomponent_overrides!(__overrides, "alpha_fl")
-  push!(__systems, @named alpha_fl = BlockComponents.Sources.Constant(; k=Float64(15.0), __overrides = alpha_fl_overrides))
-  # Subcomponent alpha_fr of type BlockComponents.Sources.Constant
-  alpha_fr_overrides = __pop_subcomponent_overrides!(__overrides, "alpha_fr")
-  push!(__systems, @named alpha_fr = BlockComponents.Sources.Constant(; k=Float64(16.0), __overrides = alpha_fr_overrides))
-  # Subcomponent alpha_rl of type BlockComponents.Sources.Constant
-  alpha_rl_overrides = __pop_subcomponent_overrides!(__overrides, "alpha_rl")
-  push!(__systems, @named alpha_rl = BlockComponents.Sources.Constant(; k=Float64(17.0), __overrides = alpha_rl_overrides))
-  # Subcomponent alpha_rr of type BlockComponents.Sources.Constant
-  alpha_rr_overrides = __pop_subcomponent_overrides!(__overrides, "alpha_rr")
-  push!(__systems, @named alpha_rr = BlockComponents.Sources.Constant(; k=Float64(18.0), __overrides = alpha_rr_overrides))
-  # Subcomponent omega_fl of type BlockComponents.Sources.Constant
-  omega_fl_overrides = __pop_subcomponent_overrides!(__overrides, "omega_fl")
-  push!(__systems, @named omega_fl = BlockComponents.Sources.Constant(; k=Float64(19.0), __overrides = omega_fl_overrides))
-  # Subcomponent omega_fr of type BlockComponents.Sources.Constant
-  omega_fr_overrides = __pop_subcomponent_overrides!(__overrides, "omega_fr")
-  push!(__systems, @named omega_fr = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = omega_fr_overrides))
-  # Subcomponent omega_rl of type BlockComponents.Sources.Constant
-  omega_rl_overrides = __pop_subcomponent_overrides!(__overrides, "omega_rl")
-  push!(__systems, @named omega_rl = BlockComponents.Sources.Constant(; k=Float64(21.0), __overrides = omega_rl_overrides))
-  # Subcomponent omega_rr of type BlockComponents.Sources.Constant
-  omega_rr_overrides = __pop_subcomponent_overrides!(__overrides, "omega_rr")
-  push!(__systems, @named omega_rr = BlockComponents.Sources.Constant(; k=Float64(22.0), __overrides = omega_rr_overrides))
-  # Subcomponent pack of type VehicleComponents.Body.Planar.BusIn
-  pack_overrides = __pop_subcomponent_overrides!(__overrides, "pack")
-  push!(__systems, @named pack = VehicleComponents.Body.Planar.BusIn(; __overrides = pack_overrides))
+  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
   # Subcomponent unpack of type VehicleComponents.Body.Planar.BusOut
   unpack_overrides = __pop_subcomponent_overrides!(__overrides, "unpack")
   push!(__systems, @named unpack = VehicleComponents.Body.Planar.BusOut(; __overrides = unpack_overrides))
@@ -139,29 +81,29 @@ the constant of its own field, so a swapped or misread field fails.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(vx.y, pack.vx))
-  push!(__eqs, connect(vy.y, pack.vy))
-  push!(__eqs, connect(r.y, pack.r))
-  push!(__eqs, connect(ax.y, pack.ax))
-  push!(__eqs, connect(ay.y, pack.ay))
-  push!(__eqs, connect(x.y, pack.x))
-  push!(__eqs, connect(y.y, pack.y))
-  push!(__eqs, connect(psi.y, pack.psi))
-  push!(__eqs, connect(beta.y, pack.beta))
-  push!(__eqs, connect(delta_sw.y, pack.delta_sw))
-  push!(__eqs, connect(kappa_fl.y, pack.kappa_fl))
-  push!(__eqs, connect(kappa_fr.y, pack.kappa_fr))
-  push!(__eqs, connect(kappa_rl.y, pack.kappa_rl))
-  push!(__eqs, connect(kappa_rr.y, pack.kappa_rr))
-  push!(__eqs, connect(alpha_fl.y, pack.alpha_fl))
-  push!(__eqs, connect(alpha_fr.y, pack.alpha_fr))
-  push!(__eqs, connect(alpha_rl.y, pack.alpha_rl))
-  push!(__eqs, connect(alpha_rr.y, pack.alpha_rr))
-  push!(__eqs, connect(omega_fl.y, pack.omega_fl))
-  push!(__eqs, connect(omega_fr.y, pack.omega_fr))
-  push!(__eqs, connect(omega_rl.y, pack.omega_rl))
-  push!(__eqs, connect(omega_rr.y, pack.omega_rr))
-  push!(__eqs, connect(pack.bus, unpack.bus))
+  push!(__eqs, bus.vx ~ 1.0)
+  push!(__eqs, bus.vy ~ 2.0)
+  push!(__eqs, bus.r ~ 3.0)
+  push!(__eqs, bus.ax ~ 4.0)
+  push!(__eqs, bus.ay ~ 5.0)
+  push!(__eqs, bus.x ~ 6.0)
+  push!(__eqs, bus.y ~ 7.0)
+  push!(__eqs, bus.psi ~ 8.0)
+  push!(__eqs, bus.beta ~ 9.0)
+  push!(__eqs, bus.delta_sw ~ 10.0)
+  push!(__eqs, bus.kappa_fl ~ 11.0)
+  push!(__eqs, bus.kappa_fr ~ 12.0)
+  push!(__eqs, bus.kappa_rl ~ 13.0)
+  push!(__eqs, bus.kappa_rr ~ 14.0)
+  push!(__eqs, bus.alpha_fl ~ 15.0)
+  push!(__eqs, bus.alpha_fr ~ 16.0)
+  push!(__eqs, bus.alpha_rl ~ 17.0)
+  push!(__eqs, bus.alpha_rr ~ 18.0)
+  push!(__eqs, bus.omega_fl ~ 19.0)
+  push!(__eqs, bus.omega_fr ~ 20.0)
+  push!(__eqs, bus.omega_rl ~ 21.0)
+  push!(__eqs, bus.omega_rr ~ 22.0)
+  push!(__eqs, connect(bus, unpack.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

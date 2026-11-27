@@ -31,6 +31,26 @@ __dyad_run_test_case!(
 )
 __dyad_run_test_case!(
   VehicleComponents.Examples.PlanarCoast,
+  "reverse for VehicleComponents.Examples.PlanarCoast";
+  case_name="reverse",
+  component_stem="PlanarCoast",
+  module_path=String["Examples"],
+  start=0e+0,
+  stop=1e-2,
+  abstol=1e-7,
+  reltol=1e-7,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("vx0" => -19.363634, "vy0" => 6.50382),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[
+    (m -> m.car.bus.vx, "car.bus.vx", -19.363634, 0.000001, 1e-6),
+    (m -> m.car.bus.beta, "car.bus.beta", 0.324039, 0.000001, 1e-6),
+  ],
+  expected_final=Tuple[],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Examples.PlanarCoast,
   "braking for VehicleComponents.Examples.PlanarCoast";
   case_name="braking",
   component_stem="PlanarCoast",

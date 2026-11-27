@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarCoast(; name, x0, __overrides)
+   PlanarCoast(; name, x0, vx0, vy0, __overrides)
 
 Straight-line runs of the planar car on the 2 % ramp road, steering wheel held straight by
 `column`, no drive: a coast up the ramp and a braked stop with load transfer on the level road.
@@ -24,6 +24,10 @@ so its slope there is exactly 0.
 - `climb` starts at x = 10 m and stays on the 2 % ramp, so tan(alpha) = 0.02,
   cos(alpha) = 1/sqrt(1.0004) = 0.99980006 and sin(alpha) = 0.01999600.
 - `braking` starts at x = -300 m, on the level road, with 250 N m on every brake.
+- `reverse` checks only the start of a car driving backward and sliding left, at
+  vx = -19.363634 m/s and vy = 6.503820 m/s: the bus reads
+  beta = atan(6.503820/max(|-19.363634|, 1)) = 0.324039 rad, where a sideslip taken against vx
+  would read atan(6.503820) = 1.418235 rad.
 
 The wheels turn with the chassis, so the four wheel inertias add J/r² each to the mass the
 forces decelerate: m_eff = 1500 + 4 · 1/0.31² = 1541.6233 kg. Coasting, the tires slip only the
@@ -79,8 +83,10 @@ by up to about 1e-5 m over the run, which its tolerance allows.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `x0`         | Start position of the chassis along the road's center line                         | m  |   -300.0 |
+| `vx0`         | Start speed of the chassis along its heading                         | m/s  |   25.0 |
+| `vy0`         | Start speed of the chassis to its left                         | m/s  |   0.0 |
 """
-@component function PlanarCoast(; name = nothing, var"x0"=-300.0, __overrides = Dict{String, Any}())
+@component function PlanarCoast(; name = nothing, var"x0"=-300.0, var"vx0"=Float64(25.0), var"vy0"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -100,6 +106,8 @@ by up to about 1e-5 m over the run, which its tolerance allows.
 
   ### Keyword argument overrides
   haskey(__overrides, "x0") && (x0 = pop!(__overrides, "x0"))
+  haskey(__overrides, "vx0") && (vx0 = pop!(__overrides, "vx0"))
+  haskey(__overrides, "vy0") && (vy0 = pop!(__overrides, "vy0"))
 
   ### Structural Parameters (functions)
 
@@ -117,6 +125,12 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   __local__x0 = x0
   append!(__params, @parameters (x0::Real), [description = "Start position of the chassis along the road's center line"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, x0, __local__x0)
+  __local__vx0 = vx0
+  append!(__params, @parameters (vx0::Real), [description = "Start speed of the chassis along its heading"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, vx0, __local__vx0)
+  __local__vy0 = vy0
+  append!(__params, @parameters (vy0::Real), [description = "Start speed of the chassis to its left"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, vy0, __local__vy0)
 
   ### Final Parameters (assignments)
 
@@ -134,11 +148,11 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   car_dict = Dict{String, Any}()
   car_dict["body.r.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([x0, 0.0]))
-  car_dict["body.v.initial"] = ModelingToolkit.default_to_parentscope([25.0, 0.0])
-  car_dict["fl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(25.0 / 0.31)
-  car_dict["fr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(25.0 / 0.31)
-  car_dict["rl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(25.0 / 0.31)
-  car_dict["rr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(25.0 / 0.31)
+  car_dict["body.v.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([vx0, vy0]))
+  car_dict["fl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
+  car_dict["fr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
+  car_dict["rl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
+  car_dict["rr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
   merge!(car_dict, car_overrides)
   push!(__systems, @named car = VehicleComponents.Body.Planar.Car(; h_cg=0.55, load_transfer=true, __overrides = car_dict))
   # Subcomponent road of type VehicleComponents.Body.Planar.RoadGrade

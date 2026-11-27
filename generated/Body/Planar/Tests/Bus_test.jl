@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Body.Planar.Tests.Bus,
-  "round_trip for VehicleComponents.Body.Planar.Tests.Bus";
-  case_name="round_trip",
+  "fields for VehicleComponents.Body.Planar.Tests.Bus";
+  case_name="fields",
   component_stem="Bus",
   module_path=String["Body", "Planar", "Tests"],
   start=0e+0,

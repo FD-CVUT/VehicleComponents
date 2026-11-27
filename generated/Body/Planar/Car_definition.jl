@@ -18,8 +18,8 @@ linkage turns the front wheels on revolute joints. `QuasiStaticLoads` pushes eac
 load onto its tire, every `Wheel` reads its grip from the road `grip`, and `RoadLoad` puts the
 drag, rolling resistance and along-slope weight of the mass `m` on the chassis. The sensors read
 the chassis (`velocity`, `acceleration`, `position`, the last in the world frame), the steering
-column (`steering_angle`) and each wheel (a `Sensors.WheelSlip` each), `Helpers.Sideslip` turns
-the chassis velocity into the sideslip angle, and a `BusIn` packs every reading onto `bus`.
+column (`steering_angle`) and each wheel (a `Sensors.WheelSlip` each), and the car's equations
+put every reading on `bus`, with the sideslip angle beta = atan(vy / max(|vx|, 1 m/s)).
 
 Ports:
 - `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
@@ -103,7 +103,7 @@ one port, each field in its own unit (SI; the slip ratios dimensionless). It is 
 bus, not a model of a vehicle network.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it, as `Car` passes on the one its `BusIn` fills. Two `CarBus` ports
+the component that holds it. Two `CarBus` ports
 side by side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
 @component function Car(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
@@ -331,12 +331,6 @@ side by side would both drive the same signals, and the compiler does not reject
   # Subcomponent slip_rr of type VehicleComponents.Sensors.WheelSlip
   slip_rr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rr")
   push!(__systems, @named slip_rr = VehicleComponents.Sensors.WheelSlip(; radius=radius, __overrides = slip_rr_overrides))
-  # Subcomponent sideslip of type VehicleComponents.Body.Planar.Helpers.Sideslip
-  sideslip_overrides = __pop_subcomponent_overrides!(__overrides, "sideslip")
-  push!(__systems, @named sideslip = VehicleComponents.Body.Planar.Helpers.Sideslip(; __overrides = sideslip_overrides))
-  # Subcomponent pack of type VehicleComponents.Body.Planar.BusIn
-  pack_overrides = __pop_subcomponent_overrides!(__overrides, "pack")
-  push!(__systems, @named pack = VehicleComponents.Body.Planar.BusIn(; __overrides = pack_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -349,6 +343,28 @@ side by side would both drive the same signals, and the compiler does not reject
   __assertions = []
 
   ### Equations
+  push!(__eqs, bus.vx ~ velocity.v_x)
+  push!(__eqs, bus.vy ~ velocity.v_y)
+  push!(__eqs, bus.r ~ velocity.w)
+  push!(__eqs, bus.ax ~ acceleration.a_x)
+  push!(__eqs, bus.ay ~ acceleration.a_y)
+  push!(__eqs, bus.x ~ position.x)
+  push!(__eqs, bus.y ~ position.y)
+  push!(__eqs, bus.psi ~ position.phi)
+  push!(__eqs, bus.beta ~ atan(bus.vy / max(abs(bus.vx), 1.0)))
+  push!(__eqs, bus.delta_sw ~ steering_angle.phi)
+  push!(__eqs, bus.kappa_fl ~ slip_fl.kappa)
+  push!(__eqs, bus.kappa_fr ~ slip_fr.kappa)
+  push!(__eqs, bus.kappa_rl ~ slip_rl.kappa)
+  push!(__eqs, bus.kappa_rr ~ slip_rr.kappa)
+  push!(__eqs, bus.alpha_fl ~ slip_fl.alpha)
+  push!(__eqs, bus.alpha_fr ~ slip_fr.alpha)
+  push!(__eqs, bus.alpha_rl ~ slip_rl.alpha)
+  push!(__eqs, bus.alpha_rr ~ slip_rr.alpha)
+  push!(__eqs, bus.omega_fl ~ slip_fl.omega)
+  push!(__eqs, bus.omega_fr ~ slip_fr.omega)
+  push!(__eqs, bus.omega_rl ~ slip_rl.omega)
+  push!(__eqs, bus.omega_rr ~ slip_rr.omega)
   push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a))
   push!(__eqs, connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a))
   push!(__eqs, connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a))
@@ -377,29 +393,6 @@ side by side would both drive the same signals, and the compiler does not reject
   push!(__eqs, connect(tau_rr, rr.tau_cmd))
   push!(__eqs, connect(f_r, roadload.f_r))
   push!(__eqs, connect(grade, roadload.grade))
-  push!(__eqs, connect(velocity.v_x, pack.vx, sideslip.vx))
-  push!(__eqs, connect(velocity.v_y, pack.vy, sideslip.vy))
-  push!(__eqs, connect(velocity.w, pack.r))
-  push!(__eqs, connect(acceleration.a_x, pack.ax))
-  push!(__eqs, connect(acceleration.a_y, pack.ay))
-  push!(__eqs, connect(position.x, pack.x))
-  push!(__eqs, connect(position.y, pack.y))
-  push!(__eqs, connect(position.phi, pack.psi))
-  push!(__eqs, connect(sideslip.beta, pack.beta))
-  push!(__eqs, connect(steering_angle.phi, pack.delta_sw))
-  push!(__eqs, connect(slip_fl.kappa, pack.kappa_fl))
-  push!(__eqs, connect(slip_fr.kappa, pack.kappa_fr))
-  push!(__eqs, connect(slip_rl.kappa, pack.kappa_rl))
-  push!(__eqs, connect(slip_rr.kappa, pack.kappa_rr))
-  push!(__eqs, connect(slip_fl.alpha, pack.alpha_fl))
-  push!(__eqs, connect(slip_fr.alpha, pack.alpha_fr))
-  push!(__eqs, connect(slip_rl.alpha, pack.alpha_rl))
-  push!(__eqs, connect(slip_rr.alpha, pack.alpha_rr))
-  push!(__eqs, connect(slip_fl.omega, pack.omega_fl))
-  push!(__eqs, connect(slip_fr.omega, pack.omega_fr))
-  push!(__eqs, connect(slip_rl.omega, pack.omega_rl))
-  push!(__eqs, connect(slip_rr.omega, pack.omega_rr))
-  push!(__eqs, connect(pack.bus, bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

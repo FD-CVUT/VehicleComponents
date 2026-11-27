@@ -1,120 +1,44 @@
 """
-A `BusIn` and a `BusOut` back to back: each of the 22 inputs gets its own constant, 1 to 22 in
-the `CarBus` order (vx = 1, vy = 2, r = 3, ..., omega_rr = 22), and each output must read back
-the constant of its own field, so a swapped or misread field fails.
+`BusOut` reading a `CarBus` whose 22 fields each hold their own value, set on this rig's own bus
+port: 1 to 22 in the connector's order (vx = 1, vy = 2, r = 3, ..., omega_rr = 22). Each output
+must read the value of its own field, so a swapped or misread field fails.
 """
 test component Bus
-  vx = BlockComponents.Sources.Constant(k = 1.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 250, "y2": 350}}}
-  }
-  vy = BlockComponents.Sources.Constant(k = 2.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 350, "y2": 450}}}
-  }
-  r = BlockComponents.Sources.Constant(k = 3.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}
-  }
-  ax = BlockComponents.Sources.Constant(k = 4.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 550, "y2": 650}}}
-  }
-  ay = BlockComponents.Sources.Constant(k = 5.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 650, "y2": 750}}}
-  }
-  x = BlockComponents.Sources.Constant(k = 6.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 750, "y2": 850}}}
-  }
-  y = BlockComponents.Sources.Constant(k = 7.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 850, "y2": 950}}}
-  }
-  psi = BlockComponents.Sources.Constant(k = 8.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 950, "y2": 1050}}}
-  }
-  beta = BlockComponents.Sources.Constant(k = 9.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1050, "y2": 1150}}}
-  }
-  delta_sw = BlockComponents.Sources.Constant(k = 10.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1150, "y2": 1250}}}
-  }
-  kappa_fl = BlockComponents.Sources.Constant(k = 11.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1250, "y2": 1350}}}
-  }
-  kappa_fr = BlockComponents.Sources.Constant(k = 12.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1350, "y2": 1450}}}
-  }
-  kappa_rl = BlockComponents.Sources.Constant(k = 13.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1450, "y2": 1550}}}
-  }
-  kappa_rr = BlockComponents.Sources.Constant(k = 14.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1550, "y2": 1650}}}
-  }
-  alpha_fl = BlockComponents.Sources.Constant(k = 15.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1650, "y2": 1750}}}
-  }
-  alpha_fr = BlockComponents.Sources.Constant(k = 16.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1750, "y2": 1850}}}
-  }
-  alpha_rl = BlockComponents.Sources.Constant(k = 17.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1850, "y2": 1950}}}
-  }
-  alpha_rr = BlockComponents.Sources.Constant(k = 18.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 1950, "y2": 2050}}}
-  }
-  omega_fl = BlockComponents.Sources.Constant(k = 19.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 2050, "y2": 2150}}}
-  }
-  omega_fr = BlockComponents.Sources.Constant(k = 20.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 2150, "y2": 2250}}}
-  }
-  omega_rl = BlockComponents.Sources.Constant(k = 21.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 2250, "y2": 2350}}}
-  }
-  omega_rr = BlockComponents.Sources.Constant(k = 22.0) {
-    "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 2350, "y2": 2450}}}
-  }
-  pack = VehicleComponents.Body.Planar.BusIn() {
-    "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 3000, "y1": 100, "y2": 2600}}}
-  }
+  "Every field at its own value"
+  bus = VehicleComponents.Body.Planar.CarBus() {}
   unpack = VehicleComponents.Body.Planar.BusOut() {
-    "Dyad": {"placement": {"diagram": {"x1": 3500, "x2": 6000, "y1": 100, "y2": 2600}}}
-  }
-relations
-  connect(vx.y, pack.vx) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(vy.y, pack.vy) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(r.y, pack.r) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(ax.y, pack.ax) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(ay.y, pack.ay) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(x.y, pack.x) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(y.y, pack.y) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(psi.y, pack.psi) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(beta.y, pack.beta) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(delta_sw.y, pack.delta_sw) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(kappa_fl.y, pack.kappa_fl) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(kappa_fr.y, pack.kappa_fr) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(kappa_rl.y, pack.kappa_rl) {
     "Dyad": {
-      "edges": [
-        {
-          "S": 1,
-          "M": [{"x": 450, "y": 1500}, {"x": 450, "y": 1500.0000000000002}],
-          "E": 2
-        }
-      ],
-      "path": {}
+      "placement": {"diagram": {"x1": 450, "x2": 550, "y1": 400, "y2": 500, "rot": 270}}
     }
   }
-  connect(kappa_rr.y, pack.kappa_rr) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(alpha_fl.y, pack.alpha_fl) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(alpha_fr.y, pack.alpha_fr) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(alpha_rl.y, pack.alpha_rl) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(alpha_rr.y, pack.alpha_rr) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(omega_fl.y, pack.omega_fl) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(omega_fr.y, pack.omega_fr) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(omega_rl.y, pack.omega_rl) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(omega_rr.y, pack.omega_rr) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  connect(pack.bus, unpack.bus) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+relations
+  connect(bus, unpack.bus) {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  bus.vx = 1.0
+  bus.vy = 2.0
+  bus.r = 3.0
+  bus.ax = 4.0
+  bus.ay = 5.0
+  bus.x = 6.0
+  bus.y = 7.0
+  bus.psi = 8.0
+  bus.beta = 9.0
+  bus.delta_sw = 10.0
+  bus.kappa_fl = 11.0
+  bus.kappa_fr = 12.0
+  bus.kappa_rl = 13.0
+  bus.kappa_rr = 14.0
+  bus.alpha_fl = 15.0
+  bus.alpha_fr = 16.0
+  bus.alpha_rl = 17.0
+  bus.alpha_rr = 18.0
+  bus.omega_fl = 19.0
+  bus.omega_fr = 20.0
+  bus.omega_rl = 21.0
+  bus.omega_rr = 22.0
 metadata {
   "Dyad": {
     "tests": {
-      "round_trip": {
+      "fields": {
         "stop": 1,
         "solver": "Auto",
         "abstol": 1e-8,
