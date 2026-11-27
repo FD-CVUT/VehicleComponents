@@ -8,7 +8,7 @@
    BusSlipAngle(; name, __overrides)
 
 Bus reader for the planar car's tire slip angles: the four slip-angle fields of a
-`Body.Planar.CarBusIn`, as plain signals.
+`Sensors.CarBusIn`, as plain signals.
 
 Ports: `bus` the car's measurement bus; `alpha_fl`, `alpha_fr`, `alpha_rl`, `alpha_rr` each
 wheel's slip angle [rad], positive when the wheel center moves to the left of its heading
@@ -74,7 +74,7 @@ listens on one of these. ([`CarBusIn`](@ref))
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBusIn())
+  push!(__systems, @named bus = VehicleComponents.Sensors.CarBusIn())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

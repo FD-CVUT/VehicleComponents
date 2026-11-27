@@ -22,14 +22,13 @@ __dyad_run_test_case!(
     (m -> m.sensor.kappa, "sensor.kappa", 0, 1e-9, 1e-7),
     (m -> m.sensor.alpha, "sensor.alpha", 0, 1e-9, 1e-7),
     (m -> m.sensor.omega, "sensor.omega", 80, 1e-9, 1e-7),
-    (m -> m.sensor.v_long, "sensor.v_long", 20, 1e-9, 1e-7),
   ],
   signals=Tuple[],
 )
 __dyad_run_test_case!(
   VehicleComponents.Sensors.Tests.WheelSlip,
-  "braking for VehicleComponents.Sensors.Tests.WheelSlip";
-  case_name="braking",
+  "braking_sideslip for VehicleComponents.Sensors.Tests.WheelSlip";
+  case_name="braking_sideslip",
   component_stem="WheelSlip",
   module_path=String["Sensors", "Tests"],
   start=0e+0,
@@ -37,32 +36,13 @@ __dyad_run_test_case!(
   abstol=1e-8,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("spin.w_fixed" => 72.0),
+  params=Dict{String, Any}("spin.w_fixed" => 72.0, "vy" => 1.2),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
     (m -> m.sensor.kappa, "sensor.kappa", -0.1, 1e-9, 1e-7),
-    (m -> m.sensor.omega, "sensor.omega", 72, 1e-9, 1e-7),
-  ],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Sensors.Tests.WheelSlip,
-  "sideslip for VehicleComponents.Sensors.Tests.WheelSlip";
-  case_name="sideslip",
-  component_stem="WheelSlip",
-  module_path=String["Sensors", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-8,
-  reltol=1e-8,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("vy" => 1.2),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.sensor.kappa, "sensor.kappa", 0, 1e-9, 1e-7),
     (m -> m.sensor.alpha, "sensor.alpha", 0.0599282, 1e-7, 1e-7),
+    (m -> m.sensor.omega, "sensor.omega", 72, 1e-9, 1e-7),
   ],
   signals=Tuple[],
 )

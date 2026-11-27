@@ -14,8 +14,7 @@ Ports:
 - `frame_a` the wheel center, with x along the wheel heading; it takes the tire force.
 - `spin` the shaft end behind the brake, where a drive or a differential attaches; open when
   nothing drives the wheel.
-- `load` takes the normal load, positive pressing the tire onto the road; the wheel holds it at
-  zero travel, so connect it to a source that sets only the force, such as `QuasiStaticLoads`.
+- `load` takes the normal load; `SlipWheelJoint` states the load-flange convention.
 - `tau_cmd` the requested brake torque, to the `Chassis.Wheel.BrakeActuator`.
 
 The tire is a `SlipWheelJoint` whose `mu_scale` comes from a `RoadGrip` at the wheel center, so

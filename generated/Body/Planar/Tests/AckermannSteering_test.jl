@@ -21,26 +21,7 @@ __dyad_run_test_case!(
   expected_final=Tuple[
     (m -> m.linkage.spline_left.phi, "linkage.spline_left.phi", 0.1029448, 1e-7, 1e-7),
     (m -> m.linkage.spline_right.phi, "linkage.spline_right.phi", 0.0972185, 1e-7, 1e-7),
-  ],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Body.Planar.Tests.AckermannSteering,
-  "right_turn for VehicleComponents.Body.Planar.Tests.AckermannSteering";
-  case_name="right_turn",
-  component_stem="AckermannSteering",
-  module_path=String["Body", "Planar", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-8,
-  reltol=1e-8,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("delta_in" => -0.1),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[
-    (m -> m.linkage.spline_left.phi, "linkage.spline_left.phi", -0.0972185, 1e-7, 1e-7),
-    (m -> m.linkage.spline_right.phi, "linkage.spline_right.phi", -0.1029448, 1e-7, 1e-7),
+    (m -> m.torque_sensor.tau, "torque_sensor.tau", -20.0486797, 0.00001, 1e-7),
   ],
   signals=Tuple[],
 )
@@ -82,22 +63,5 @@ __dyad_run_test_case!(
     (m -> m.linkage.spline_left.phi, "linkage.spline_left.phi", 0.1, 1e-9, 1e-7),
     (m -> m.linkage.spline_right.phi, "linkage.spline_right.phi", 0.1, 1e-9, 1e-7),
   ],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Body.Planar.Tests.AckermannSteering,
-  "torque for VehicleComponents.Body.Planar.Tests.AckermannSteering";
-  case_name="torque",
-  component_stem="AckermannSteering",
-  module_path=String["Body", "Planar", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-8,
-  reltol=1e-8,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("tau_load" => 10.0),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[],
-  expected_final=Tuple[(m -> m.torque_sensor.tau, "torque_sensor.tau", -20.0486797, 0.00001, 1e-7)],
   signals=Tuple[],
 )

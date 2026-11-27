@@ -8,10 +8,10 @@
     <circle cx="560" cy="500" r="140" fill="#fff"/>
     <path d="M560 500 L640 410" stroke-width="14"/>
     <path d="M380 500 H420"/>
-    <path d="M700 200 H1000 M700 400 H1000 M700 600 H1000 M700 800 H1000" stroke="#5757db"/>
-    <path d="M700 200 V800" stroke="#5757db"/>
+    <path d="M700 250 H1000 M700 500 H1000 M700 750 H1000" stroke="#5757db"/>
+    <path d="M700 250 V750" stroke="#5757db"/>
   </g>
   <g font-family="sans-serif" font-size="70" fill="#000" text-anchor="end">
-    <text x="960" y="180">κ</text><text x="960" y="380">α</text><text x="960" y="580">ω</text><text x="960" y="780">v</text>
+    <text x="960" y="230">κ</text><text x="960" y="480">α</text><text x="960" y="730">ω</text>
   </g>
 </svg>

@@ -1,6 +1,6 @@
 """
 Bus reader for the planar car's longitudinal wheel slips: the four slip fields of a
-`Body.Planar.CarBusIn`, as plain signals.
+`Sensors.CarBusIn`, as plain signals.
 
 Ports: `bus` the car's measurement bus; `kappa_fl`, `kappa_fr`, `kappa_rl`, `kappa_rr` each
 wheel's longitudinal slip ratio, negative while braking (`WheelSlip` defines it).
@@ -9,7 +9,7 @@ Assumptions: none; each output is its bus field, with no delay or noise.
 """
 component BusSlip
   "The car's measurement bus"
-  bus = VehicleComponents.Body.Planar.CarBusIn() {^bus}
+  bus = VehicleComponents.Sensors.CarBusIn() {^bus}
   "Longitudinal slip of the front-left wheel [-]"
   kappa_fl = RealOutput() {^kappa_fl}
   "Longitudinal slip of the front-right wheel [-]"

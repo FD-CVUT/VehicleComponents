@@ -5,30 +5,27 @@
 
 
 @doc Markdown.doc"""
-   WheelSlip(; name, vx, vy, __overrides)
+   WheelSlip(; name, vy, __overrides)
 
 `WheelSlip` on a wheel center moved at a prescribed constant velocity, heading along the world x
 axis, and a shaft spun at a prescribed constant speed. The sensor's radius is 0.25 m, so the
-shaft speed `w` rolls the wheel at 0.25 w.
+shaft speed `w` rolls the wheel at 0.25 w. The center moves at 20 m/s forward and `vy` to the
+left.
 
-The center moves at `vx` = 20 m/s forward and `vy` sideways, so with the default `vy` = 0 the
-slip angle is atan(0/20) = 0 and `v_long` = 20 m/s.
+- `rolling`: w = 80 rad/s rolls at 20 m/s and vy = 0, so kappa = (20 - 20)/20 = 0 and
+  alpha = atan(0/20) = 0.
+- `braking_sideslip`: w = 72 rad/s rolls at 18 m/s, kappa = (18 - 20)/20 = -0.1, and
+  vy = 1.2 m/s, alpha = atan(1.2/20) = atan(0.06) = 0.0599282 rad.
 
-- `rolling`: w = 80 rad/s rolls at 20 m/s, kappa = (20 - 20)/20 = 0.
-- `braking`: w = 72 rad/s rolls at 18 m/s, kappa = (18 - 20)/20 = -0.1.
-- `sideslip`: vy = 1.2 m/s at w = 80 rad/s, alpha = atan(1.2/20) = atan(0.06) = 0.0599282 rad, and
-  kappa = 0, since the lateral speed does not enter it.
-
-`omega` is w and `v_long` is vx in every case.
+`omega` is w in both cases.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `vx`         | Forward speed of the wheel center                         | m/s  |   20.0 |
 | `vy`         | Sideways speed of the wheel center                         | m/s  |   0.0 |
 """
-@component function WheelSlip(; name = nothing, var"vx"=Float64(20.0), var"vy"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function WheelSlip(; name = nothing, var"vy"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,7 +44,6 @@ slip angle is atan(0/20) = 0 and `v_long` = 20 m/s.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
-  haskey(__overrides, "vx") && (vx = pop!(__overrides, "vx"))
   haskey(__overrides, "vy") && (vy = pop!(__overrides, "vy"))
 
   ### Structural Parameters (functions)
@@ -63,9 +59,6 @@ slip angle is atan(0/20) = 0 and `v_long` = 20 m/s.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__vx = vx
-  append!(__params, @parameters (vx::Real), [description = "Forward speed of the wheel center"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, vx, __local__vx)
   __local__vy = vy
   append!(__params, @parameters (vy::Real), [description = "Sideways speed of the wheel center"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, vy, __local__vy)
@@ -84,7 +77,7 @@ slip angle is atan(0/20) = 0 and `v_long` = 20 m/s.
   ### Components
   # Subcomponent forward of type BlockComponents.Sources.Constant
   forward_overrides = __pop_subcomponent_overrides!(__overrides, "forward")
-  push!(__systems, @named forward = BlockComponents.Sources.Constant(; k=vx, __overrides = forward_overrides))
+  push!(__systems, @named forward = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = forward_overrides))
   # Subcomponent sideways of type BlockComponents.Sources.Constant
   sideways_overrides = __pop_subcomponent_overrides!(__overrides, "sideways")
   push!(__systems, @named sideways = BlockComponents.Sources.Constant(; k=vy, __overrides = sideways_overrides))

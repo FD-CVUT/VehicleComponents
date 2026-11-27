@@ -8,33 +8,31 @@
    AckermannSteering(; name, delta_in, tau_load, __overrides)
 
 `AckermannSteering` with the default wheelbase L = 2.7 m and kingpin track t_k = 1.55 m, its input
-shaft held at the angle `delta_in` from the housing, and the torque `tau_load` applied to each
-road-wheel shaft. The housing is fixed at angle 0, so each road-wheel shaft's angle is its
-steering angle.
+shaft held at the angle `delta_in` from the housing, and 10 N m applied to each road-wheel shaft.
+The linkage is kinematic, so the load moves no angle. The housing is fixed at angle 0, so each
+road-wheel shaft's angle is its steering angle.
 
 With full Ackermann, k = t_k/(2 L) = 1.55/5.4 = 0.287037.
 
 - `left_turn`: delta = 0.1 rad, tan 0.1 = 0.1003347. delta_left = atan(0.1003347/(1 -
   0.287037 · 0.1003347)) = atan(0.1033100) = 0.1029448 rad and delta_right =
-  atan(0.1003347/(1 + 0.0287998)) = 0.0972185 rad: the inner, left wheel turns further.
-- `right_turn`: delta = -0.1 rad mirrors it, delta_left = -0.0972185 and delta_right =
-  -0.1029448 rad.
+  atan(0.1003347/(1 + 0.0287998)) = 0.0972185 rad: the inner, left wheel turns further. Virtual
+  work puts g_left + g_right times the wheels' 10 N m on the input, with
+  g = (1 + tan² delta)/((1 ∓ k tan delta)² + tan² delta): g_left = 1.0595513 and
+  g_right = 0.9453166, so the input shaft carries -(1.0595513 + 0.9453166) · 10 = -20.0486797 N m
+  through the torque sensor.
 - `tight`: delta = 0.2 rad, tan 0.2 = 0.2027100, gives delta_left = 0.2119993 and delta_right =
   0.1892709 rad.
 - `parallel`: `ackermann` = 0 makes k = 0, so both wheels turn by delta = 0.1 rad.
-- `torque`: 10 N m on each road-wheel shaft at delta = 0.1 rad. Virtual work puts
-  g_left + g_right times it on the input, with g = (1 + tan² delta)/((1 ∓ k tan delta)² +
-  tan² delta): g_left = 1.0595513 and g_right = 0.9453166, so the input shaft carries
-  -(1.0595513 + 0.9453166) · 10 = -20.0486797 N m through the torque sensor.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `delta_in`         | Input shaft angle from the housing                         | rad  |   0.1 |
-| `tau_load`         | Torque applied to each road-wheel shaft                         | N.m  |   0.0 |
+| `tau_load`         | Torque applied to each road-wheel shaft                         | N.m  |   10.0 |
 """
-@component function AckermannSteering(; name = nothing, var"delta_in"=0.1, var"tau_load"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function AckermannSteering(; name = nothing, var"delta_in"=0.1, var"tau_load"=Float64(10.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

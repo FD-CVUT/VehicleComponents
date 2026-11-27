@@ -6,8 +6,8 @@
 
 __dyad_run_test_case!(
   VehicleComponents.Body.Planar.Tests.QuasiStaticLoads,
-  "braking for VehicleComponents.Body.Planar.Tests.QuasiStaticLoads";
-  case_name="braking",
+  "braking_cornering for VehicleComponents.Body.Planar.Tests.QuasiStaticLoads";
+  case_name="braking_cornering",
   component_stem="QuasiStaticLoads",
   module_path=String["Body", "Planar", "Tests"],
   start=0e+0,
@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-8,
   reltol=1e-8,
   solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("ax" => -4.0),
+  params=Dict{String, Any}("ax" => -4.0, "ay" => 3.873),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.loads.fl.f, "loads.fl.f", -4086.1042, 0.001, 1e-7),
@@ -24,37 +24,10 @@ __dyad_run_test_case!(
     (m -> m.loads.rr.f, "loads.rr.f", -3268.8833, 0.001, 1e-7),
   ],
   expected_final=Tuple[
-    (m -> m.loads.fl.f, "loads.fl.f", -4697.2153, 0.001, 1e-7),
-    (m -> m.loads.fr.f, "loads.fr.f", -4697.2153, 0.001, 1e-7),
-    (m -> m.loads.rl.f, "loads.rl.f", -2657.7722, 0.001, 1e-7),
-    (m -> m.loads.rr.f, "loads.rr.f", -2657.7722, 0.001, 1e-7),
-  ],
-  signals=Tuple[],
-)
-__dyad_run_test_case!(
-  VehicleComponents.Body.Planar.Tests.QuasiStaticLoads,
-  "cornering for VehicleComponents.Body.Planar.Tests.QuasiStaticLoads";
-  case_name="cornering",
-  component_stem="QuasiStaticLoads",
-  module_path=String["Body", "Planar", "Tests"],
-  start=0e+0,
-  stop=1e+0,
-  abstol=1e-8,
-  reltol=1e-8,
-  solver=ODEAlg.Auto(),
-  params=Dict{String, Any}("ay" => 3.873),
-  initial_conditions=Tuple[],
-  expected_initial=Tuple[
-    (m -> m.loads.fl.f, "loads.fl.f", -4086.1042, 0.001, 1e-7),
-    (m -> m.loads.fr.f, "loads.fr.f", -4086.1042, 0.001, 1e-7),
-    (m -> m.loads.rl.f, "loads.rl.f", -3268.8833, 0.001, 1e-7),
-    (m -> m.loads.rr.f, "loads.rr.f", -3268.8833, 0.001, 1e-7),
-  ],
-  expected_final=Tuple[
-    (m -> m.loads.fl.f, "loads.fl.f", -2940.8622, 0.001, 1e-7),
-    (m -> m.loads.fr.f, "loads.fr.f", -5231.3461, 0.001, 1e-7),
-    (m -> m.loads.rl.f, "loads.rl.f", -2352.6898, 0.001, 1e-7),
-    (m -> m.loads.rr.f, "loads.rr.f", -4185.0769, 0.001, 1e-7),
+    (m -> m.loads.fl.f, "loads.fl.f", -3551.9734, 0.001, 1e-7),
+    (m -> m.loads.fr.f, "loads.fr.f", -5842.4572, 0.001, 1e-7),
+    (m -> m.loads.rl.f, "loads.rl.f", -1741.5787, 0.001, 1e-7),
+    (m -> m.loads.rr.f, "loads.rr.f", -3573.9657, 0.001, 1e-7),
   ],
   signals=Tuple[],
 )

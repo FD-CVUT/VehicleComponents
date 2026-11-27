@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    BusMotion(; name, __overrides)
 
-Bus reader for the planar car's body motion: the motion fields of a `Body.Planar.CarBusIn`, as
+Bus reader for the planar car's body motion: the motion fields of a `Sensors.CarBusIn`, as
 plain signals for blocks that take `RealInput`s.
 
 Ports: `bus` the car's measurement bus; `delta_sw` steering-wheel angle [rad], `r` yaw rate
@@ -88,7 +88,7 @@ listens on one of these. ([`CarBusIn`](@ref))
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBusIn())
+  push!(__systems, @named bus = VehicleComponents.Sensors.CarBusIn())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))

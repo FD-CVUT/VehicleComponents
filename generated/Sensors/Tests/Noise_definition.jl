@@ -14,12 +14,10 @@ At t = 0 every sine is at its phase: sin 0 + sin 0.7 + sin 1.5 + sin 2.2 + sin 3
 0 + 0.644218 + 0.997495 + 0.808496 + 0.141120 - 0.687766 = 1.903563, so y = 90 + 0.2 · 1.903563
 = 90.380713.
 
-- `repeat` stops at 2 s, where every sine has run a whole number of cycles (1 to 32), so y is
-  back at 90.380713.
-- `half_second` stops at 0.5 s. The 1 to 16 Hz sines have run whole cycles and sit at their
-  phases again, the 0.5 Hz sine a quarter cycle, sin(pi/2) = 1, instead of sin 0 = 0, and the
-  1 Hz sine half a cycle, sin(pi + 0.7) = -0.644218, instead of 0.644218. The sum is
-  1.903563 + 1 - 2 · 0.644218 = 1.615127, so y = 90 + 0.2 · 1.615127 = 90.323025.
+The case stops at 0.5 s. The 1 to 16 Hz sines have run whole cycles and sit at their phases
+again, the 0.5 Hz sine a quarter cycle, sin(pi/2) = 1, instead of sin 0 = 0, and the 1 Hz sine
+half a cycle, sin(pi + 0.7) = -0.644218, instead of 0.644218. The sum is
+1.903563 + 1 - 2 · 0.644218 = 1.615127, so y = 90 + 0.2 · 1.615127 = 90.323025.
 """
 @component function Noise(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""

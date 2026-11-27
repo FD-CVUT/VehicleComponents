@@ -1,24 +1,20 @@
 """
 `WheelSlip` on a wheel center moved at a prescribed constant velocity, heading along the world x
 axis, and a shaft spun at a prescribed constant speed. The sensor's radius is 0.25 m, so the
-shaft speed `w` rolls the wheel at 0.25 w.
+shaft speed `w` rolls the wheel at 0.25 w. The center moves at 20 m/s forward and `vy` to the
+left.
 
-The center moves at `vx` = 20 m/s forward and `vy` sideways, so with the default `vy` = 0 the
-slip angle is atan(0/20) = 0 and `v_long` = 20 m/s.
+- `rolling`: w = 80 rad/s rolls at 20 m/s and vy = 0, so kappa = (20 - 20)/20 = 0 and
+  alpha = atan(0/20) = 0.
+- `braking_sideslip`: w = 72 rad/s rolls at 18 m/s, kappa = (18 - 20)/20 = -0.1, and
+  vy = 1.2 m/s, alpha = atan(1.2/20) = atan(0.06) = 0.0599282 rad.
 
-- `rolling`: w = 80 rad/s rolls at 20 m/s, kappa = (20 - 20)/20 = 0.
-- `braking`: w = 72 rad/s rolls at 18 m/s, kappa = (18 - 20)/20 = -0.1.
-- `sideslip`: vy = 1.2 m/s at w = 80 rad/s, alpha = atan(1.2/20) = atan(0.06) = 0.0599282 rad, and
-  kappa = 0, since the lateral speed does not enter it.
-
-`omega` is w and `v_long` is vx in every case.
+`omega` is w in both cases.
 """
 test component WheelSlip
-  "Forward speed of the wheel center"
-  parameter vx::Velocity = 20.0
   "Sideways speed of the wheel center"
   parameter vy::Velocity = 0.0
-  forward = BlockComponents.Sources.Constant(k = vx) {
+  forward = BlockComponents.Sources.Constant(k = 20.0) {
     "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 200, "y2": 300}}}
   }
   sideways = BlockComponents.Sources.Constant(k = vy) {
@@ -93,38 +89,19 @@ metadata {
         "solver": "Auto",
         "abstol": 1e-8,
         "reltol": 1e-8,
-        "atol": {
-          "sensor.kappa": 1e-9,
-          "sensor.alpha": 1e-9,
-          "sensor.omega": 1e-9,
-          "sensor.v_long": 1e-9
-        },
+        "atol": {"sensor.kappa": 1e-9, "sensor.alpha": 1e-9, "sensor.omega": 1e-9},
+        "expect": {"final": {"sensor.kappa": 0.0, "sensor.alpha": 0.0, "sensor.omega": 80.0}}
+      },
+      "braking_sideslip": {
+        "stop": 1,
+        "solver": "Auto",
+        "abstol": 1e-8,
+        "reltol": 1e-8,
+        "params": {"spin.w_fixed": 72.0, "vy": 1.2},
+        "atol": {"sensor.kappa": 1e-9, "sensor.alpha": 1e-7, "sensor.omega": 1e-9},
         "expect": {
-          "final": {
-            "sensor.kappa": 0.0,
-            "sensor.alpha": 0.0,
-            "sensor.omega": 80.0,
-            "sensor.v_long": 20.0
-          }
+          "final": {"sensor.kappa": -0.1, "sensor.alpha": 0.0599282, "sensor.omega": 72.0}
         }
-      },
-      "braking": {
-        "stop": 1,
-        "solver": "Auto",
-        "abstol": 1e-8,
-        "reltol": 1e-8,
-        "params": {"spin.w_fixed": 72.0},
-        "atol": {"sensor.kappa": 1e-9, "sensor.omega": 1e-9},
-        "expect": {"final": {"sensor.kappa": -0.1, "sensor.omega": 72.0}}
-      },
-      "sideslip": {
-        "stop": 1,
-        "solver": "Auto",
-        "abstol": 1e-8,
-        "reltol": 1e-8,
-        "params": {"vy": 1.2},
-        "atol": {"sensor.kappa": 1e-9, "sensor.alpha": 1e-7},
-        "expect": {"final": {"sensor.kappa": 0.0, "sensor.alpha": 0.0599282}}
       }
     }
   }

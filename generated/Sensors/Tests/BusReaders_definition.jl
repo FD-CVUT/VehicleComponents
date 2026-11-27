@@ -5,29 +5,31 @@
 
 
 @doc Markdown.doc"""
-   BusSlip(; name, __overrides)
+   BusReaders(; name, __overrides)
 
-`BusSlip` reading a `Body.Planar.CarBus` whose 22 fields each hold their own value: 1 to 22 in the
-connector's order (vx = 1, vy = 2, r = 3, ..., omega_rr = 22), set on this rig's own bus port. Each
-output must carry its own field, so a swapped or misread field fails: kappa_fl = 11, kappa_fr = 12,
-kappa_rl = 13, kappa_rr = 14.
+The four bus readers, `BusMotion`, `BusSlip`, `BusSlipAngle` and `BusWheelSpeed`, on one
+`Sensors.CarBus` whose 22 fields each hold their own value: 1 to 22 in the connector's order
+(vx = 1, vy = 2, r = 3, ax = 4, ay = 5, x = 6, y = 7, psi = 8, beta = 9, delta_sw = 10,
+kappa_fl to kappa_rr = 11 to 14, alpha_fl to alpha_rr = 15 to 18, omega_fl to omega_rr = 19 to
+22), set on this rig's own bus port. Each reader output must carry its own field, so a swapped or
+misread field fails.
 
 ## Connectors
 
- * `bus` - The planar car's measurement bus, as the car sends it: every signal the car measures about
-itself, on one port. One wire carries all of them, the way a vehicle network carries the
-sensors' messages to every control unit that listens.
+ * `bus` - The planar car's measurement bus, as its sensor cluster `PlanarCar` sends it: every signal
+measured about the car, on one port. One wire carries all of them, the way a vehicle network
+carries the sensors' messages to every control unit that listens.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it, as `Car` passes on its sensors' bus. Two `CarBus` ports side by
-side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
+the component that holds it. Two `CarBus` ports side by side would both drive the same signals,
+and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
-@component function BusSlip(; name = nothing, __overrides = Dict{String, Any}())
+@component function BusReaders(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = BusSlip()
+    @named model = BusReaders()
   """))
 
   __overrides = Dict{String, Any}(__overrides)
@@ -66,10 +68,19 @@ side would both drive the same signals, and the compiler does not reject that wi
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
-  # Subcomponent reader of type VehicleComponents.Sensors.BusSlip
-  reader_overrides = __pop_subcomponent_overrides!(__overrides, "reader")
-  push!(__systems, @named reader = VehicleComponents.Sensors.BusSlip(; __overrides = reader_overrides))
+  push!(__systems, @named bus = VehicleComponents.Sensors.CarBus())
+  # Subcomponent motion of type VehicleComponents.Sensors.BusMotion
+  motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
+  push!(__systems, @named motion = VehicleComponents.Sensors.BusMotion(; __overrides = motion_overrides))
+  # Subcomponent slips of type VehicleComponents.Sensors.BusSlip
+  slips_overrides = __pop_subcomponent_overrides!(__overrides, "slips")
+  push!(__systems, @named slips = VehicleComponents.Sensors.BusSlip(; __overrides = slips_overrides))
+  # Subcomponent angles of type VehicleComponents.Sensors.BusSlipAngle
+  angles_overrides = __pop_subcomponent_overrides!(__overrides, "angles")
+  push!(__systems, @named angles = VehicleComponents.Sensors.BusSlipAngle(; __overrides = angles_overrides))
+  # Subcomponent speeds of type VehicleComponents.Sensors.BusWheelSpeed
+  speeds_overrides = __pop_subcomponent_overrides!(__overrides, "speeds")
+  push!(__systems, @named speeds = VehicleComponents.Sensors.BusWheelSpeed(; __overrides = speeds_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -104,9 +115,12 @@ side would both drive the same signals, and the compiler does not reject that wi
   push!(__eqs, bus.omega_fr ~ 20.0)
   push!(__eqs, bus.omega_rl ~ 21.0)
   push!(__eqs, bus.omega_rr ~ 22.0)
-  push!(__eqs, connect(bus, reader.bus))
+  push!(__eqs, connect(bus, motion.bus))
+  push!(__eqs, connect(bus, slips.bus))
+  push!(__eqs, connect(bus, angles.bus))
+  push!(__eqs, connect(bus, speeds.bus))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export BusSlip
+export BusReaders

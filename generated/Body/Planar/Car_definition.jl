@@ -8,30 +8,35 @@
    Car(; name, grip, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
 Four-wheel planar car: a rigid chassis on four braked slip wheels, the front pair steered through
-a column and an Ackermann linkage, with quasi-static wheel loads, and an ideal sensor cluster
-that sends everything the car measures about itself on `bus`.
+a column and an Ackermann linkage, with quasi-static wheel loads and its road load.
 
 The chassis is a planar body of mass `m` and yaw inertia `Iz` at the center of mass, with the
 front axle `a` ahead and the rear axle `b` behind it and the wheels `tw/2` to either side. The
 steering wheel turns the column, which turns the linkage's input by `1/i_s` of its angle; the
 linkage turns the front wheels on revolute joints. `QuasiStaticLoads` pushes each wheel's normal
-load onto its tire, and every `Wheel` reads its grip from the road `grip`.
+load onto its tire, every `Wheel` reads its grip from the road `grip`, and `RoadLoad` puts the
+drag, rolling resistance and along-slope weight of the mass `m` on the chassis.
 
 Ports:
 - `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
   be held or driven (a `Fixed`, or a position source): the wheels carry no aligning torque, so
   an open steering shaft leaves its angle undetermined.
-- `chassis` the chassis frame at the center of mass, for the road load and the road grade.
+- `chassis` the chassis frame at the center of mass, for a `RoadGrade` or the sensors.
 - `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr` the wheel-center frames.
 - `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft behind its brake, where a drive
   attaches; open for an undriven wheel.
 - `tau_fl`, `tau_fr`, `tau_rl`, `tau_rr` each wheel's requested brake torque.
-- `bus` everything the car measures about itself (`CarBus`).
+- `grade` the road gradient tan(alpha) along the heading, 0 on a flat road (or from a
+  `RoadGrade` on `chassis`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
+  asphalt).
 
-Assumptions: no suspension, so no roll, pitch or camber; the road load is not part of the car
-(`RoadLoad` attaches to `chassis`); gravity enters only through the wheel loads, the world's
-gravity is off. The car starts at rest at the world origin heading along x, with every wheel at
-rest and every brake released; give another start at the declaration,
+The car carries no sensors: a model that needs measurements places a `Sensors.PlanarCar` beside
+it and wires it to `steering`, `chassis` and the wheel frames and shafts.
+
+Assumptions: no suspension, so no roll, pitch or camber; the road load acts at the center of mass
+along the heading (`RoadLoad`); gravity enters only through the wheel loads and the road load,
+the world's gravity is off. The car starts at rest at the world origin heading along x, with
+every wheel at rest and every brake released; give another start at the declaration,
 `Car(body(v = initial [20.0, 0.0]), fl(inertia(w = initial 64.5)))`. Defaults are the course's
 planar car (a mid-size sedan, assumed).
 
@@ -85,13 +90,8 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `tau_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `bus` - The planar car's measurement bus, as the car sends it: every signal the car measures about
-itself, on one port. One wire carries all of them, the way a vehicle network carries the
-sensors' messages to every control unit that listens.
-
-A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it, as `Car` passes on its sensors' bus. Two `CarBus` ports side by
-side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
+ * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `f_r` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
 @component function Car(; name = nothing, var"grip"=VehicleComponents.Road.grip("dyad://VehicleComponents/data/roads/uniform_mu.crg"), var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -212,6 +212,8 @@ side would both drive the same signals, and the compiler does not reject that wi
   append!(__vars, @variables (tau_fr(t)::Real), [input = true])
   append!(__vars, @variables (tau_rl(t)::Real), [input = true])
   append!(__vars, @variables (tau_rr(t)::Real), [input = true])
+  append!(__vars, @variables (grade(t)::Real), [input = true])
+  append!(__vars, @variables (f_r(t)::Real), [input = true])
 
   ### Variables (declarations)
 
@@ -231,7 +233,6 @@ side would both drive the same signals, and the compiler does not reject that wi
   push!(__systems, @named spin_fr = __Dyad__Spline())
   push!(__systems, @named spin_rl = __Dyad__Spline())
   push!(__systems, @named spin_rr = __Dyad__Spline())
-  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
   # Subcomponent world of type MultibodyComponents.PlanarMechanics.World
   world_overrides = __pop_subcomponent_overrides!(__overrides, "world")
   push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), __symbol_overrides(world_overrides)...))
@@ -292,9 +293,9 @@ side would both drive the same signals, and the compiler does not reject that wi
   # Subcomponent rr of type VehicleComponents.Body.Planar.Wheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
   push!(__systems, @named rr = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
-  # Subcomponent sensors of type VehicleComponents.Sensors.PlanarCar
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleComponents.Sensors.PlanarCar(; radius=radius, __overrides = sensors_overrides))
+  # Subcomponent roadload of type VehicleComponents.Body.Planar.RoadLoad
+  roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
+  push!(__systems, @named roadload = VehicleComponents.Body.Planar.RoadLoad(; m=m, __overrides = roadload_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -307,16 +308,16 @@ side would both drive the same signals, and the compiler does not reject that wi
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, sensors.chassis))
+  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis))
   push!(__eqs, connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a))
   push!(__eqs, connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a))
   push!(__eqs, connect(arm_fl.frame_b, kingpin_fl.frame_a))
-  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, wheel_fl, sensors.wheel_fl))
+  push!(__eqs, connect(kingpin_fl.frame_b, fl.frame_a, wheel_fl))
   push!(__eqs, connect(arm_fr.frame_b, kingpin_fr.frame_a))
-  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(steering, column.spline_a, sensors.steering))
+  push!(__eqs, connect(kingpin_fr.frame_b, fr.frame_a, wheel_fr))
+  push!(__eqs, connect(arm_rl.frame_b, rl.frame_a, wheel_rl))
+  push!(__eqs, connect(arm_rr.frame_b, rr.frame_a, wheel_rr))
+  push!(__eqs, connect(steering, column.spline_a))
   push!(__eqs, connect(column.spline_b, linkage.spline_in))
   push!(__eqs, connect(linkage.spline_left, kingpin_fl.flange_a))
   push!(__eqs, connect(linkage.spline_right, kingpin_fr.flange_a))
@@ -325,15 +326,16 @@ side would both drive the same signals, and the compiler does not reject that wi
   push!(__eqs, connect(loads.fr, fr.load))
   push!(__eqs, connect(loads.rl, rl.load))
   push!(__eqs, connect(loads.rr, rr.load))
-  push!(__eqs, connect(fl.spin, spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(fr.spin, spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(rl.spin, spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(rr.spin, spin_rr, sensors.spin_rr))
+  push!(__eqs, connect(fl.spin, spin_fl))
+  push!(__eqs, connect(fr.spin, spin_fr))
+  push!(__eqs, connect(rl.spin, spin_rl))
+  push!(__eqs, connect(rr.spin, spin_rr))
   push!(__eqs, connect(tau_fl, fl.tau_cmd))
   push!(__eqs, connect(tau_fr, fr.tau_cmd))
   push!(__eqs, connect(tau_rl, rl.tau_cmd))
   push!(__eqs, connect(tau_rr, rr.tau_cmd))
-  push!(__eqs, connect(sensors.bus, bus))
+  push!(__eqs, connect(f_r, roadload.f_r))
+  push!(__eqs, connect(grade, roadload.grade))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

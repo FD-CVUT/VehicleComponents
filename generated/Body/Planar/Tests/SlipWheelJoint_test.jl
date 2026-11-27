@@ -49,6 +49,23 @@ __dyad_run_test_case!(
 )
 __dyad_run_test_case!(
   VehicleComponents.Body.Planar.Tests.SlipWheelJoint,
+  "sliding for VehicleComponents.Body.Planar.Tests.SlipWheelJoint";
+  case_name="sliding",
+  component_stem="SlipWheelJoint",
+  module_path=String["Body", "Planar", "Tests"],
+  start=0e+0,
+  stop=1e+0,
+  abstol=1e-8,
+  reltol=1e-8,
+  solver=ODEAlg.Auto(),
+  params=Dict{String, Any}("vy" => 7.2),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[(m -> m.tire.F_y, "tire.F_y", -3200, 0.001, 1e-7)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleComponents.Body.Planar.Tests.SlipWheelJoint,
   "scaled for VehicleComponents.Body.Planar.Tests.SlipWheelJoint";
   case_name="scaled",
   component_stem="SlipWheelJoint",

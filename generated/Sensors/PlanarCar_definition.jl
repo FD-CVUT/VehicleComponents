@@ -9,7 +9,7 @@
 
 Ideal sensor cluster of the planar car: reads the chassis, the steering column and each wheel
 through physical ports, without applying force or torque, and sends every reading on one
-`Body.Planar.CarBus`.
+`Sensors.CarBus`.
 
 The chassis readings are resolved in the chassis frame, except the position `x`, `y` and the
 yaw angle `psi`, which are in the world frame. The body sideslip angle is
@@ -18,7 +18,7 @@ a `WheelSlip` on its center frame and shaft; `delta_sw` is the steering-wheel an
 
 Ports: `chassis` the chassis frame; `steering` the steering-wheel shaft; `wheel_fl`, `wheel_fr`,
 `wheel_rl`, `wheel_rr` the wheel centers; `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` the wheel
-shafts; `bus` every reading (`Body.Planar.CarBus` lists the fields).
+shafts; `bus` every reading (`Sensors.CarBus` lists the fields).
 
 Assumptions: ideal, with no delay or noise. Below 1 m/s the sideslip is taken against 1 m/s, and
 the wheel ratios against `WheelSlip`'s `v_eps`, which keeps them finite at standstill.
@@ -46,13 +46,13 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin_fr` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `spin_rl` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `spin_rr` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
- * `bus` - The planar car's measurement bus, as the car sends it: every signal the car measures about
-itself, on one port. One wire carries all of them, the way a vehicle network carries the
-sensors' messages to every control unit that listens.
+ * `bus` - The planar car's measurement bus, as its sensor cluster `PlanarCar` sends it: every signal
+measured about the car, on one port. One wire carries all of them, the way a vehicle network
+carries the sensors' messages to every control unit that listens.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it, as `Car` passes on its sensors' bus. Two `CarBus` ports side by
-side would both drive the same signals, and the compiler does not reject that wiring. ([`CarBus`](@ref))
+the component that holds it. Two `CarBus` ports side by side would both drive the same signals,
+and the compiler does not reject that wiring. ([`CarBus`](@ref))
 """
 @component function PlanarCar(; name = nothing, var"radius"=0.31, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -114,7 +114,7 @@ side would both drive the same signals, and the compiler does not reject that wi
   push!(__systems, @named spin_fr = __Dyad__Spline())
   push!(__systems, @named spin_rl = __Dyad__Spline())
   push!(__systems, @named spin_rr = __Dyad__Spline())
-  push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
+  push!(__systems, @named bus = VehicleComponents.Sensors.CarBus())
   # Subcomponent velocity of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
   velocity_overrides = __pop_subcomponent_overrides!(__overrides, "velocity")
   push!(__systems, @named velocity = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = velocity_overrides))

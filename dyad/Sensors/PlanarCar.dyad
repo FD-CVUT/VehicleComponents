@@ -1,7 +1,7 @@
 """
 Ideal sensor cluster of the planar car: reads the chassis, the steering column and each wheel
 through physical ports, without applying force or torque, and sends every reading on one
-`Body.Planar.CarBus`.
+`Sensors.CarBus`.
 
 The chassis readings are resolved in the chassis frame, except the position `x`, `y` and the
 yaw angle `psi`, which are in the world frame. The body sideslip angle is
@@ -10,7 +10,7 @@ a `WheelSlip` on its center frame and shaft; `delta_sw` is the steering-wheel an
 
 Ports: `chassis` the chassis frame; `steering` the steering-wheel shaft; `wheel_fl`, `wheel_fr`,
 `wheel_rl`, `wheel_rr` the wheel centers; `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` the wheel
-shafts; `bus` every reading (`Body.Planar.CarBus` lists the fields).
+shafts; `bus` every reading (`Sensors.CarBus` lists the fields).
 
 Assumptions: ideal, with no delay or noise. Below 1 m/s the sideslip is taken against 1 m/s, and
 the wheel ratios against `WheelSlip`'s `v_eps`, which keeps them finite at standstill.
@@ -37,7 +37,7 @@ component PlanarCar
   "Rear-right wheel shaft"
   spin_rr = Spline() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
   "Every reading"
-  bus = VehicleComponents.Body.Planar.CarBus() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}}
+  bus = VehicleComponents.Sensors.CarBus() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}}
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   velocity = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {

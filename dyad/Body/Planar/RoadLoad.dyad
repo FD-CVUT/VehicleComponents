@@ -29,8 +29,6 @@ component RoadLoad
   parameter CdA::Area = 0.63
   "Air density at sea level"
   parameter rho::Density = 1.2
-  "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force"
-  parameter v_nominal::Velocity = 30.0
   "Gravitational acceleration, standard gravity"
   parameter g::Acceleration = 9.80665
   speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {
@@ -45,7 +43,7 @@ component RoadLoad
   sensor = TranslationalComponents.Sensors.ForceSensor() {
     "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}
   }
-  law = VehicleComponents.Body.Longitudinal.RoadLoad(m = m, CdA = CdA, rho = rho, v_nominal = v_nominal, g = g) {
+  law = VehicleComponents.Body.Longitudinal.RoadLoad(m = m, CdA = CdA, rho = rho, g = g) {
     "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}
   }
   zero = BlockComponents.Sources.Constant(k = 0.0) {

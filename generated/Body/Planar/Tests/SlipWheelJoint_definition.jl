@@ -27,6 +27,8 @@ with mu_scale · mu · F_z:
   c = 0.8668777, so the force is 3467.5108 N along the slip velocity: F_x = -3467.5108/1.5620499
   = -2219.8463 N, F_y = -3467.5108 · 1.2/1.5620499 = -2663.8156 N. The road pushes the wheel's
   shaft with -r F_x the other way: the shaft takes -0.31 · 2219.8463 = -688.1524 N m.
+- `sliding`: v_lat = 7.2 m/s reaches the sliding slip speed 0.36 r w = 7.2 m/s, where the law sits
+  on its plateau mu_S: F_y = -0.8 · 4000 = -3200 N.
 - `scaled`: as `lateral` with mu_scale = 0.5, F_y = -1375 N.
 - `lifted`: a -1000 N load lifts the tire, F_z = 0 and F_y = 0.
 

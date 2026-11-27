@@ -18,11 +18,14 @@ each rear wheel N_r = m g a/(2 L) = 3268.8833 N; the lagged accelerations start 
 case starts there. The cases stop at 1 s, 20 lag time constants of 0.05 s, so the lag is done
 to e^-20:
 
-- `braking`: ax = -4 m/s² moves m ax h/(2 L) = 1500 · 4 · 0.55/5.4 = 611.1111 N onto each front
-  wheel from each rear one: 4697.2153 N front and 2657.7722 N rear.
-- `cornering`: ay = 3.873 m/s² moves m ay h (b/L)/t_w = 1145.2419 N from the front-left to the
-  front-right wheel and m ay h (a/L)/t_w = 916.1935 N from the rear-left to the rear-right:
-  2940.8622, 5231.3461, 2352.6898 and 4185.0769 N.
+- `braking_cornering` brakes and turns left at once. ax = -4 m/s² moves m ax h/(2 L) =
+  1500 · 4 · 0.55/5.4 = 611.1111 N onto each front wheel from each rear one, and ay = 3.873 m/s²
+  moves m ay h (b/L)/t_w = 1145.2419 N from the front-left to the front-right wheel and
+  m ay h (a/L)/t_w = 916.1935 N from the rear-left to the rear-right:
+  F_fl = 4086.1042 + 611.1111 - 1145.2419 = 3551.9734 N,
+  F_fr = 4086.1042 + 611.1111 + 1145.2419 = 5842.4572 N,
+  F_rl = 3268.8833 - 611.1111 - 916.1935 = 1741.5787 N,
+  F_rr = 3268.8833 - 611.1111 + 916.1935 = 3573.9657 N.
 - `lifted`: ay = 15 m/s² would move 4435.4839 N off the front-left and 3548.3871 N off the
   rear-left wheel, more than their static loads: both left wheels end at 0 N, while the right
   ones carry 8521.5880 and 6817.2704 N.

@@ -9,10 +9,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
-include("BusMotion_experiment.jl")
-include("BusSlipAngle_experiment.jl")
-include("BusSlip_experiment.jl")
-include("BusWheelSpeed_experiment.jl")
+include("BusReaders_experiment.jl")
 include("Noise_experiment.jl")
 include("PlanarCar_experiment.jl")
 include("WheelSlip_experiment.jl")

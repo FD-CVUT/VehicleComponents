@@ -7,15 +7,15 @@
 @doc Markdown.doc"""
    RoadLoad(; name, __overrides)
 
-A planar chassis under `RoadLoad` and the longitudinal `Body.Longitudinal.Vehicle` of the same
-1500 kg coast down side by side on a flat road (grade 0, f_r = 0.012) from 30 m/s.
+A planar chassis of 1500 kg under `RoadLoad` coasts on a flat road (grade 0, f_r = 0.012) from
+30 m/s, heading 0.5 rad off the world x axis, so the road load has to read the speed and apply
+the force in the chassis frame.
 
-The chassis heads 0.5 rad off the world x axis, so the road load has to read the speed and apply
-the force in the chassis frame. Both cars follow m dv/dt = -(c v² + A), with
-c = rho CdA/2 = 1.2 · 0.63/2 = 0.378 kg/m and A = f_r m g = 0.012 · 1500 · 9.80665 = 176.5197 N
-(the rolling resistance is at full value above a few mm/s). The solution is
-v(t) = s tan(theta0 - k t), with s = sqrt(A/c) = 21.609797 m/s, k = sqrt(A c)/m = 0.0054457 1/s and
-theta0 = atan(30/s) = 0.946558, so at 10 s both are at v = 26.794378 m/s.
+The chassis follows m dv/dt = -(c v² + A), with c = rho CdA/2 = 1.2 · 0.63/2 = 0.378 kg/m and
+A = f_r m g = 0.012 · 1500 · 9.80665 = 176.5197 N (the rolling resistance is at full value above a
+few mm/s). The solution is v(t) = s tan(theta0 - k t), with s = sqrt(A/c) = 21.609797 m/s,
+k = sqrt(A c)/m = 0.0054457 1/s and theta0 = atan(30/s) = 0.946558, so at 5 s the chassis is at
+v = 28.339941 m/s.
 
 The chassis' velocity in its own frame is that speed along its heading and none across it, and
 it does not turn.
@@ -88,12 +88,6 @@ it does not turn.
   # Subcomponent tire of type BlockComponents.Sources.Constant
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
   push!(__systems, @named tire = BlockComponents.Sources.Constant(; k=0.012, __overrides = tire_overrides))
-  # Subcomponent reference of type VehicleComponents.Body.Longitudinal.Vehicle
-  reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  reference_dict = Dict{String, Any}()
-  reference_dict["mass.v.initial"] = ModelingToolkit.default_to_parentscope(30.0)
-  merge!(reference_dict, reference_overrides)
-  push!(__systems, @named reference = VehicleComponents.Body.Longitudinal.Vehicle(; m=Float64(1500.0), __overrides = reference_dict))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -109,9 +103,7 @@ it does not turn.
   push!(__eqs, connect(body.frame_a, roadload.chassis))
   push!(__eqs, connect(body.frame_a, speed.frame_a))
   push!(__eqs, connect(flat.y, roadload.grade))
-  push!(__eqs, connect(flat.y, reference.grade))
   push!(__eqs, connect(tire.y, roadload.f_r))
-  push!(__eqs, connect(tire.y, reference.f_r))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

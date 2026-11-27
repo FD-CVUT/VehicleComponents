@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadLoad(; name, m, CdA, rho, v_nominal, g, __overrides)
+   RoadLoad(; name, m, CdA, rho, g, __overrides)
 
 Road load on a planar chassis: the longitudinal `Body.Longitudinal.RoadLoad` law, aerodynamic
 drag, rolling resistance and the along-slope weight, applied along the chassis heading.
@@ -31,7 +31,6 @@ otherwise.
 | `m`         | Vehicle mass; the road load uses it for the normal load and the along-slope weight                         | kg  |   1500.0 |
 | `CdA`         | Aerodynamic drag area, Cd * A                         | m2  |   0.63 |
 | `rho`         | Air density at sea level                         | kg/m3  |   1.2 |
-| `v_nominal`         | Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force                         | m/s  |   30.0 |
 | `g`         | Gravitational acceleration, standard gravity                         | m/s2  |   9.80665 |
 
 ## Connectors
@@ -41,7 +40,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `f_r` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function RoadLoad(; name = nothing, var"m"=Float64(1500.0), var"CdA"=0.63, var"rho"=1.2, var"v_nominal"=Float64(30.0), var"g"=9.80665, __overrides = Dict{String, Any}())
+@component function RoadLoad(; name = nothing, var"m"=Float64(1500.0), var"CdA"=0.63, var"rho"=1.2, var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -63,7 +62,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
   haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
   haskey(__overrides, "rho") && (rho = pop!(__overrides, "rho"))
-  haskey(__overrides, "v_nominal") && (v_nominal = pop!(__overrides, "v_nominal"))
   haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
 
   ### Structural Parameters (functions)
@@ -88,9 +86,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __local__rho = rho
   append!(__params, @parameters (rho::Real), [description = "Air density at sea level", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, rho, __local__rho)
-  __local__v_nominal = v_nominal
-  append!(__params, @parameters (v_nominal::Real), [description = "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, v_nominal, __local__v_nominal)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration, standard gravity"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
@@ -124,7 +119,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named sensor = TranslationalComponents.Sensors.ForceSensor(; __overrides = sensor_overrides))
   # Subcomponent law of type VehicleComponents.Body.Longitudinal.RoadLoad
   law_overrides = __pop_subcomponent_overrides!(__overrides, "law")
-  push!(__systems, @named law = VehicleComponents.Body.Longitudinal.RoadLoad(; m=m, CdA=CdA, rho=rho, v_nominal=v_nominal, g=g, __overrides = law_overrides))
+  push!(__systems, @named law = VehicleComponents.Body.Longitudinal.RoadLoad(; m=m, CdA=CdA, rho=rho, g=g, __overrides = law_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
   push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))

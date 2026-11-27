@@ -200,10 +200,7 @@ component.
 end
 
 
-include("BusMotion_definition.jl")
-include("BusSlipAngle_definition.jl")
-include("BusSlip_definition.jl")
-include("BusWheelSpeed_definition.jl")
+include("BusReaders_definition.jl")
 include("Noise_definition.jl")
 include("PlanarCar_definition.jl")
 include("WheelSlip_definition.jl")

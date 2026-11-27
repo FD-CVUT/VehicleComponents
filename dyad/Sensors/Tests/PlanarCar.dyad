@@ -7,7 +7,8 @@ constant (1, -0.5) m/s² in the world frame. A revolute joint on it turns the ch
 constant yaw rate r = 0.2 rad/s from the heading 0.5 rad. The wheel centers sit on the chassis at
 (1.2, ±0.775) m front and (-1.5, ±0.775) m rear, left positive, unsteered. Each wheel shaft turns
 at its own constant speed, 60, 62, 64 and 66 rad/s for fl, fr, rl, rr, each source on its own
-mount; the cluster's radius is 0.25 m, so they roll at 15, 15.5, 16 and 16.5 m/s. The steering wheel is held at 0.3 rad.
+mount; the cluster's radius is 0.25 m, so they roll at 15, 15.5, 16 and 16.5 m/s. The steering
+wheel is held at 0.3 rad.
 
 At t = 1 s the heading is psi = 0.7 rad, the world velocity (19, 7.5) m/s and the position
 (18.5, 7.75) m. In the chassis frame, with c = cos 0.7 = 0.7648422 and s = sin 0.7 = 0.6442177:

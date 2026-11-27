@@ -1,5 +1,5 @@
 """
-Bus reader for the planar car's body motion: the motion fields of a `Body.Planar.CarBusIn`, as
+Bus reader for the planar car's body motion: the motion fields of a `Sensors.CarBusIn`, as
 plain signals for blocks that take `RealInput`s.
 
 Ports: `bus` the car's measurement bus; `delta_sw` steering-wheel angle [rad], `r` yaw rate
@@ -12,7 +12,7 @@ adds them after the reader, `Noise` for one.
 """
 component BusMotion
   "The car's measurement bus"
-  bus = VehicleComponents.Body.Planar.CarBusIn() {^bus}
+  bus = VehicleComponents.Sensors.CarBusIn() {^bus}
   "Steering-wheel angle [rad]"
   delta_sw = RealOutput() {^delta_sw}
   "Yaw rate [rad/s]"

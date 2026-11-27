@@ -7,8 +7,8 @@
 @doc Markdown.doc"""
    WheelSlip(; name, radius, v_eps, __overrides)
 
-Ideal wheel-slip sensor: the longitudinal slip ratio, slip angle, spin speed and forward speed of
-one wheel, read from its center frame and its shaft without applying force or torque.
+Ideal wheel-slip sensor: the longitudinal slip ratio, slip angle and spin speed of one wheel, read
+from its center frame and its shaft without applying force or torque.
 
 The wheel center's velocity is resolved in its own frame, `v_x` along the wheel heading and
 `v_y` to its left. With the shaft speed omega:
@@ -20,8 +20,7 @@ so `kappa` is negative while braking and positive under wheelspin, the same slip
 heading.
 
 Ports: `frame_a` the wheel center, with x along the wheel heading; `spline` the wheel shaft;
-outputs `kappa` [-], `alpha` [rad], `omega` the shaft speed [rad/s] and `v_long` the
-wheel-center speed along the heading [m/s].
+outputs `kappa` [-], `alpha` [rad] and `omega` the shaft speed [rad/s].
 
 Assumptions: ideal, with no delay or noise. Below `v_eps` both ratios are taken against `v_eps`,
 which keeps them finite at standstill. The default radius is the planar car's wheel.
@@ -41,7 +40,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `alpha` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `omega` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `v_long` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
 @component function WheelSlip(; name = nothing, var"radius"=0.31, var"v_eps"=0.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -91,7 +89,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   append!(__vars, @variables (kappa(t)::Real), [output = true])
   append!(__vars, @variables (alpha(t)::Real), [output = true])
   append!(__vars, @variables (omega(t)::Real), [output = true])
-  append!(__vars, @variables (v_long(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -126,7 +123,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(frame_a, velocity.frame_a))
   push!(__eqs, connect(spline, spin.spline))
   push!(__eqs, connect(spin.w, omega))
-  push!(__eqs, connect(velocity.v_x, v_long))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

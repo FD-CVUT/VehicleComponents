@@ -5,13 +5,13 @@
 
 
 @doc Markdown.doc"""
-The planar car's measurement bus, as the car sends it: every signal the car measures about
-itself, on one port. One wire carries all of them, the way a vehicle network carries the
-sensors' messages to every control unit that listens.
+The planar car's measurement bus, as its sensor cluster `PlanarCar` sends it: every signal
+measured about the car, on one port. One wire carries all of them, the way a vehicle network
+carries the sensors' messages to every control unit that listens.
 
 A `CarBus` connects to a `CarBusIn`, field by field, or passes out through the `CarBus` port of
-the component that holds it, as `Car` passes on its sensors' bus. Two `CarBus` ports side by
-side would both drive the same signals, and the compiler does not reject that wiring.
+the component that holds it. Two `CarBus` ports side by side would both drive the same signals,
+and the compiler does not reject that wiring.
 """
 @connector function CarBus(; name=nothing)
   isnothing(name) && throw(ArgumentError("""

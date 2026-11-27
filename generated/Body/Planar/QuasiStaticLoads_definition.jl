@@ -21,9 +21,9 @@ the right, split between the axles as b/L front and a/L rear:
 Ports:
 - `chassis` the chassis frame at the center of mass; the loads read its acceleration, resolved
   in the chassis frame, and apply no force to it.
-- `fl`, `fr`, `rl`, `rr` each push one wheel's normal load onto that wheel's `load` flange, with
-  the planar wheels' convention (positive force presses the tire onto the road). The wheels hold
-  the flanges at zero travel, so each must be connected to a wheel's load flange or to a `Fixed`.
+- `fl`, `fr`, `rl`, `rr` each push one wheel's normal load onto that wheel's `load` flange;
+  `SlipWheelJoint` states the load-flange convention. Each must be connected to a wheel's load
+  flange or to a `Fixed`.
 
 With `load_transfer = false` the loads stay at their static values; with `true` the accelerations
 pass through a first-order lag of `T_lt`, the time the suspension takes to roll and pitch the

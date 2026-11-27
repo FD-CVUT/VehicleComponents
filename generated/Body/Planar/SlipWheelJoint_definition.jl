@@ -23,9 +23,10 @@ and falls to `mu_S` at the sliding speed `vSlide`. Both speeds grow with the rol
 Ports:
 - `frame_a` the wheel center, steered on the plane; it takes the tire force and no torque.
 - `spline` the wheel shaft; it takes the tire's reaction torque.
-- `load` takes the normal load with the planar wheels' convention: a positive force presses the
-  tire onto the road, and the joint holds the flange at zero travel. It must be connected to a
-  source that sets only the force, such as `QuasiStaticLoads`.
+- `load` takes the normal load in newtons. This is the planar wheels' load-flange convention,
+  which `Wheel` and `QuasiStaticLoads` follow: the flange force, flow into the port, is the load,
+  positive when it presses the tire onto the road, and the joint holds the flange at zero travel.
+  It must be connected to a source that sets only the force, such as `QuasiStaticLoads`.
 - `mu_scale` multiplies the friction for the road: 1 on the road the law describes.
 
 Documented variables: `F_x` and `F_y` are the longitudinal and lateral tire forces on the
