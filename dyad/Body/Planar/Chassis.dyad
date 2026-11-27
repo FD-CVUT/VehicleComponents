@@ -24,8 +24,8 @@ Any wheel with a frame, a load flange and a shaft fits, such as `Wheel`; each wh
 radius must match `radius`, which the slip sensors use. And:
 - `steering` the steering-wheel shaft; it must be held or driven (a `Fixed`, or a position
   source), since the wheels of this library carry no aligning torque.
-- `chassis` the body frame at the center of mass, for a `RoadGrade` or a sensor of the model's
-  own.
+- `frame_cg` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the
+  model's own.
 - `grade` the road gradient tan(alpha) along the heading, 0 on a flat road; `f_r` the rolling
   resistance coefficient (0.012 is a car tire on asphalt).
 - `bus` everything measured about the car (`CarBus` lists the fields); read it with a `BusOut`.
@@ -45,7 +45,7 @@ component Chassis
   "Steering-wheel shaft"
   steering = Spline() {^steering}
   "Chassis frame at the center of mass"
-  chassis = Frame2D() {^chassis}
+  frame_cg = Frame2D() {^frame_cg}
   "Front-left wheel center"
   frame_fl = Frame2D() {^frame_fl}
   "Front-left wheel normal load"
@@ -123,7 +123,7 @@ component Chassis
   slip_rl = VehicleComponents.Sensors.WheelSlip(radius = radius) {^slip_rl}
   slip_rr = VehicleComponents.Sensors.WheelSlip(radius = radius) {^slip_rr}
 relations
-  connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a) {^w1}
+  connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, frame_cg, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a) {^w1}
   connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a) {^w2}
   connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a) {^w3}
   connect(arm_fl.frame_b, kingpin_fl.frame_a) {^w4}
@@ -193,7 +193,7 @@ metadata {
     "f_r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 400, "x2": 50, "y2": 500}, "diagram": {"x1": -30, "y1": 770, "x2": 30, "y2": 830}}}},
     "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 500, "x2": 50, "y2": 600}, "diagram": {"x1": -30, "y1": 840, "x2": 30, "y2": 900}}}},
     "steering": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 250, "y1": -30, "x2": 350, "y2": 70}}}},
-    "chassis": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 970, "y1": 1370, "x2": 1030, "y2": 1430}}}},
+    "frame_cg": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 970, "y1": 1370, "x2": 1030, "y2": 1430}}}},
     "spin_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 300, "x2": 50, "y2": 400}, "diagram": {"x1": -30, "y1": 580, "x2": 30, "y2": 640}}}},
     "spin_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 300, "x2": 1050, "y2": 400}, "diagram": {"x1": 1370, "y1": 580, "x2": 1430, "y2": 640}}}},
     "spin_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}, "diagram": {"x1": -30, "y1": 1180, "x2": 30, "y2": 1240}}}},

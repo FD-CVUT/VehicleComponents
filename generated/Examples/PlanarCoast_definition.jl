@@ -149,8 +149,8 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   # Subcomponent car of type VehicleComponents.Body.Planar.Car
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   car_dict = Dict{String, Any}()
-  car_dict["base.body.r.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([x0, 0.0])))
-  car_dict["base.body.v.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([vx0, vy0])))
+  car_dict["chassis.body.r.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([x0, 0.0])))
+  car_dict["chassis.body.v.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope([vx0, vy0])))
   car_dict["fl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
   car_dict["fr.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
   car_dict["rl.inertia.w.initial"] = ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(ModelingToolkit.default_to_parentscope(vx0 / 0.31)))
@@ -208,7 +208,7 @@ by up to about 1e-5 m over the run, which its tolerance allows.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(car.chassis, road.frame_a))
+  push!(__eqs, connect(car.frame_cg, road.frame_a))
   push!(__eqs, connect(road.grade, car.grade))
   push!(__eqs, connect(tire.y, car.f_r))
   push!(__eqs, connect(column.spline, car.steering))

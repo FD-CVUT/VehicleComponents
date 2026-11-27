@@ -1,5 +1,5 @@
 """
-Four-wheel planar car, ready-made: a `Chassis`, the part `base`, on four `Wheel`s. The chassis is
+Four-wheel planar car, ready-made: a `Chassis`, the part `chassis`, on four `Wheel`s. The chassis is
 steered through a column and an Ackermann linkage, with quasi-static wheel loads, its road load,
 and ideal sensors that send everything measured about the car on `bus`; each wheel is slip tire
 contact and spin inertia, reading its grip from the road `grip`. A model that needs other wheels
@@ -10,23 +10,23 @@ Ports:
 - `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
   be held or driven (a `Fixed`, or a position source): the wheels carry no aligning torque, so
   an open steering shaft leaves its angle undetermined.
-- `chassis` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the model's
-  own.
+- `frame_cg` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the
+  model's own.
 - `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft, where a brake or a drive
   attaches; open when nothing acts on the wheel. The car has no brakes: a model places a
   `Chassis.Wheel.BrakeActuator` or a `Chassis.Brakes.Caliper` on each shaft it brakes.
 - `grade` the road gradient tan(alpha) along the heading, 0 on a flat road (or from a
-  `RoadGrade` on `chassis`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
+  `RoadGrade` on `frame_cg`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
   asphalt).
 - `bus` everything measured about the car (`CarBus` lists the fields); read it with a `BusOut`.
-  Other sensors a model places itself attach to `chassis`, `steering` and the `spin_*` shafts.
+  Other sensors a model places itself attach to `frame_cg`, `steering` and the `spin_*` shafts.
 
 Assumptions: no suspension, so no roll, pitch or camber; the road load acts at the center of mass
 along the heading (`RoadLoad`); gravity enters only through the wheel loads and the road load,
 and the model must hold one planar `World` with `g = 0`, since the car lies in the road plane.
 The car starts at rest at the world origin heading along x, with every wheel at rest; give
 another start at the declaration,
-`Car(base(body(v = initial [20.0, 0.0])), fl(inertia(w = initial 64.5)))`. Defaults are the
+`Car(chassis(body(v = initial [20.0, 0.0])), fl(inertia(w = initial 64.5)))`. Defaults are the
 course's planar car (a mid-size sedan, assumed). The steering column and linkage react on a fixed
 housing, not on the chassis.
 
@@ -37,7 +37,7 @@ component Car
   "Steering-wheel shaft"
   steering = Spline() {^steering}
   "Chassis frame at the center of mass"
-  chassis = Frame2D() {^chassis}
+  frame_cg = Frame2D() {^frame_cg}
   "Front-left wheel shaft"
   spin_fl = Spline() {^spin_fl}
   "Front-right wheel shaft"
@@ -88,34 +88,34 @@ component Car
   structural parameter load_transfer::Boolean = false
   "Suspension lag of the load transfer"
   parameter T_lt::Time = 0.05
-  base = VehicleComponents.Body.Planar.Chassis(m = m, Iz = Iz, a = a, b = b, tw = tw, radius = radius, i_s = i_s, t_k = t_k, ackermann = ackermann, h_cg = h_cg, load_transfer = load_transfer, T_lt = T_lt) {^base}
+  chassis = VehicleComponents.Body.Planar.Chassis(m = m, Iz = Iz, a = a, b = b, tw = tw, radius = radius, i_s = i_s, t_k = t_k, ackermann = ackermann, h_cg = h_cg, load_transfer = load_transfer, T_lt = T_lt) {^chassis}
   fl = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_f) {^fl}
   fr = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_f) {^fr}
   rl = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_r) {^rl}
   rr = VehicleComponents.Body.Planar.Wheel(grip = grip, radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, sAdhesion = sAdhesion_r) {^rr}
 relations
-  connect(steering, base.steering) {^w1}
-  connect(base.chassis, chassis) {^w2}
-  connect(grade, base.grade) {^w3}
-  connect(f_r, base.f_r) {^w4}
-  connect(base.bus, bus) {^w5}
-  connect(fl.frame_a, base.frame_fl) {^w6}
-  connect(fl.load, base.load_fl) {^w7}
-  connect(fl.spin, spin_fl, base.spin_fl) {^w8}
-  connect(fr.frame_a, base.frame_fr) {^w9}
-  connect(fr.load, base.load_fr) {^w10}
-  connect(fr.spin, spin_fr, base.spin_fr) {^w11}
-  connect(rl.frame_a, base.frame_rl) {^w12}
-  connect(rl.load, base.load_rl) {^w13}
-  connect(rl.spin, spin_rl, base.spin_rl) {^w14}
-  connect(rr.frame_a, base.frame_rr) {^w15}
-  connect(rr.load, base.load_rr) {^w16}
-  connect(rr.spin, spin_rr, base.spin_rr) {^w17}
+  connect(steering, chassis.steering) {^w1}
+  connect(chassis.frame_cg, frame_cg) {^w2}
+  connect(grade, chassis.grade) {^w3}
+  connect(f_r, chassis.f_r) {^w4}
+  connect(chassis.bus, bus) {^w5}
+  connect(fl.frame_a, chassis.frame_fl) {^w6}
+  connect(fl.load, chassis.load_fl) {^w7}
+  connect(fl.spin, spin_fl, chassis.spin_fl) {^w8}
+  connect(fr.frame_a, chassis.frame_fr) {^w9}
+  connect(fr.load, chassis.load_fr) {^w10}
+  connect(fr.spin, spin_fr, chassis.spin_fr) {^w11}
+  connect(rl.frame_a, chassis.frame_rl) {^w12}
+  connect(rl.load, chassis.load_rl) {^w13}
+  connect(rl.spin, spin_rl, chassis.spin_rl) {^w14}
+  connect(rr.frame_a, chassis.frame_rr) {^w15}
+  connect(rr.load, chassis.load_rr) {^w16}
+  connect(rr.spin, spin_rr, chassis.spin_rr) {^w17}
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleComponents/Body/Planar/Car.svg"}},
   "_links": {
     "steering": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 670, "y1": -30, "x2": 730, "y2": 30}}}},
-    "chassis": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 670, "y1": 970, "x2": 730, "y2": 1030}}}},
+    "frame_cg": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 670, "y1": 970, "x2": 730, "y2": 1030}}}},
     "spin_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -30, "y1": 320, "x2": 30, "y2": 380}}}},
     "spin_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}, "diagram": {"x1": -30, "y1": 620, "x2": 30, "y2": 680}}}},
     "spin_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 200, "x2": 1050, "y2": 300}, "diagram": {"x1": 1370, "y1": 320, "x2": 1430, "y2": 380}}}},
@@ -123,7 +123,7 @@ metadata {
     "f_r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 400, "x2": 50, "y2": 500}, "diagram": {"x1": -20, "y1": 460, "x2": 20, "y2": 500}}}},
     "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 500, "x2": 50, "y2": 600}, "diagram": {"x1": -20, "y1": 500, "x2": 20, "y2": 540}}}},
     "bus": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1370, "y1": 470, "x2": 1430, "y2": 530}}}},
-    "base": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 300, "x2": 900, "y2": 700}}}},
+    "chassis": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 300, "x2": 900, "y2": 700}}}},
     "fl": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 300, "x2": 350, "y2": 400}}}},
     "rl": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 600, "x2": 350, "y2": 700}}}},
     "fr": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 300, "x2": 1050, "y2": 400}}}},

@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    Car(; name, grip, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
-Four-wheel planar car, ready-made: a `Chassis`, the part `base`, on four `Wheel`s. The chassis is
+Four-wheel planar car, ready-made: a `Chassis`, the part `chassis`, on four `Wheel`s. The chassis is
 steered through a column and an Ackermann linkage, with quasi-static wheel loads, its road load,
 and ideal sensors that send everything measured about the car on `bus`; each wheel is slip tire
 contact and spin inertia, reading its grip from the road `grip`. A model that needs other wheels
@@ -18,23 +18,23 @@ Ports:
 - `steering` the steering-wheel shaft; its angle steers the car, positive to the left. It must
   be held or driven (a `Fixed`, or a position source): the wheels carry no aligning torque, so
   an open steering shaft leaves its angle undetermined.
-- `chassis` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the model's
-  own.
+- `frame_cg` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the
+  model's own.
 - `spin_fl`, `spin_fr`, `spin_rl`, `spin_rr` each wheel's shaft, where a brake or a drive
   attaches; open when nothing acts on the wheel. The car has no brakes: a model places a
   `Chassis.Wheel.BrakeActuator` or a `Chassis.Brakes.Caliper` on each shaft it brakes.
 - `grade` the road gradient tan(alpha) along the heading, 0 on a flat road (or from a
-  `RoadGrade` on `chassis`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
+  `RoadGrade` on `frame_cg`); `f_r` the rolling resistance coefficient (0.012 is a car tire on
   asphalt).
 - `bus` everything measured about the car (`CarBus` lists the fields); read it with a `BusOut`.
-  Other sensors a model places itself attach to `chassis`, `steering` and the `spin_*` shafts.
+  Other sensors a model places itself attach to `frame_cg`, `steering` and the `spin_*` shafts.
 
 Assumptions: no suspension, so no roll, pitch or camber; the road load acts at the center of mass
 along the heading (`RoadLoad`); gravity enters only through the wheel loads and the road load,
 and the model must hold one planar `World` with `g = 0`, since the car lies in the road plane.
 The car starts at rest at the world origin heading along x, with every wheel at rest; give
 another start at the declaration,
-`Car(base(body(v = initial [20.0, 0.0])), fl(inertia(w = initial 64.5)))`. Defaults are the
+`Car(chassis(body(v = initial [20.0, 0.0])), fl(inertia(w = initial 64.5)))`. Defaults are the
 course's planar car (a mid-size sedan, assumed). The steering column and linkage react on a fixed
 housing, not on the chassis.
 
@@ -67,7 +67,7 @@ wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are 
 ## Connectors
 
  * `steering` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
- * `chassis` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
+ * `frame_cg` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `spin_fl` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `spin_fr` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
@@ -202,15 +202,15 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
 
   ### Components
   push!(__systems, @named steering = __Dyad__Spline())
-  push!(__systems, @named chassis = __Dyad__Frame2D())
+  push!(__systems, @named frame_cg = __Dyad__Frame2D())
   push!(__systems, @named spin_fl = __Dyad__Spline())
   push!(__systems, @named spin_fr = __Dyad__Spline())
   push!(__systems, @named spin_rl = __Dyad__Spline())
   push!(__systems, @named spin_rr = __Dyad__Spline())
   push!(__systems, @named bus = VehicleComponents.Body.Planar.CarBus())
-  # Subcomponent base of type VehicleComponents.Body.Planar.Chassis
-  base_overrides = __pop_subcomponent_overrides!(__overrides, "base")
-  push!(__systems, @named base = VehicleComponents.Body.Planar.Chassis(; m=m, Iz=Iz, a=a, b=b, tw=tw, radius=radius, i_s=i_s, t_k=t_k, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = base_overrides))
+  # Subcomponent chassis of type VehicleComponents.Body.Planar.Chassis
+  chassis_overrides = __pop_subcomponent_overrides!(__overrides, "chassis")
+  push!(__systems, @named chassis = VehicleComponents.Body.Planar.Chassis(; m=m, Iz=Iz, a=a, b=b, tw=tw, radius=radius, i_s=i_s, t_k=t_k, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = chassis_overrides))
   # Subcomponent fl of type VehicleComponents.Body.Planar.Wheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
   push!(__systems, @named fl = VehicleComponents.Body.Planar.Wheel(; grip=grip, radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, sAdhesion=sAdhesion_f, __overrides = fl_overrides))
@@ -235,23 +235,23 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(steering, base.steering))
-  push!(__eqs, connect(base.chassis, chassis))
-  push!(__eqs, connect(grade, base.grade))
-  push!(__eqs, connect(f_r, base.f_r))
-  push!(__eqs, connect(base.bus, bus))
-  push!(__eqs, connect(fl.frame_a, base.frame_fl))
-  push!(__eqs, connect(fl.load, base.load_fl))
-  push!(__eqs, connect(fl.spin, spin_fl, base.spin_fl))
-  push!(__eqs, connect(fr.frame_a, base.frame_fr))
-  push!(__eqs, connect(fr.load, base.load_fr))
-  push!(__eqs, connect(fr.spin, spin_fr, base.spin_fr))
-  push!(__eqs, connect(rl.frame_a, base.frame_rl))
-  push!(__eqs, connect(rl.load, base.load_rl))
-  push!(__eqs, connect(rl.spin, spin_rl, base.spin_rl))
-  push!(__eqs, connect(rr.frame_a, base.frame_rr))
-  push!(__eqs, connect(rr.load, base.load_rr))
-  push!(__eqs, connect(rr.spin, spin_rr, base.spin_rr))
+  push!(__eqs, connect(steering, chassis.steering))
+  push!(__eqs, connect(chassis.frame_cg, frame_cg))
+  push!(__eqs, connect(grade, chassis.grade))
+  push!(__eqs, connect(f_r, chassis.f_r))
+  push!(__eqs, connect(chassis.bus, bus))
+  push!(__eqs, connect(fl.frame_a, chassis.frame_fl))
+  push!(__eqs, connect(fl.load, chassis.load_fl))
+  push!(__eqs, connect(fl.spin, spin_fl, chassis.spin_fl))
+  push!(__eqs, connect(fr.frame_a, chassis.frame_fr))
+  push!(__eqs, connect(fr.load, chassis.load_fr))
+  push!(__eqs, connect(fr.spin, spin_fr, chassis.spin_fr))
+  push!(__eqs, connect(rl.frame_a, chassis.frame_rl))
+  push!(__eqs, connect(rl.load, chassis.load_rl))
+  push!(__eqs, connect(rl.spin, spin_rl, chassis.spin_rl))
+  push!(__eqs, connect(rr.frame_a, chassis.frame_rr))
+  push!(__eqs, connect(rr.load, chassis.load_rr))
+  push!(__eqs, connect(rr.spin, spin_rr, chassis.spin_rr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

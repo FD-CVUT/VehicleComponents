@@ -32,8 +32,8 @@ Any wheel with a frame, a load flange and a shaft fits, such as `Wheel`; each wh
 radius must match `radius`, which the slip sensors use. And:
 - `steering` the steering-wheel shaft; it must be held or driven (a `Fixed`, or a position
   source), since the wheels of this library carry no aligning torque.
-- `chassis` the body frame at the center of mass, for a `RoadGrade` or a sensor of the model's
-  own.
+- `frame_cg` the chassis frame at the center of mass, for a `RoadGrade` or a sensor of the
+  model's own.
 - `grade` the road gradient tan(alpha) along the heading, 0 on a flat road; `f_r` the rolling
   resistance coefficient (0.012 is a car tire on asphalt).
 - `bus` everything measured about the car (`CarBus` lists the fields); read it with a `BusOut`.
@@ -69,7 +69,7 @@ wrong results (JuliaComputing/DyadCompilerPasses.jl#43); straight-line runs are 
 ## Connectors
 
  * `steering` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
- * `chassis` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
+ * `frame_cg` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `frame_fl` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
 All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
@@ -194,7 +194,7 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
 
   ### Components
   push!(__systems, @named steering = __Dyad__Spline())
-  push!(__systems, @named chassis = __Dyad__Frame2D())
+  push!(__systems, @named frame_cg = __Dyad__Frame2D())
   push!(__systems, @named frame_fl = __Dyad__Frame2D())
   push!(__systems, @named load_fl = __Dyad__Flange())
   push!(__systems, @named frame_fr = __Dyad__Frame2D())
@@ -314,7 +314,7 @@ and the compiler does not reject that wiring. ([`CarBus`](@ref))
   push!(__eqs, bus.omega_fr ~ slip_fr.omega)
   push!(__eqs, bus.omega_rl ~ slip_rl.omega)
   push!(__eqs, bus.omega_rr ~ slip_rr.omega)
-  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, chassis, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a))
+  push!(__eqs, connect(body.frame_a, front.frame_a, rear.frame_a, loads.chassis, frame_cg, roadload.chassis, velocity.frame_a, acceleration.frame_a, position.frame_a))
   push!(__eqs, connect(front.frame_b, arm_fl.frame_a, arm_fr.frame_a))
   push!(__eqs, connect(rear.frame_b, arm_rl.frame_a, arm_rr.frame_a))
   push!(__eqs, connect(arm_fl.frame_b, kingpin_fl.frame_a))
